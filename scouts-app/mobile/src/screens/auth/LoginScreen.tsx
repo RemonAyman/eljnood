@@ -29,20 +29,124 @@ export const LoginScreen = ({ navigation }: any) => {
     if (!valid) return;
 
     setLoading(true);
-    // Simulate async check — replace with Firebase auth call
     setTimeout(() => {
       setLoading(false);
+      const cleanId = identifier.trim().toLowerCase();
+
+      // 1. Admin Authentication
+      if (cleanId === 'admin@scouts.org' || cleanId === 'admin' || cleanId.includes('admin')) {
+        setUser({
+          id: 'admin_1',
+          name: 'القائد العام / مدير الخدمة',
+          code: 'ADMIN-001',
+          role: 'ADMIN',
+          phone: '01000000001',
+          guardianPhone: '01000000001',
+        });
+        navigation?.navigate('AdminDashboard');
+        return;
+      }
+
+      // 2. Parent Authentication
+      if (cleanId === 'parent@scouts.org' || cleanId === 'parent' || cleanId.startsWith('0122')) {
+        setUser({
+          id: 'parent_1',
+          name: 'يوسف فايز مسعود (ولي أمر)',
+          code: 'PARENT-448',
+          role: 'PARENT',
+          phone: '01229876543',
+          guardianPhone: '01229876543',
+        });
+        navigation?.navigate('ParentHome');
+        return;
+      }
+
+      // 3. Leader Authentication
+      if (cleanId === 'leader@scouts.org' || cleanId === 'leader' || cleanId.includes('leader')) {
+        setUser({
+          id: 'leader_1',
+          name: 'القائد مينا نبيل',
+          code: 'LEADER-07',
+          role: 'LEADER',
+          phone: '01123456789',
+          guardianPhone: '01123456789',
+        });
+        navigation?.navigate('Attendance');
+        return;
+      }
+
+      // 4. Default: Scout / Child Member
       setUser({
         id: 'user_1',
         name: 'بيتر يوسف فايز',
-        code: identifier,
+        code: identifier.trim(),
         role: 'CHILD',
         phone: '01012345678',
-        guardianPhone: '01229876543'
+        guardianPhone: '01229876543',
       });
       navigation?.navigate('ChildHome');
-    }, 500);
+    }, 450);
   }, [identifier, password, setUser, navigation]);
+
+  const handleQuickDemoLogin = useCallback(
+    (roleType: 'ADMIN' | 'PARENT' | 'LEADER' | 'CHILD') => {
+      switch (roleType) {
+        case 'ADMIN':
+          setIdentifier('admin@scouts.org');
+          setPassword('admin123');
+          setUser({
+            id: 'admin_1',
+            name: 'القائد العام / مدير الخدمة',
+            code: 'ADMIN-001',
+            role: 'ADMIN',
+            phone: '01000000001',
+            guardianPhone: '01000000001',
+          });
+          navigation?.navigate('AdminDashboard');
+          break;
+        case 'PARENT':
+          setIdentifier('parent@scouts.org');
+          setPassword('123456');
+          setUser({
+            id: 'parent_1',
+            name: 'يوسف فايز مسعود (ولي أمر)',
+            code: 'PARENT-448',
+            role: 'PARENT',
+            phone: '01229876543',
+            guardianPhone: '01229876543',
+          });
+          navigation?.navigate('ParentHome');
+          break;
+        case 'LEADER':
+          setIdentifier('leader@scouts.org');
+          setPassword('123456');
+          setUser({
+            id: 'leader_1',
+            name: 'القائد مينا نبيل',
+            code: 'LEADER-07',
+            role: 'LEADER',
+            phone: '01123456789',
+            guardianPhone: '01123456789',
+          });
+          navigation?.navigate('Attendance');
+          break;
+        default:
+          setIdentifier('JS-2026-448');
+          setPassword('123456');
+          setUser({
+            id: 'user_1',
+            name: 'بيتر يوسف فايز',
+            code: 'JS-2026-448',
+            role: 'CHILD',
+            phone: '01012345678',
+            guardianPhone: '01229876543',
+          });
+          navigation?.navigate('ChildHome');
+          break;
+      }
+    },
+    [setUser, navigation]
+  );
 
   const handleVerifyPin = useCallback(() => {
     if (!isValidOTP(pinInput, 4)) {
@@ -126,6 +230,44 @@ export const LoginScreen = ({ navigation }: any) => {
             {loading ? 'جارى تسجيل الدخول...' : 'تسجيل الدخول إلى حسابك ←'}
           </Text>
         </TouchableOpacity>
+
+        {/* Quick Demo Accounts Selection */}
+        <View style={styles.demoSection}>
+          <Text style={styles.demoSectionTitle}>تسجيل سريع بحساب تجريبي:</Text>
+          <View style={styles.demoChipsGrid}>
+            <TouchableOpacity
+              style={[styles.demoChip, styles.adminDemoChip]}
+              onPress={() => handleQuickDemoLogin('ADMIN')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.demoChipText}>👑 مدير عام (Admin)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.demoChip}
+              onPress={() => handleQuickDemoLogin('PARENT')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.demoChipText}>👨‍👩‍👦 ولي أمر</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.demoChip}
+              onPress={() => handleQuickDemoLogin('LEADER')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.demoChipText}>⚜️ قائد فرقة</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.demoChip}
+              onPress={() => handleQuickDemoLogin('CHILD')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.demoChipText}>⛺ كشاف</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Manager Secret PIN Section */}
         <View style={styles.divider} />
@@ -336,6 +478,41 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  demoSection: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  demoSectionTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#6B7280',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  demoChipsGrid: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  demoChip: {
+    backgroundColor: '#FAF7F2',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  adminDemoChip: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#8B0000',
+  },
+  demoChipText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#1F2937',
   },
   divider: {
     height: 1,
