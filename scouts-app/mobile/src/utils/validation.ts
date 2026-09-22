@@ -76,11 +76,23 @@ export function validateLoginForm(identifier: string, password: string): Validat
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 export function validateRegisterForm(data: {
+  role?: 'CHILD' | 'PARENT' | 'LEADER';
   name: string;
-  guardianPhone: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  guardianPhone?: string;
   phone?: string;
-  code: string;
+  code?: string;
+  sonName?: string;
+  sonCode?: string;
+  sectionName?: string;
+  sectionLeaderName?: string;
 }): ValidationResult {
   const errors: Record<string, string> = {};
 
@@ -88,18 +100,66 @@ export function validateRegisterForm(data: {
     errors.name = ValidationMessages.invalidName;
   }
 
-  if (!isRequired(data.guardianPhone)) {
-    errors.guardianPhone = ValidationMessages.required('رقم موبايل ولي الأمر');
-  } else if (!isValidEgyptPhone(data.guardianPhone)) {
-    errors.guardianPhone = ValidationMessages.invalidPhone;
+  if (data.email !== undefined) {
+    if (!isRequired(data.email)) {
+      errors.email = ValidationMessages.required('البريد الإلكتروني');
+    } else if (!isValidEmail(data.email)) {
+      errors.email = 'صيغة البريد الإلكتروني غير صحيحة';
+    }
   }
 
-  if (data.phone && data.phone.trim() && !isValidEgyptPhone(data.phone)) {
-    errors.phone = ValidationMessages.invalidPhone;
+  if (data.password !== undefined) {
+    if (!isRequired(data.password)) {
+      errors.password = ValidationMessages.required('كلمة المرور');
+    } else if (!isValidPassword(data.password)) {
+      errors.password = ValidationMessages.passwordTooShort;
+    }
   }
 
-  if (!isValidScoutCode(data.code)) {
-    errors.code = ValidationMessages.invalidScoutCode;
+  if (data.confirmPassword !== undefined) {
+    if (!isRequired(data.confirmPassword)) {
+      errors.confirmPassword = ValidationMessages.required('تأكيد كلمة المرور');
+    } else if (data.confirmPassword !== data.password) {
+      errors.confirmPassword = 'كلمات المرور غير متطابقة';
+    }
+  }
+
+  if (data.role === 'PARENT') {
+    if (!isRequired(data.sonName)) {
+      errors.sonName = ValidationMessages.required('اسم الابن');
+    }
+    if (!isRequired(data.sonCode)) {
+      errors.sonCode = ValidationMessages.required('كود الابن');
+    }
+    if (!isRequired(data.guardianPhone)) {
+      errors.guardianPhone = ValidationMessages.required('رقم موبايل ولي الأمر');
+    } else if (!isValidEgyptPhone(data.guardianPhone)) {
+      errors.guardianPhone = ValidationMessages.invalidPhone;
+    }
+  } else if (data.role === 'LEADER') {
+    if (!isRequired(data.phone)) {
+      errors.phone = ValidationMessages.required('رقم الموبايل');
+    } else if (!isValidEgyptPhone(data.phone)) {
+      errors.phone = ValidationMessages.invalidPhone;
+    }
+    if (!isRequired(data.sectionLeaderName)) {
+      errors.sectionLeaderName = ValidationMessages.required('اسم رئيس القطاع');
+    }
+  } else {
+    // Child
+    if (!isRequired(data.guardianPhone)) {
+      errors.guardianPhone = ValidationMessages.required('رقم موبايل ولي الأمر');
+    } else if (!isValidEgyptPhone(data.guardianPhone)) {
+      errors.guardianPhone = ValidationMessages.invalidPhone;
+    }
+
+    if (data.phone && data.phone.trim() && !isValidEgyptPhone(data.phone)) {
+      errors.phone = ValidationMessages.invalidPhone;
+    }
+
+    if (data.code && !isValidScoutCode(data.code)) {
+      errors.code = ValidationMessages.invalidScoutCode;
+    }
   }
 
   return { valid: Object.keys(errors).length === 0, errors };

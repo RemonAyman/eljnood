@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useSubscriptionsStore } from '../../store/subscriptionsStore';
 import { useMembersStore } from '../../store/membersStore';
+import { saveSubscriptionToFirestore } from '../../services/firebaseService';
 
 export const SubscriptionsScreen = () => {
   const members = useMembersStore((s) => s.members);
@@ -78,6 +79,11 @@ export const SubscriptionsScreen = () => {
       discountPercentage: discountApplied ? discountPercent : 0,
       totalPaid,
     });
+
+    // Sync receipt to Cloud Firestore
+    saveSubscriptionToFirestore(newRecord).catch((e) =>
+      console.warn('Subscription Firestore sync:', e)
+    );
 
     setLastReceipt(newRecord);
     setShowReceiptModal(true);
@@ -280,7 +286,7 @@ export const SubscriptionsScreen = () => {
           <View style={styles.receiptBox}>
             <View style={styles.receiptHeader}>
               <Text style={styles.receiptGroup}>مجموعة جنود المسيح الكشفية</Text>
-              <Text style={styles.receiptChurch}>كنيسة السيدة العذراء مريم - الفوج الأول</Text>
+              <Text style={styles.receiptChurch}>مجموعة جنود المسيح الكشفية</Text>
               <Text style={styles.receiptType}>🧾 إيصال تحصيل اشتراكات رسمي</Text>
             </View>
 

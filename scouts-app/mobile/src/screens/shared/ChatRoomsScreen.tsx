@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,13 @@ import { useChatStore } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { ChatMessage, Role } from '../../types';
+import { subscribeToChatMessages, sendChatMessageToFirestore } from '../../services/firebaseService';
 
 const ROOM_OPTIONS = [
-  { id: 'GENERAL', title: 'الغرفة العامة', icon: '📢', subtitle: 'إعلانات وأنشطة المجموعة' },
-  { id: 'LEADERS', title: 'غرفة القادة', icon: '⚜️', subtitle: 'الاجتماعات والتنسيق الداخلي' },
-  { id: 'SQUAD', title: 'غرفة الفرقة', icon: '⛺', subtitle: 'أنشطة الطليعة والفرقة' },
-  { id: 'PARENTS', title: 'أولياء الأمور', icon: '👨‍👩‍👧', subtitle: 'التواصل والاستفسارات' },
+  { id: 'GENERAL', title: 'الغرفة العامة', icon: '📢', subtitle: 'إعلانات وأنشطة المجموعة ككل (الجميع)' },
+  { id: 'SECTION_ROOM', title: 'غرفة القطاع', icon: '⛺', subtitle: 'أبناء وقادة القطاع الخاص بك' },
+  { id: 'LEADERS_ROOM', title: 'قادة وجوالة القطاع', icon: '⚜️', subtitle: 'التنسيق والتحضير للخدمة' },
+  { id: 'MANAGERS_ROOM', title: 'رؤساء القطاعات والإدارة', icon: '🛡️', subtitle: 'الاجتماعات والقرارات المركزية' },
 ];
 
 const getRoleBadge = (role: Role) => {
@@ -28,6 +29,8 @@ const getRoleBadge = (role: Role) => {
       return { label: 'مسؤول عام 👑', bg: '#DC2626' };
     case 'GROUP_MANAGER':
       return { label: 'قائد عام المجموعة ⚜️', bg: '#8B0000' };
+    case 'SECTION_LEADER':
+      return { label: 'رئيس قطاع 🛡️', bg: '#7C3AED' };
     case 'LEADER':
       return { label: 'قائد فرقة 🌟', bg: '#D97706' };
     case 'JOWALAH':
@@ -39,7 +42,6 @@ const getRoleBadge = (role: Role) => {
   }
 };
 
-// Memoized Chat Bubble Item for high performance and smooth 60fps scrolling
 const ChatBubbleItem = React.memo(({ msg, isMe }: { msg: ChatMessage; isMe: boolean }) => {
   const roleBadge = getRoleBadge(msg.senderRole);
 
@@ -68,7 +70,7 @@ const ChatBubbleItem = React.memo(({ msg, isMe }: { msg: ChatMessage; isMe: bool
         {msg.mediaType === 'IMAGE' && (
           <View style={styles.mediaImagePlaceholder}>
             <Text style={styles.mediaIcon}>🖼️</Text>
-            <Text style={styles.mediaText}>صورة مرفقة</Text>
+            <Text style={styles.mediaText}>صورة مرفقة من النشاط</Text>
           </View>
         )}
         {msg.mediaType === 'AUDIO' && (
@@ -95,24 +97,56 @@ export const ChatRoomsScreen = () => {
   const { currentRoomId, messages, sendMessage, setRoom } = useChatStore();
   const currentUser = useAuthStore((s) => s.user);
 
+  const [firestoreMessages, setFirestoreMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  const roomMessages = useMemo(() => {
-    return messages.filter((m) => m.roomId === currentRoomId);
-  }, [messages, currentRoomId]);
+  // Subscribe to real-time messages in Cloud Firestore
+  useEffect(() => {
+    const unsubscribe = subscribeToChatMessages(currentRoomId, (cloudMsgs) => {
+      if (cloudMsgs && cloudMsgs.length > 0) {
+        setFirestoreMessages(cloudMsgs as ChatMessage[]);
+      }
+    });
 
-  const handleSend = useCallback(() => {
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [currentRoomId]);
+
+  const displayMessages = useMemo(() => {
+    const localRoomMsgs = messages.filter((m) => m.roomId === currentRoomId);
+    if (firestoreMessages.length > 0) {
+      // Merge unique messages
+      const map = new Map<string, ChatMessage>();
+      localRoomMsgs.forEach((m) => map.set(m.id, m));
+      firestoreMessages.forEach((m) => map.set(m.id, m));
+      return Array.from(map.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    }
+    return localRoomMsgs;
+  }, [messages, firestoreMessages, currentRoomId]);
+
+  const handleSend = useCallback(async () => {
     if (!inputMessage.trim()) return;
 
-    sendMessage({
+    const newMsgData = {
       roomId: currentRoomId,
-      senderId: currentUser?.id || 'u1',
-      senderName: currentUser?.name || 'كشاف نشط',
+      senderId: currentUser?.id || `u_${Date.now()}`,
+      senderName: currentUser?.name || 'عضو كشفي',
       senderRole: (currentUser?.role as Role) || 'CHILD',
       content: inputMessage.trim(),
-    });
+    };
+
+    // 1. Local update
+    sendMessage(newMsgData);
+
+    // 2. Cloud Firestore Real-time push
+    sendChatMessageToFirestore(newMsgData).catch((e) =>
+      console.warn('Chat firestore sync:', e)
+    );
 
     setInputMessage('');
     setTimeout(() => {
@@ -124,14 +158,17 @@ export const ChatRoomsScreen = () => {
     setIsRecording(true);
     setTimeout(() => {
       setIsRecording(false);
-      sendMessage({
+      const voiceData = {
         roomId: currentRoomId,
-        senderId: currentUser?.id || 'u1',
-        senderName: currentUser?.name || 'كشاف نشط',
+        senderId: currentUser?.id || `u_${Date.now()}`,
+        senderName: currentUser?.name || 'عضو كشفي',
         senderRole: (currentUser?.role as Role) || 'CHILD',
         content: '🎙️ تسجيل صوتي (0:14 ثانية)',
-        mediaType: 'AUDIO',
-      });
+        mediaType: 'AUDIO' as const,
+      };
+
+      sendMessage(voiceData);
+      sendChatMessageToFirestore(voiceData);
       Alert.alert('تم بنجاح', 'تم إرسال التسجيل الصوتي 🎙️');
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 1200);
@@ -142,28 +179,32 @@ export const ChatRoomsScreen = () => {
       {
         text: 'صورة من المعرض',
         onPress: () => {
-          sendMessage({
+          const imgData = {
             roomId: currentRoomId,
-            senderId: currentUser?.id || 'u1',
-            senderName: currentUser?.name || 'كشاف نشط',
+            senderId: currentUser?.id || `u_${Date.now()}`,
+            senderName: currentUser?.name || 'عضو كشفي',
             senderRole: (currentUser?.role as Role) || 'CHILD',
-            content: '📸 أرسل صورة من نشاط اليوم',
-            mediaType: 'IMAGE',
-          });
+            content: '📸 أرسل صورة من نشاط اليوم الكشفي',
+            mediaType: 'IMAGE' as const,
+          };
+          sendMessage(imgData);
+          sendChatMessageToFirestore(imgData);
           flatListRef.current?.scrollToEnd({ animated: true });
         },
       },
       {
         text: 'مستند PDF',
         onPress: () => {
-          sendMessage({
+          const docData = {
             roomId: currentRoomId,
-            senderId: currentUser?.id || 'u1',
-            senderName: currentUser?.name || 'كشاف نشط',
+            senderId: currentUser?.id || `u_${Date.now()}`,
+            senderName: currentUser?.name || 'عضو كشفي',
             senderRole: (currentUser?.role as Role) || 'CHILD',
-            content: '📑 مرفق: جدول الفعاليات الأسبوعي.pdf',
-            mediaType: 'DOCUMENT',
-          });
+            content: '📑 مرفق: جدول الأنشطة الأسبوعية.pdf',
+            mediaType: 'DOCUMENT' as const,
+          };
+          sendMessage(docData);
+          sendChatMessageToFirestore(docData);
           flatListRef.current?.scrollToEnd({ animated: true });
         },
       },
@@ -173,7 +214,7 @@ export const ChatRoomsScreen = () => {
 
   const renderItem = useCallback(
     ({ item }: { item: ChatMessage }) => {
-      const isMe = item.senderId === (currentUser?.id || 'u1');
+      const isMe = item.senderId === currentUser?.id;
       return <ChatBubbleItem msg={item} isMe={isMe} />;
     },
     [currentUser]
@@ -187,12 +228,12 @@ export const ChatRoomsScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.headerTitle}>غرف التواصل والدردشة الكشفية 💬</Text>
+        <Text style={styles.headerTitle}>غرف التواصل والشات اللحظي 💬</Text>
       </View>
 
       {/* Room Selector using IconCardSelector */}
       <View style={styles.roomSelectorCard}>
-        <Text style={styles.sectionTitle}>1️⃣ اختر الغرفة</Text>
+        <Text style={styles.sectionTitle}>اختر الغرفة الكشفية:</Text>
         <IconCardSelector
           options={ROOM_OPTIONS}
           selectedId={currentRoomId}
@@ -203,7 +244,7 @@ export const ChatRoomsScreen = () => {
       {/* Messages Stream - Virtualized FlatList */}
       <FlatList
         ref={flatListRef}
-        data={roomMessages}
+        data={displayMessages}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.messagesContainer}
@@ -215,7 +256,7 @@ export const ChatRoomsScreen = () => {
           <View style={styles.emptyMessages}>
             <Text style={styles.emptyIcon}>💬</Text>
             <Text style={styles.emptyText}>لا توجد رسائل سابقة في هذه الغرفة</Text>
-            <Text style={styles.emptySubText}>كن أول من يبدأ المحادثة الآن!</Text>
+            <Text style={styles.emptySubText}>كن أول من يشارك ويبدأ المحادثة الآن!</Text>
           </View>
         }
       />

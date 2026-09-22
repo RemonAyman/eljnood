@@ -122,7 +122,7 @@ export const ContactUsScreen = () => {
           </View>
           <View style={styles.infoTextWrap}>
             <Text style={styles.infoLabel}>المقر الكشفي</Text>
-            <Text style={styles.infoValue}>كنيسة السيدة العذراء مريم - الفوج الأول، أسيوط</Text>
+            <Text style={styles.infoValue}>مقر مجموعة جنود المسيح الكشفية، أسيوط</Text>
           </View>
         </View>
       </View>

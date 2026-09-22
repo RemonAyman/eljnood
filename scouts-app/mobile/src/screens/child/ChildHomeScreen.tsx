@@ -47,15 +47,15 @@ export const ChildHomeScreen = ({ navigation }: any) => {
         <Text style={styles.heroSubText}>معاً نخدم ونبني</Text>
         <Text style={styles.heroTitle}>مجموعة جنود المسيح الكشفية</Text>
         <Text style={styles.heroDesc}>
-          نُعد مجموعة مبدعة من الشباب القادرين على خدمة الكنيسة والمجتمع بروح المحبة والعطاء.
+          نُعد مجموعة مبدعة من الشباب القادرين على خدمة المجتمع والوطن بروح المحبة والعطاء الكشفي.
         </Text>
 
         <View style={styles.heroBtnRow}>
           <TouchableOpacity 
             style={styles.heroPrimaryBtn}
-            onPress={() => navigation?.navigate('Subscriptions')}
+            onPress={() => navigation?.navigate('Curricula')}
           >
-            <Text style={styles.heroPrimaryText}>الاشتراكات والماليات ←</Text>
+            <Text style={styles.heroPrimaryText}>المناهج الكشفية ←</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -85,6 +85,26 @@ export const ChildHomeScreen = ({ navigation }: any) => {
         member={member} 
         onPrint={() => navigation?.navigate('Subscriptions')}
       />
+
+      {/* Official Receipts History in Scout Account */}
+      <Text style={styles.sectionTitle}>سجل إيصالات الاشتراكات والرسوم المعتمدة 🧾</Text>
+      <View style={styles.receiptCard}>
+        <View style={styles.receiptTopRow}>
+          <View style={styles.receiptBadge}>
+            <Text style={styles.receiptBadgeText}>تم السداد بنجاح ✅</Text>
+          </View>
+          <Text style={styles.receiptNum}>رقم الإيصال: REC-2026-448</Text>
+        </View>
+        <Text style={styles.receiptMemberName}>{member.name} - فرقة {member.squadName}</Text>
+        <Text style={styles.receiptItemsSummary}>
+          • اشتراك سنوي (2026) • اشتراك مهرجان • وجلة وشارات كشفية
+        </Text>
+        <View style={styles.receiptDivider} />
+        <View style={styles.receiptBottomRow}>
+          <Text style={styles.receiptTotalPaid}>المبلغ المسدد: 549 ج.م</Text>
+          <Text style={styles.receiptDate}>تاريخ الاعتماد: 2026-09-22</Text>
+        </View>
+      </View>
 
       {/* Quick Navigation Buttons */}
       <View style={styles.quickGrid}>
@@ -120,6 +140,7 @@ export const ChildHomeScreen = ({ navigation }: any) => {
           <Text style={styles.gridTitle}>خزانة الذكريات</Text>
         </TouchableOpacity>
       </View>
+
     </ScrollView>
   );
 };
@@ -243,6 +264,68 @@ const styles = StyleSheet.create({
     marginTop: 14,
     marginBottom: 8,
     textAlign: 'right',
+  },
+  receiptCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+    elevation: 2,
+  },
+  receiptTopRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  receiptBadge: {
+    backgroundColor: '#DEF7EC',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  receiptBadgeText: {
+    color: '#03543F',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  receiptNum: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: 'bold',
+  },
+  receiptMemberName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    textAlign: 'right',
+  },
+  receiptItemsSummary: {
+    fontSize: 11,
+    color: '#4B5563',
+    textAlign: 'right',
+    marginVertical: 4,
+  },
+  receiptDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginVertical: 8,
+  },
+  receiptBottomRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  receiptTotalPaid: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  receiptDate: {
+    fontSize: 10,
+    color: '#9CA3AF',
   },
   quickGrid: {
     flexDirection: 'row',

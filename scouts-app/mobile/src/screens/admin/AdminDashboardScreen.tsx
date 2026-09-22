@@ -69,7 +69,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>لوحة القيادة الإدارية وسجل النشاط المركزي 🛡️</Text>
-        <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - كنيسة العذراء مريم</Text>
+        <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - الإدارة العامة</Text>
       </View>
 
       {/* Firebase Initialize Button — Admin Only */}

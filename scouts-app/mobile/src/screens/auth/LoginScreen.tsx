@@ -179,7 +179,7 @@ export const LoginScreen = ({ navigation }: any) => {
           <Text style={styles.logoText}>⚜️</Text>
         </View>
         <Text style={styles.groupTitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.churchSub}>كنيسة السيدة العذراء مريم - الفوج الكشفي الأول</Text>
+        <Text style={styles.churchSub}>النظام الكشفي المركزي الموحد</Text>
         <View style={styles.sloganTag}>
           <Text style={styles.sloganText}>مستعد دائماً للخدمة والتفوق</Text>
         </View>

@@ -22,6 +22,8 @@ export const COLLECTIONS = {
   CHAT_MESSAGES: 'chat_messages',
   ROOM_RESERVATIONS: 'room_reservations',
   INVENTORY_REQUESTS: 'inventory_requests',
+  FOLLOW_UPS: 'follow_ups',
+  ABSENCE_EXCUSES: 'absence_excuses',
 } as const;
 
 // ─── 1. Members Operations ───────────────────────────────────────────────────
@@ -57,7 +59,122 @@ export async function fetchMembersFromFirestore(): Promise<Member[]> {
   }
 }
 
-// ─── 2. Attendance Operations ────────────────────────────────────────────────
+// ─── 2. Users Operations ─────────────────────────────────────────────────────
+
+export async function saveUserToFirestore(userData: {
+  uid: string;
+  name: string;
+  email: string;
+  role: string;
+  code?: string;
+  phone?: string;
+  guardianPhone?: string;
+  sectionName?: string;
+  sectionLeaderName?: string;
+  sonName?: string;
+  sonCode?: string;
+}): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.USERS, userData.uid);
+    await setDoc(docRef, {
+      ...userData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save user error:', error.message);
+    return false;
+  }
+}
+
+// ─── 3. Subscriptions & Receipts Operations ──────────────────────────────────
+
+export async function saveSubscriptionToFirestore(record: SubscriptionRecord): Promise<boolean> {
+  try {
+    const docId = record.receiptNumber || `REC-${Date.now()}`;
+    const docRef = doc(db, COLLECTIONS.SUBSCRIPTIONS, docId);
+    await setDoc(docRef, {
+      ...record,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save subscription error:', error.message);
+    return false;
+  }
+}
+
+export async function fetchMemberSubscriptions(memberCode: string): Promise<SubscriptionRecord[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.SUBSCRIPTIONS));
+    const list: SubscriptionRecord[] = [];
+    snapshot.forEach((d) => {
+      const data = d.data() as SubscriptionRecord;
+      if (data.memberCode === memberCode) {
+        list.push(data);
+      }
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch subscriptions error:', error.message);
+    return [];
+  }
+}
+
+// ─── 4. Real-time Chat Messages Operations ───────────────────────────────────
+
+export function subscribeToChatMessages(
+  roomId: string,
+  onMessagesUpdate: (messages: any[]) => void
+) {
+  try {
+    const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES);
+    const q = query(messagesRef, orderBy('createdAt', 'asc'));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const roomMsgs: any[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data.roomId === roomId) {
+            roomMsgs.push({ id: docSnap.id, ...data });
+          }
+        });
+        onMessagesUpdate(roomMsgs);
+      },
+      (error) => {
+        console.warn('⚠️ Chat snapshot listener warning:', error.message);
+      }
+    );
+  } catch (e: any) {
+    console.warn('⚠️ Subscribe chat error:', e.message);
+    return () => {};
+  }
+}
+
+export async function sendChatMessageToFirestore(msg: {
+  roomId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  content: string;
+  mediaType?: string;
+}): Promise<boolean> {
+  try {
+    const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES);
+    await addDoc(messagesRef, {
+      ...msg,
+      createdAt: new Date().toISOString(),
+    });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Send chat message error:', error.message);
+    return false;
+  }
+}
+
+// ─── 5. Attendance Operations ────────────────────────────────────────────────
 
 export async function saveAttendanceToFirestore(record: AttendanceRecord): Promise<boolean> {
   try {
@@ -70,6 +187,7 @@ export async function saveAttendanceToFirestore(record: AttendanceRecord): Promi
     return false;
   }
 }
+
 
 // ─── 3. Seed Initial Data (ينشئ المجموعات والجداول فوراً في فايربيس) ─────────
 

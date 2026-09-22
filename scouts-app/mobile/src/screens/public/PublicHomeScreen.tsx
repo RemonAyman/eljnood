@@ -60,7 +60,7 @@ export const PublicHomeScreen = ({ navigation }: any) => {
       {/* Top Banner with Hero */}
       <View style={styles.heroCard}>
         <View style={styles.badgeRow}>
-          <Text style={styles.churchBadge}>كنيسة السيدة العذراء مريم - الفوج الأول</Text>
+          <Text style={styles.churchBadge}>مجموعة جنود المسيح الكشفية</Text>
           <Text style={styles.scoutEmblem}>⚜️</Text>
         </View>
 

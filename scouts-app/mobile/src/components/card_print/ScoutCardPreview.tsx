@@ -26,7 +26,7 @@ export const ScoutCardPreview: React.FC<ScoutCardPreviewProps> = ({ member, onPr
       {/* Header Banner */}
       <View style={styles.headerBanner}>
         <Text style={styles.groupTitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.churchTitle}>كنيسة السيدة العذراء مريم - الفوج الأول</Text>
+        <Text style={styles.churchTitle}>مجموعة جنود المسيح الكشفية</Text>
       </View>
 
       {/* Profile Section */}
