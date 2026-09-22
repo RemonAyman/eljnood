@@ -1,50 +1,77 @@
-import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert 
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert
 } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
+import { validateLoginForm, isValidOTP, ValidationMessages } from '../../utils/validation';
+
+// ─── Inline error component ───────────────────────────────────────────────────
+const FieldError = ({ message }: { message?: string }) =>
+  message ? <Text style={styles.fieldError}>{message}</Text> : null;
 
 export const LoginScreen = ({ navigation }: any) => {
   const setUser = useAuthStore((s) => s.setUser);
   const setPinUnlocked = useAuthStore((s) => s.setPinUnlocked);
 
-  const [identifier, setIdentifier] = useState('JS-2026-448');
-  const [password, setPassword] = useState('123456');
-  
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
   // Secret PIN Modal state
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
 
-  const handleLogin = () => {
-    if (!identifier.trim() || !password.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال كود الكشاف/البريد وكلمة المرور');
+  const handleLogin = useCallback(() => {
+    const { valid, errors: formErrors } = validateLoginForm(identifier, password);
+    setErrors(formErrors);
+    if (!valid) return;
+
+    setLoading(true);
+    // Simulate async check — replace with Firebase auth call
+    setTimeout(() => {
+      setLoading(false);
+      setUser({
+        id: 'user_1',
+        name: 'بيتر يوسف فايز',
+        code: identifier,
+        role: 'CHILD',
+        phone: '01012345678',
+        guardianPhone: '01229876543'
+      });
+      navigation?.navigate('ChildHome');
+    }, 500);
+  }, [identifier, password, setUser, navigation]);
+
+  const handleVerifyPin = useCallback(() => {
+    if (!isValidOTP(pinInput, 4)) {
+      setPinError(ValidationMessages.invalidOTP);
       return;
     }
-
-    setUser({
-      id: 'user_1',
-      name: 'بيتر يوسف فايز',
-      code: identifier,
-      role: 'CHILD',
-      phone: '01012345678',
-      guardianPhone: '01229876543'
-    });
-
-    navigation?.navigate('ChildHome');
-  };
-
-  const handleVerifyPin = () => {
     if (pinInput === '1234' || pinInput === '0000') {
       setPinUnlocked(true);
       setShowPinModal(false);
-      Alert.alert('نجاح', 'تم تفعيل صلاحيات أمين الصندوق والخصومات بنجاح! 🔑');
+      setPinInput('');
+      setPinError('');
+      Alert.alert('نجاح ✅', 'تم تفعيل صلاحيات أمين الصندوق والخصومات بنجاح! 🔑');
     } else {
-      Alert.alert('أخطاء', 'الرمز السري غير صحيح');
+      setPinError(ValidationMessages.pinIncorrect);
     }
-  };
+  }, [pinInput, setPinUnlocked]);
+
+  const handleClosePin = useCallback(() => {
+    setShowPinModal(false);
+    setPinInput('');
+    setPinError('');
+  }, []);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* Curved Header Banner */}
       <View style={styles.header}>
         <View style={styles.logoCircle}>
@@ -64,11 +91,14 @@ export const LoginScreen = ({ navigation }: any) => {
 
         <Text style={styles.inputLabel}>كود الكشاف أو البريد *</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, errors.identifier ? styles.inputError : null]}
           placeholder="مثال: JS-2026-448 أو name@scouts.org"
           value={identifier}
-          onChangeText={setIdentifier}
+          onChangeText={(t) => { setIdentifier(t); if (errors.identifier) setErrors(e => ({ ...e, identifier: '' })); }}
+          autoCapitalize="none"
+          textAlign="right"
         />
+        <FieldError message={errors.identifier} />
 
         <View style={styles.passwordRow}>
           <Text style={styles.inputLabel}>كلمة المرور *</Text>
@@ -77,21 +107,30 @@ export const LoginScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
         <TextInput
-          style={styles.input}
+          style={[styles.input, errors.password ? styles.inputError : null]}
           placeholder="••••••••"
           secureTextEntry
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(t) => { setPassword(t); if (errors.password) setErrors(e => ({ ...e, password: '' })); }}
+          textAlign="right"
         />
+        <FieldError message={errors.password} />
 
-        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} activeOpacity={0.8}>
-          <Text style={styles.loginBtnText}>تسجيل الدخول إلى حسابك ←</Text>
+        <TouchableOpacity
+          style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
+          onPress={handleLogin}
+          activeOpacity={0.8}
+          disabled={loading}
+        >
+          <Text style={styles.loginBtnText}>
+            {loading ? 'جارى تسجيل الدخول...' : 'تسجيل الدخول إلى حسابك ←'}
+          </Text>
         </TouchableOpacity>
 
         {/* Manager Secret PIN Section */}
         <View style={styles.divider} />
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.pinTriggerBtn}
           onPress={() => setShowPinModal(true)}
           activeOpacity={0.8}
@@ -99,9 +138,21 @@ export const LoginScreen = ({ navigation }: any) => {
           <Text style={styles.pinTriggerTitle}>🔑 رمز PIN الخاص بالقادة وأمناء الصندوق</Text>
           <Text style={styles.pinTriggerSub}>تفعيل صلاحيات الخزينة ومسؤولي العهدة والخصومات</Text>
         </TouchableOpacity>
+        {/* Quick Barcode Attendance Banner from Stitch design */}
+        <TouchableOpacity
+          style={styles.quickAttendanceBtn}
+          onPress={() => navigation?.navigate('Attendance')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.quickAttendanceIcon}>📷</Text>
+          <View style={styles.quickAttendanceTextWrap}>
+            <Text style={styles.quickAttendanceTitle}>حاضر في طابور الصباح؟</Text>
+            <Text style={styles.quickAttendanceSub}>تحضير سريع ومباشر بمسح الباركود</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Register Link */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.registerLinkContainer}
           onPress={() => navigation?.navigate('RoleSelect')}
         >
@@ -109,37 +160,43 @@ export const LoginScreen = ({ navigation }: any) => {
             ليس لديك حساب كشفي؟ <Text style={styles.boldRed}>سجل الآن وانضم للفرقة</Text>
           </Text>
         </TouchableOpacity>
+
+        {/* Public Showcase Gateway Link */}
+        <TouchableOpacity
+          style={styles.publicPortalBtn}
+          onPress={() => navigation?.navigate('PublicHome')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.publicPortalText}>
+            🌐 تعرف على المجموعة والأنشطة العامة (بوابة الزوار) ➔
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Secret PIN Modal */}
-      <Modal visible={showPinModal} transparent animationType="fade">
+      <Modal visible={showPinModal} transparent animationType="fade" onRequestClose={handleClosePin}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>رمز PIN السري للمدير الخزينة 🔑</Text>
             <Text style={styles.modalSub}>أدخل الرمز السري المكون من 4 أرقام لتفعيل الخصومات</Text>
-            
+
             <TextInput
-              style={styles.pinInput}
+              style={[styles.pinInput, pinError ? styles.pinInputError : null]}
               placeholder="••••"
               keyboardType="number-pad"
               maxLength={4}
               secureTextEntry
               value={pinInput}
-              onChangeText={setPinInput}
+              onChangeText={(t) => { setPinInput(t); if (pinError) setPinError(''); }}
             />
+            {pinError ? <Text style={styles.pinErrorText}>{pinError}</Text> : null}
 
             <View style={styles.modalBtnRow}>
-              <TouchableOpacity 
-                style={[styles.modalBtn, styles.cancelBtn]} 
-                onPress={() => setShowPinModal(false)}
-              >
+              <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={handleClosePin}>
                 <Text style={styles.cancelBtnText}>إلغاء</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalBtn, styles.confirmBtn]} 
-                onPress={handleVerifyPin}
-              >
+
+              <TouchableOpacity style={[styles.modalBtn, styles.confirmBtn]} onPress={handleVerifyPin}>
                 <Text style={styles.confirmBtnText}>تأكيد الرمز</Text>
               </TouchableOpacity>
             </View>
@@ -241,8 +298,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: '#1F2937',
-    marginBottom: 14,
+    marginBottom: 4,
     textAlign: 'right',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  fieldError: {
+    color: '#EF4444',
+    fontSize: 11,
+    textAlign: 'right',
+    marginBottom: 10,
   },
   passwordRow: {
     flexDirection: 'row-reverse',
@@ -260,6 +327,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 10,
+  },
+  loginBtnDisabled: {
+    backgroundColor: '#B45309',
+    opacity: 0.7,
   },
   loginBtnText: {
     color: '#FFFFFF',
@@ -290,8 +361,36 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'right',
   },
+  quickAttendanceBtn: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 16,
+    padding: 12,
+    marginTop: 12,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  quickAttendanceIcon: {
+    fontSize: 24,
+    marginLeft: 10,
+  },
+  quickAttendanceTextWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  quickAttendanceTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  quickAttendanceSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+  },
   registerLinkContainer: {
-    marginTop: 20,
+    marginTop: 18,
     alignItems: 'center',
   },
   registerLinkText: {
@@ -300,6 +399,18 @@ const styles = StyleSheet.create({
   },
   boldRed: {
     color: '#8B0000',
+    fontWeight: 'bold',
+  },
+  publicPortalBtn: {
+    marginTop: 16,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  publicPortalText: {
+    fontSize: 12,
+    color: '#D4A359',
     fontWeight: 'bold',
   },
   modalOverlay: {
@@ -338,12 +449,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: 140,
     paddingVertical: 8,
-    marginBottom: 20,
+    marginBottom: 8,
+  },
+  pinInputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  pinErrorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   modalBtnRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+    marginTop: 8,
   },
   modalBtn: {
     flex: 1,

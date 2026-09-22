@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
-// Screens
+// Operational & Internal Screens
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { RoleSelectScreen } from '../screens/auth/RoleSelectScreen';
@@ -20,6 +20,13 @@ import { InventoryRequestScreen } from '../screens/shared/InventoryRequestScreen
 import { RoomReservationScreen } from '../screens/shared/RoomReservationScreen';
 import { ScoutingPlanScreen } from '../screens/shared/ScoutingPlanScreen';
 
+// Public Showcase Screens (from Stitch design)
+import { PublicHomeScreen } from '../screens/public/PublicHomeScreen';
+import { AboutUsScreen } from '../screens/public/AboutUsScreen';
+import { ActivitiesScreen } from '../screens/public/ActivitiesScreen';
+import { PublicGalleryScreen } from '../screens/public/PublicGalleryScreen';
+import { ContactUsScreen } from '../screens/public/ContactUsScreen';
+
 const Stack = createStackNavigator();
 
 export function RootNavigator() {
@@ -34,6 +41,7 @@ export function RootNavigator() {
           headerTitleAlign: 'center',
         }}
       >
+        {/* Auth & Gateway */}
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -54,6 +62,35 @@ export function RootNavigator() {
           component={ResetPasswordScreen}
           options={{ title: 'استعادة كلمة السر' }}
         />
+
+        {/* Public Showcase Screens */}
+        <Stack.Screen
+          name="PublicHome"
+          component={PublicHomeScreen}
+          options={{ title: 'مجموعة جنود المسيح الكشفية' }}
+        />
+        <Stack.Screen
+          name="AboutUs"
+          component={AboutUsScreen}
+          options={{ title: 'من نحن ورسالتنا' }}
+        />
+        <Stack.Screen
+          name="Activities"
+          component={ActivitiesScreen}
+          options={{ title: 'الأنشطة والفعاليات' }}
+        />
+        <Stack.Screen
+          name="PublicGallery"
+          component={PublicGalleryScreen}
+          options={{ title: 'معرض الصور والفيديوهات' }}
+        />
+        <Stack.Screen
+          name="ContactUs"
+          component={ContactUsScreen}
+          options={{ title: 'تواصل مع القيادة' }}
+        />
+
+        {/* Role Home Dashboards */}
         <Stack.Screen
           name="ChildHome"
           component={ChildHomeScreen}
@@ -69,6 +106,8 @@ export function RootNavigator() {
           component={AdminDashboardScreen}
           options={{ title: 'لوحة القيادة الإدارية' }}
         />
+
+        {/* Scout Operations & Shared Modules */}
         <Stack.Screen
           name="FollowUp"
           component={FollowUpScreen}

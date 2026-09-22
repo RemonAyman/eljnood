@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,63 @@ const EVENT_OPTIONS: { id: EventType; title: string; icon: string; subtitle: str
   { id: 'SECTIONS_JOINT_MEETING', title: 'لقاء الفروع المشترك', icon: '🤝', subtitle: 'تجمع القطاعات' },
 ];
 
+const MemberRowItem = React.memo(
+  ({
+    member,
+    currentStatus,
+    onQuickMark,
+  }: {
+    member: Member;
+    currentStatus: string;
+    onQuickMark: (member: Member, status: 'PRESENT' | 'ABSENT' | 'EXCUSED') => void;
+  }) => {
+    return (
+      <View style={styles.memberRow}>
+        <View style={styles.memberInfo}>
+          <Text style={styles.memberName}>{member.name}</Text>
+          <View style={styles.memberSubRow}>
+            <Text style={styles.memberCodeBadge}>{member.code}</Text>
+            <Text style={styles.memberSquadBadge}>فرقة {member.squadName}</Text>
+            <Text style={styles.scarfIcon}>
+              {member.scarfStatus === 'RECEIVED' ? '🧣' : member.scarfStatus === 'WITHDRAWN' ? '⚠️' : '❌'}
+            </Text>
+          </View>
+        </View>
+
+        {/* 3 Status Buttons */}
+        <View style={styles.statusButtonsGroup}>
+          <TouchableOpacity
+            style={[styles.statusBtn, currentStatus === 'PRESENT' && styles.statusBtnPresentActive]}
+            onPress={() => onQuickMark(member, 'PRESENT')}
+          >
+            <Text style={[styles.statusBtnText, currentStatus === 'PRESENT' && styles.statusBtnTextActive]}>
+              حاضر
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.statusBtn, currentStatus === 'EXCUSED' && styles.statusBtnExcusedActive]}
+            onPress={() => onQuickMark(member, 'EXCUSED')}
+          >
+            <Text style={[styles.statusBtnText, currentStatus === 'EXCUSED' && styles.statusBtnTextActive]}>
+              معتذر
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.statusBtn, currentStatus === 'ABSENT' && styles.statusBtnAbsentActive]}
+            onPress={() => onQuickMark(member, 'ABSENT')}
+          >
+            <Text style={[styles.statusBtnText, currentStatus === 'ABSENT' && styles.statusBtnTextActive]}>
+              غائب
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+);
+
 export const AttendanceManageScreen = () => {
   const members = useMembersStore((s) => s.members);
   const { records, markAttendance, importFromFingerprintExcel, getAttendanceStats } = useAttendanceStore();
@@ -43,41 +100,52 @@ export const AttendanceManageScreen = () => {
   const [targetMember, setTargetMember] = useState<Member | null>(null);
   const [excuseText, setExcuseText] = useState('');
 
-  const stats = getAttendanceStats(selectedDate, selectedEvent);
+  const stats = useMemo(
+    () => getAttendanceStats(selectedDate, selectedEvent),
+    [getAttendanceStats, selectedDate, selectedEvent, records]
+  );
 
-  const filteredMembers = members.filter((m) => {
-    const matchSearch =
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.code.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchSquad = selectedSquadFilter === 'ALL' || m.squadName === selectedSquadFilter;
-    return matchSearch && matchSquad;
-  });
-
-  const getMemberStatus = (memberId: string) => {
-    const record = records.find(
-      (r) => r.memberId === memberId && r.date === selectedDate && r.eventType === selectedEvent
-    );
-    return record?.status || 'ABSENT';
-  };
-
-  const handleQuickMark = (member: Member, status: 'PRESENT' | 'ABSENT' | 'EXCUSED') => {
-    if (status === 'EXCUSED') {
-      setTargetMember(member);
-      setExcuseText('');
-      setShowExcuseModal(true);
-      return;
-    }
-
-    markAttendance({
-      memberId: member.id,
-      memberName: member.name,
-      memberCode: member.code,
-      date: selectedDate,
-      eventType: selectedEvent,
-      status,
-      recordedBy: 'القائد مينا (المسؤول)',
+  const filteredMembers = useMemo(() => {
+    return members.filter((m) => {
+      const matchSearch =
+        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.code.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSquad = selectedSquadFilter === 'ALL' || m.squadName === selectedSquadFilter;
+      return matchSearch && matchSquad;
     });
-  };
+  }, [members, searchQuery, selectedSquadFilter]);
+
+  const getMemberStatus = useCallback(
+    (memberId: string) => {
+      const record = records.find(
+        (r) => r.memberId === memberId && r.date === selectedDate && r.eventType === selectedEvent
+      );
+      return record?.status || 'ABSENT';
+    },
+    [records, selectedDate, selectedEvent]
+  );
+
+  const handleQuickMark = useCallback(
+    (member: Member, status: 'PRESENT' | 'ABSENT' | 'EXCUSED') => {
+      if (status === 'EXCUSED') {
+        setTargetMember(member);
+        setExcuseText('');
+        setShowExcuseModal(true);
+        return;
+      }
+
+      markAttendance({
+        memberId: member.id,
+        memberName: member.name,
+        memberCode: member.code,
+        date: selectedDate,
+        eventType: selectedEvent,
+        status,
+        recordedBy: 'القائد مينا (المسؤول)',
+      });
+    },
+    [selectedDate, selectedEvent, markAttendance]
+  );
 
   const handleSaveExcuse = () => {
     if (!targetMember) return;
@@ -223,56 +291,17 @@ export const AttendanceManageScreen = () => {
         <View style={styles.rosterCard}>
           <Text style={styles.sectionTitle}>قائمة الكشافين ({filteredMembers.length})</Text>
 
-          {filteredMembers.map((member) => {
-            const currentStatus = getMemberStatus(member.id);
-
-            return (
-              <View key={member.id} style={styles.memberRow}>
-                <View style={styles.memberInfo}>
-                  <Text style={styles.memberName}>{member.name}</Text>
-                  <View style={styles.memberSubRow}>
-                    <Text style={styles.memberCodeBadge}>{member.code}</Text>
-                    <Text style={styles.memberSquadBadge}>فرقة {member.squadName}</Text>
-                    <Text style={styles.scarfIcon}>
-                      {member.scarfStatus === 'RECEIVED' ? '🧣' : member.scarfStatus === 'WITHDRAWN' ? '⚠️' : '❌'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* 3 Status Buttons */}
-                <View style={styles.statusButtonsGroup}>
-                  <TouchableOpacity
-                    style={[styles.statusBtn, currentStatus === 'PRESENT' && styles.statusBtnPresentActive]}
-                    onPress={() => handleQuickMark(member, 'PRESENT')}
-                  >
-                    <Text style={[styles.statusBtnText, currentStatus === 'PRESENT' && styles.statusBtnTextActive]}>
-                      حاضر
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.statusBtn, currentStatus === 'EXCUSED' && styles.statusBtnExcusedActive]}
-                    onPress={() => handleQuickMark(member, 'EXCUSED')}
-                  >
-                    <Text style={[styles.statusBtnText, currentStatus === 'EXCUSED' && styles.statusBtnTextActive]}>
-                      معتذر
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.statusBtn, currentStatus === 'ABSENT' && styles.statusBtnAbsentActive]}
-                    onPress={() => handleQuickMark(member, 'ABSENT')}
-                  >
-                    <Text style={[styles.statusBtnText, currentStatus === 'ABSENT' && styles.statusBtnTextActive]}>
-                      غائب
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
+          {filteredMembers.map((member) => (
+            <MemberRowItem
+              key={member.id}
+              member={member}
+              currentStatus={getMemberStatus(member.id)}
+              onQuickMark={handleQuickMark}
+            />
+          ))}
         </View>
       </ScrollView>
+
 
       {/* QR Scanner Simulation Modal */}
       <Modal visible={showScannerModal} transparent animationType="slide">

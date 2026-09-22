@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert 
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert
 } from 'react-native';
 import { IconCardSelector, SelectorOption } from '../../components/ui/IconCardSelector';
 import { Gender, ScarfStatus, GradeLevel } from '../../types';
 import { calculateSquad } from '../../utils/squadCalculator';
 import { useMembersStore } from '../../store/membersStore';
+import { validateRegisterForm } from '../../utils/validation';
+
+const FieldError = ({ message }: { message?: string }) =>
+  message ? <Text style={styles.fieldError}>{message}</Text> : null;
 
 export const RegisterScreen = ({ navigation }: any) => {
   const addMember = useMembersStore((s) => s.addMember);
@@ -21,6 +25,8 @@ export const RegisterScreen = ({ navigation }: any) => {
   const [street, setStreet] = useState('');
   const [buildingNo, setBuildingNo] = useState('');
   const [addressDescription, setAddressDescription] = useState('');
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Calculate squad automatically
   const calculatedSquad = calculateSquad(gradeLevel, gender);
@@ -61,13 +67,11 @@ export const RegisterScreen = ({ navigation }: any) => {
     { value: 'GRADUATE', label: 'خريج', icon: '🏅' }
   ];
 
-  const handleSubmit = () => {
-    if (!name.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال اسم الكشاف');
-      return;
-    }
-    if (!guardianPhone.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال رقم موبايل ولي الأمر (إجباري)');
+  const handleSubmit = useCallback(() => {
+    const { valid, errors: formErrors } = validateRegisterForm({ name, code, guardianPhone, phone });
+    setErrors(formErrors);
+    if (!valid) {
+      Alert.alert('تنبيه', 'يرجى تصحيح الأخطاء المُشار إليها في النموذج');
       return;
     }
 
@@ -90,7 +94,7 @@ export const RegisterScreen = ({ navigation }: any) => {
     Alert.alert('نجاح', `تم تسجيل الكشاف بنجاح ورُبط بفرقة (${calculatedSquad})!`, [
       { text: 'حسناً', onPress: () => navigation?.navigate('Login') }
     ]);
-  };
+  }, [name, code, gender, scarfStatus, gradeLevel, guardianPhone, phone, region, street, buildingNo, addressDescription, calculatedSquad, addMember, navigation]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -117,18 +121,21 @@ export const RegisterScreen = ({ navigation }: any) => {
 
       <Text style={styles.inputLabel}>الاسم الرباعي للكشاف *</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.name ? styles.inputError : null]}
         placeholder="أدخل الاسم الرباعي"
         value={name}
-        onChangeText={setName}
+        onChangeText={(t) => { setName(t); if (errors.name) setErrors(e => ({ ...e, name: '' })); }}
+        textAlign="right"
       />
+      <FieldError message={errors.name} />
 
       <Text style={styles.inputLabel}>الكود الكشفي المخصص *</Text>
       <TextInput
-        style={[styles.input, styles.readOnlyInput]}
+        style={[styles.input, styles.readOnlyInput, errors.code ? styles.inputError : null]}
         value={code}
         editable={false}
       />
+      <FieldError message={errors.code} />
 
       {/* Gender Icon Card Selector */}
       <IconCardSelector
@@ -159,16 +166,20 @@ export const RegisterScreen = ({ navigation }: any) => {
 
       <Text style={styles.inputLabel}>رقم موبايل ولي الأمر (واتساب) * [إجباري]</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.guardianPhone ? styles.inputError : null]}
         placeholder="012XXXXXXXX"
         keyboardType="phone-pad"
         value={guardianPhone}
-        onChangeText={setGuardianPhone}
+        onChangeText={(t) => { setGuardianPhone(t); if (errors.guardianPhone) setErrors(e => ({ ...e, guardianPhone: '' })); }}
+        textAlign="right"
+        maxLength={11}
       />
+      <FieldError message={errors.guardianPhone} />
 
       <Text style={styles.inputLabel}>رقم موبايل الكشاف [اختياري]</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.phone ? styles.inputError : null]}
+
         placeholder="010XXXXXXXX"
         keyboardType="phone-pad"
         value={phone}
@@ -332,5 +343,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  fieldError: {
+    color: '#EF4444',
+    fontSize: 11,
+    textAlign: 'right',
+    marginBottom: 8,
+    marginTop: -8,
   },
 });
