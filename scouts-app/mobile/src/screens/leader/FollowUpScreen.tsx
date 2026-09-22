@@ -1,54 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator 
 } from 'react-native';
 import { useMembersStore } from '../../store/membersStore';
+import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector, SelectorOption } from '../../components/ui/IconCardSelector';
+import { saveFollowUpToFirestore, fetchFollowUpsFromFirestore } from '../../services/firebaseService';
+import { Member } from '../../types';
 
 type VisitType = 'PHONE' | 'HOME_VISIT' | 'OCCASION';
 
 export const FollowUpScreen = () => {
-  const members = useMembersStore((s) => s.members);
+  const { members, loadMembersFromFirestore } = useMembersStore();
+  const currentUser = useAuthStore((s) => s.user);
 
-  const [selectedMember, setSelectedMember] = useState(members[0]);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+
   const [visitType, setVisitType] = useState<VisitType>('HOME_VISIT');
-  const [primaryLeader, setPrimaryLeader] = useState('الخادم بيتر يوسف فايز');
-  const [coLeaders, setCoLeaders] = useState('الخادم مينا نبيل، الخادم كيرلس سامي');
+  const [primaryLeader, setPrimaryLeader] = useState(currentUser?.name || 'القائد المسؤول');
+  const [coLeaders, setCoLeaders] = useState('');
   const [occasionReason, setOccasionReason] = useState('');
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const [history, setHistory] = useState([
-    {
-      id: '1',
-      memberName: 'مارك أمجد شفيق',
-      squad: 'طليعة النسور (كشاف)',
-      visitType: 'HOME_VISIT' as VisitType,
-      visitTypeLabel: 'زيارة منزلية',
-      leader: 'الخادم بيتر يوسف + 2 آخرين',
-      date: 'منذ يومين',
-      notes: 'جلسة مشجعة مع والد الكشاف، تم مناقشة انتظام الكشاف في القداس وتأكيد حضوره معسكر الشتاء الكشفي وتكريمه على شارات الهواية.'
-    },
-    {
-      id: '2',
-      memberName: 'أثناسيوس إيهاب فخري',
-      squad: 'طليعة الفرسان (أشبال)',
-      visitType: 'PHONE' as VisitType,
-      visitTypeLabel: 'مكالمة هاتفية',
-      leader: 'الخادم مينا نبيل',
-      date: '١٤ سبتمبر',
-      notes: 'متابعة هاتفية للاطمئنان على استعداده للاختبارات الكشفية وتأكيد موعد درس الكتاب يوم الأحد.'
-    },
-    {
-      id: '3',
-      memberName: 'فيلوباتير سامح كمال',
-      squad: 'طليعة المجد (متقدم)',
-      visitType: 'OCCASION' as VisitType,
-      visitTypeLabel: 'مناسبة / إصابة',
-      leader: 'الخادم جورج سامي + الخادم مينا',
-      date: '١٠ سبتمبر',
-      notes: 'زيارة في المستشفى للاطمئنان عليه بعد إجراء جراحة بسيطة وتقديم هدية تذكارية من أسرة المجموعة الكشفية.'
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    loadMembersFromFirestore();
+    loadFollowUpHistory();
+  }, []);
+
+  useEffect(() => {
+    if (members.length > 0 && !selectedMember) {
+      setSelectedMember(members[0]);
     }
-  ]);
+  }, [members]);
+
+  const loadFollowUpHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const records = await fetchFollowUpsFromFirestore();
+      if (records && records.length > 0) {
+        setHistory(records);
+      } else {
+        setHistory([]);
+      }
+    } catch (e) {
+      console.warn('Error loading follow-ups:', e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const visitOptions: SelectorOption<VisitType>[] = [
     { value: 'PHONE', label: 'مكالمة تليفون', icon: '📞' },
@@ -56,29 +61,53 @@ export const FollowUpScreen = () => {
     { value: 'OCCASION', label: 'مناسبة / إصابة', icon: '🎈' },
   ];
 
-  const handleSaveFollowUp = () => {
+  const handleSaveFollowUp = async () => {
+    if (!selectedMember) {
+      Alert.alert('تنبيه', 'يرجى اختيار الكشاف المراد تسجيل الافتقاد له');
+      return;
+    }
     if (!notes.trim()) {
       Alert.alert('تنبيه', 'يرجى كتابة ملاحظات الافتقاد وتقرير الزيارة');
       return;
     }
 
+    setSaving(true);
     const typeLabel = visitType === 'PHONE' ? 'مكالمة هاتفية' : visitType === 'HOME_VISIT' ? 'زيارة منزلية' : 'مناسبة / إصابة';
     const newEntry = {
-      id: Date.now().toString(),
+      id: `fu_${Date.now()}`,
+      memberId: selectedMember.id,
+      memberCode: selectedMember.code,
       memberName: selectedMember.name,
       squad: `فرقة ${selectedMember.squadName}`,
       visitType,
       visitTypeLabel: typeLabel,
-      leader: `${primaryLeader} (والمشاركون)`,
-      date: 'الآن',
-      notes
+      occasionReason: visitType === 'OCCASION' ? occasionReason : '',
+      leader: primaryLeader + (coLeaders.trim() ? ` و (${coLeaders})` : ''),
+      date: new Date().toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', year: 'numeric' }),
+      createdAt: new Date().toISOString(),
+      notes: notes.trim(),
     };
 
-    setHistory([newEntry, ...history]);
-    setNotes('');
-    setOccasionReason('');
-    Alert.alert('تم بنجاح', 'تم تسجيل تقرير الافتقاد وحفظه في سجل الخدمة! 📋');
+    const success = await saveFollowUpToFirestore(newEntry);
+    setSaving(false);
+
+    if (success) {
+      setHistory([newEntry, ...history]);
+      setNotes('');
+      setOccasionReason('');
+      Alert.alert('تم بنجاح ✅', 'تم تسجيل تقرير الافتقاد وحفظه في السجل المركزي للمجموعة الكشفية! 📋');
+    } else {
+      // Still update locally
+      setHistory([newEntry, ...history]);
+      setNotes('');
+      Alert.alert('تم الحفظ محلياً ⚠️', 'تم حفظ التقرير محلياً وتعذر المزامنة مؤقتاً.');
+    }
   };
+
+  const filteredMemberList = members.filter((m) =>
+    m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+    m.code.toLowerCase().includes(memberSearch.toLowerCase())
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -92,16 +121,18 @@ export const FollowUpScreen = () => {
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statVal}>54</Text>
-            <Text style={styles.statLbl}>افتقادات الشهر</Text>
+            <Text style={styles.statVal}>{history.length}</Text>
+            <Text style={styles.statLbl}>إجمالي الافتقادات</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statVal}>%91</Text>
-            <Text style={styles.statLbl}>نسبة التغطية</Text>
+            <Text style={styles.statVal}>{members.length}</Text>
+            <Text style={styles.statLbl}>الكشافين المقيدين</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statVal}>05</Text>
-            <Text style={styles.statLbl}>حالات خاصة</Text>
+            <Text style={styles.statVal}>
+              {history.filter((h) => h.visitType === 'OCCASION').length}
+            </Text>
+            <Text style={styles.statLbl}>حالات ومناسبات</Text>
           </View>
         </View>
       </View>
@@ -111,10 +142,53 @@ export const FollowUpScreen = () => {
         <Text style={styles.cardTitle}>تسجيل تقرير افتقاد كشفي جديد</Text>
 
         <Text style={styles.inputLabel}>اختر المخدوم الكشفي *</Text>
-        <View style={styles.memberBox}>
-          <Text style={styles.memberBoxName}>👦 {selectedMember.name}</Text>
-          <Text style={styles.memberBoxSub}>فرقة {selectedMember.squadName} ({selectedMember.code})</Text>
-        </View>
+        {selectedMember ? (
+          <TouchableOpacity 
+            style={styles.memberBox}
+            onPress={() => setShowMemberPicker(!showMemberPicker)}
+          >
+            <Text style={styles.memberBoxName}>👦 {selectedMember.name}</Text>
+            <Text style={styles.memberBoxSub}>فرقة {selectedMember.squadName} ({selectedMember.code}) - اضغط للتغيير 🔄</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={styles.memberBoxEmpty}
+            onPress={() => setShowMemberPicker(true)}
+          >
+            <Text style={styles.memberBoxEmptyText}>⚠️ اضغط هنا لاختيار الكشاف من القائمة</Text>
+          </TouchableOpacity>
+        )}
+
+        {showMemberPicker && (
+          <View style={styles.pickerContainer}>
+            <TextInput
+              style={styles.pickerSearch}
+              placeholder="🔍 ابحث عن الكشاف بالاسم أو الكود..."
+              placeholderTextColor="#888"
+              value={memberSearch}
+              onChangeText={setMemberSearch}
+            />
+            <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+              {filteredMemberList.length > 0 ? (
+                filteredMemberList.map((m) => (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={styles.pickerItem}
+                    onPress={() => {
+                      setSelectedMember(m);
+                      setShowMemberPicker(false);
+                    }}
+                  >
+                    <Text style={styles.pickerItemName}>{m.name}</Text>
+                    <Text style={styles.pickerItemSub}>فرقة {m.squadName} • {m.code}</Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.pickerEmpty}>لا يوجد أعضاء متطابقين مع البحث</Text>
+              )}
+            </ScrollView>
+          </View>
+        )}
 
         <Text style={styles.inputLabel}>الخادم الأساسي المكلف بالتقرير *</Text>
         <TextInput
@@ -123,12 +197,12 @@ export const FollowUpScreen = () => {
           onChangeText={setPrimaryLeader}
         />
 
-        <Text style={styles.inputLabel}>الخدام المشاركون في الافتقاد *</Text>
+        <Text style={styles.inputLabel}>الخدام المشاركون في الافتقاد (اختياري)</Text>
         <TextInput
           style={styles.input}
           value={coLeaders}
           onChangeText={setCoLeaders}
-          placeholder="أسماء الخدام المشاركين"
+          placeholder="مثال: الخادم مينا، الخادم كيرلس"
         />
 
         {/* Visit Type Horizontal Icon Card Selector */}
@@ -160,33 +234,60 @@ export const FollowUpScreen = () => {
           onChangeText={setNotes}
         />
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSaveFollowUp} activeOpacity={0.85}>
-          <Text style={styles.saveBtnText}>💾 حفظ واعتماد تقرير الافتقاد</Text>
+        <TouchableOpacity 
+          style={styles.saveBtn} 
+          onPress={handleSaveFollowUp} 
+          activeOpacity={0.85}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.saveBtnText}>💾 حفظ واعتماد تقرير الافتقاد</Text>
+          )}
         </TouchableOpacity>
       </View>
 
       {/* History Stream */}
-      <Text style={styles.sectionHeading}>سجل وتقارير الافتقاد السابقة</Text>
-      {history.map((item) => (
-        <View key={item.id} style={styles.historyCard}>
-          <View style={styles.historyTopRow}>
-            <View style={styles.historyBadge}>
-              <Text style={styles.historyBadgeText}>
-                {item.visitType === 'PHONE' ? '📞' : item.visitType === 'HOME_VISIT' ? '🏠' : '🎈'} {item.visitTypeLabel}
-              </Text>
-            </View>
-            <View style={styles.historyNameCol}>
-              <Text style={styles.historyName}>{item.memberName}</Text>
-              <Text style={styles.historySquad}>{item.squad}</Text>
-            </View>
-          </View>
-          <Text style={styles.historyNotes}>{item.notes}</Text>
-          <View style={styles.historyFooter}>
-            <Text style={styles.historyLeader}>👤 {item.leader}</Text>
-            <Text style={styles.historyDate}>⏱️ {item.date}</Text>
-          </View>
+      <Text style={styles.sectionHeading}>سجل وتقارير الافتقاد السابقة ({history.length})</Text>
+      {loadingHistory ? (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <ActivityIndicator color="#8B0000" size="small" />
+          <Text style={{ fontSize: 12, color: '#666', marginTop: 6 }}>جاري تحميل سجلات الافتقاد...</Text>
         </View>
-      ))}
+      ) : history.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyCardIcon}>📋</Text>
+          <Text style={styles.emptyCardTitle}>لا توجد تقارير افتقاد مسجلة حتى الآن</Text>
+          <Text style={styles.emptyCardSub}>استخدم النموذج أعلاه لتسجيل أول تقرير زيارة أو مكالمة هاتفية.</Text>
+        </View>
+      ) : (
+        history.map((item) => (
+          <View key={item.id} style={styles.historyCard}>
+            <View style={styles.historyTopRow}>
+              <View style={styles.historyBadge}>
+                <Text style={styles.historyBadgeText}>
+                  {item.visitType === 'PHONE' ? '📞' : item.visitType === 'HOME_VISIT' ? '🏠' : '🎈'} {item.visitTypeLabel}
+                </Text>
+              </View>
+              <View style={styles.historyNameCol}>
+                <Text style={styles.historyName}>{item.memberName}</Text>
+                <Text style={styles.historySquad}>{item.squad}</Text>
+              </View>
+            </View>
+            <Text style={styles.historyNotes}>{item.notes}</Text>
+            {item.occasionReason ? (
+              <Text style={{ fontSize: 11, color: '#92400E', fontWeight: 'bold', textAlign: 'right', marginBottom: 4 }}>
+                📌 المناسبة: {item.occasionReason}
+              </Text>
+            ) : null}
+            <View style={styles.historyFooter}>
+              <Text style={styles.historyLeader}>👤 {item.leader}</Text>
+              <Text style={styles.historyDate}>⏱️ {item.date}</Text>
+            </View>
+          </View>
+        ))
+      )}
     </ScrollView>
   );
 };
@@ -294,6 +395,66 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 2,
   },
+  memberBoxEmpty: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  memberBoxEmptyText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#DC2626',
+  },
+  pickerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 14,
+  },
+  pickerSearch: {
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#1F2937',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  pickerScroll: {
+    maxHeight: 160,
+  },
+  pickerItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    alignItems: 'flex-end',
+  },
+  pickerItemName: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  pickerItemSub: {
+    fontSize: 11,
+    color: '#8B0000',
+    marginTop: 2,
+  },
+  pickerEmpty: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    fontSize: 12,
+    paddingVertical: 12,
+  },
   input: {
     backgroundColor: '#FAF7F2',
     borderRadius: 12,
@@ -389,5 +550,29 @@ const styles = StyleSheet.create({
   historyDate: {
     fontSize: 11,
     color: '#9CA3AF',
+  },
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 16,
+  },
+  emptyCardIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
+  emptyCardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  emptyCardSub: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 });

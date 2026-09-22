@@ -5,7 +5,7 @@ import {
 
 export const ResetPasswordScreen = ({ navigation }: any) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [identifier, setIdentifier] = useState('JS-2026-448');
+  const [identifier, setIdentifier] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -72,7 +72,7 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
           <Text style={styles.inputLabel}>كود الكشاف أو رقم الموبايل *</Text>
           <TextInput
             style={styles.input}
-            placeholder="مثال: JS-2026-448 أو 0122XXXXXXX"
+            placeholder="مثال: JNOOD-001 أو 0122XXXXXXX"
             value={identifier}
             onChangeText={setIdentifier}
           />
@@ -88,7 +88,7 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
         <View style={styles.stepCard}>
           <Text style={styles.stepTitle}>الخطوة ٢: كود التحقق السريع</Text>
           <Text style={styles.stepSub}>
-            تم إرسال رمز أمان مكون من 4 أرقام عبر SMS إلى رقم موبايل ولي الأمر المسجل (***0122)
+            تم إرسال رمز أمان مكون من 4 أرقام عبر SMS إلى رقم موبايل ولي الأمر المسجل
           </Text>
 
           {/* OTP Code Display Boxes */}
@@ -149,7 +149,7 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
           <Text style={styles.successIcon}>🎉</Text>
           <Text style={styles.successTitle}>تم تغيير كلمة السر بنجاح!</Text>
           <Text style={styles.successSub}>
-            تم تحديث كلمة المرور الخاصة بحسابك في كشافة الكنيسة. يمكنك الآن تسجيل الدخول مباشرة ببياناتك الجديدة.
+            تم تحديث كلمة المرور الخاصة بحسابك في مجموعة جنود المسيح الكشفية. يمكنك الآن تسجيل الدخول مباشرة ببياناتك الجديدة.
           </Text>
 
           <TouchableOpacity 

@@ -248,6 +248,114 @@ export async function saveAttendanceToFirestore(record: AttendanceRecord): Promi
   }
 }
 
+export async function fetchAttendanceFromFirestore(date?: string): Promise<AttendanceRecord[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.ATTENDANCE));
+    const list: AttendanceRecord[] = [];
+    snapshot.forEach((d) => {
+      const data = d.data() as AttendanceRecord;
+      if (!date || data.date === date) {
+        list.push(data);
+      }
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch attendance error:', error.message);
+    return [];
+  }
+}
+
+// ─── 6. Follow-up Operations ─────────────────────────────────────────────────
+
+export async function saveFollowUpToFirestore(followUp: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.FOLLOW_UPS, followUp.id || `fu_${Date.now()}`);
+    await setDoc(docRef, {
+      ...followUp,
+      createdAt: followUp.createdAt || new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save follow-up error:', error.message);
+    return false;
+  }
+}
+
+export async function fetchFollowUpsFromFirestore(): Promise<any[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.FOLLOW_UPS));
+    const list: any[] = [];
+    snapshot.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch follow-ups error:', error.message);
+    return [];
+  }
+}
+
+// ─── 7. Room Reservations Operations ──────────────────────────────────────────
+
+export async function saveRoomReservationToFirestore(reservation: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.ROOM_RESERVATIONS, reservation.id || `res_${Date.now()}`);
+    await setDoc(docRef, {
+      ...reservation,
+      createdAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save room reservation error:', error.message);
+    return false;
+  }
+}
+
+export async function fetchRoomReservationsFromFirestore(): Promise<any[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.ROOM_RESERVATIONS));
+    const list: any[] = [];
+    snapshot.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch room reservations error:', error.message);
+    return [];
+  }
+}
+
+// ─── 8. Inventory Requests Operations ────────────────────────────────────────
+
+export async function saveInventoryRequestToFirestore(request: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.INVENTORY_REQUESTS, request.id || `req_${Date.now()}`);
+    await setDoc(docRef, {
+      ...request,
+      createdAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save inventory request error:', error.message);
+    return false;
+  }
+}
+
+export async function fetchInventoryRequestsFromFirestore(): Promise<any[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.INVENTORY_REQUESTS));
+    const list: any[] = [];
+    snapshot.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch inventory requests error:', error.message);
+    return [];
+  }
+}
+
+
 
 // ─── 3. Seed Initial Data (ينشئ المجموعات والجداول فوراً في فايربيس) ─────────
 

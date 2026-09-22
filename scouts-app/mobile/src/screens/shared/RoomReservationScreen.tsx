@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { RoomReservation } from '../../types';
+import { saveRoomReservationToFirestore, fetchRoomReservationsFromFirestore } from '../../services/firebaseService';
 
 const CHURCH_ROOMS = [
   { id: 'BIG_HALL', title: 'القاعة الكبرى', icon: '🏛️', subtitle: 'سعة ٤٠٠ فرد - مجهزة بالكامل' },
@@ -42,40 +44,11 @@ const SERVICES_LIST = [
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 8); // 8:00 to 23:00
 
-const INITIAL_RESERVATIONS: RoomReservation[] = [
-  {
-    id: 'res_1',
-    roomName: 'قاعة الكشافة المركزية',
-    serviceName: 'مجموعة جنود المسيح الكشفية',
-    date: '2026-09-22',
-    startHour: 15,
-    endHour: 18,
-    reservedByName: 'القائد بيتر',
-  },
-  {
-    id: 'res_2',
-    roomName: 'مسرح الكنيسة',
-    serviceName: 'فريق المسرح الكنسي',
-    date: '2026-09-22',
-    startHour: 18,
-    endHour: 21,
-    reservedByName: 'الأستاذ عماد',
-  },
-  {
-    id: 'res_3',
-    roomName: 'القاعة الكبرى',
-    serviceName: 'خدمة مدارس الأحد (ابتدائي)',
-    date: '2026-09-22',
-    startHour: 9,
-    endHour: 12,
-    reservedByName: 'تاسوني مريم',
-  },
-];
-
 export const RoomReservationScreen = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string>('SCOUT_HALL');
-  const [selectedDate, setSelectedDate] = useState<string>('2026-09-22');
-  const [reservations, setReservations] = useState<RoomReservation[]>(INITIAL_RESERVATIONS);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [reservations, setReservations] = useState<RoomReservation[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Reservation Modal
   const [showModal, setShowModal] = useState(false);
@@ -83,6 +56,21 @@ export const RoomReservationScreen = () => {
   const [endHour, setEndHour] = useState<number>(12);
   const [selectedService, setSelectedService] = useState(SERVICES_LIST[0]);
   const [reservedByName, setReservedByName] = useState('');
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const data = await fetchRoomReservationsFromFirestore();
+        setReservations(data);
+      } catch (e) {
+        console.warn('Error loading reservations:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const activeRoomObj = CHURCH_ROOMS.find((r) => r.id === selectedRoomId);
   const activeRoomName = activeRoomObj?.title || 'القاعة الكشفية';
@@ -109,7 +97,7 @@ export const RoomReservationScreen = () => {
     setShowModal(true);
   };
 
-  const handleConfirmReservation = () => {
+  const handleConfirmReservation = async () => {
     if (!reservedByName.trim()) {
       Alert.alert('تنبيه', 'من فضلك أدخل اسم الخادم المسؤول عن الحجز ورقم هاتفه');
       return;
@@ -143,10 +131,12 @@ export const RoomReservationScreen = () => {
       reservedByName: reservedByName.trim(),
     };
 
-    setReservations([...reservations, newRes]);
+    setReservations((prev) => [...prev, newRes]);
     setShowModal(false);
     setReservedByName('');
-    Alert.alert('تم الحجز بنجاح 🎉', `تم تأكيد حجز ${activeRoomName} من ${startHour}:00 إلى ${endHour}:00.`);
+
+    await saveRoomReservationToFirestore(newRes);
+    Alert.alert('تم الحجز بنجاح 🎉', `تم تأكيد حجز ${activeRoomName} من ${startHour}:00 إلى ${endHour}:00 وحفظه في سجل الحجوزات.`);
   };
 
   return (

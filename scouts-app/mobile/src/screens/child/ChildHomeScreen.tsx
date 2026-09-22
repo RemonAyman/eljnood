@@ -1,26 +1,76 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useMembersStore } from '../../store/membersStore';
 import { ScoutCardPreview } from '../../components/card_print/ScoutCardPreview';
+import { fetchMemberByCodeFromFirestore, findUserOrMemberInFirestore, fetchMemberSubscriptions } from '../../services/firebaseService';
+import { Member, SubscriptionRecord } from '../../types';
 
 export const ChildHomeScreen = ({ navigation }: any) => {
   const user = useAuthStore((s) => s.user);
   const getMemberByCode = useMembersStore((s) => s.getMemberByCode);
   
-  const member = getMemberByCode(user?.code || 'JS-2026-448') || {
-    id: 'm1',
-    code: 'JS-2026-448',
-    name: 'بيتر يوسف فايز',
-    gender: 'MALE' as const,
-    scarfStatus: 'RECEIVED' as const,
-    birthDate: '2012-09-15',
-    gradeLevel: 'PREP_1' as const,
-    squadName: 'كشاف' as const,
-    phone: '01012345678',
-    guardianPhone: '01229876543',
-    createdAt: new Date().toISOString()
-  };
+  const [member, setMember] = useState<Member | null>(null);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const identifier = user?.code || user?.email || user?.phone;
+        if (identifier) {
+          let found = getMemberByCode(identifier);
+          if (!found) {
+            found = await fetchMemberByCodeFromFirestore(identifier);
+          }
+          if (!found) {
+            found = await findUserOrMemberInFirestore(identifier);
+          }
+
+          if (found) {
+            const memberObj: Member = {
+              id: found.id || 'm_current',
+              code: found.code || user?.code || 'JNOOD-MEMBER',
+              name: found.name || user?.name || 'عضو الكشافة',
+              gender: (found.gender as any) || 'MALE',
+              scarfStatus: (found.scarfStatus as any) || 'RECEIVED',
+              birthDate: found.birthDate || '2015-01-01',
+              gradeLevel: (found.gradeLevel as any) || 'PREP_1',
+              squadName: (found.squadName as any) || 'كشاف',
+              phone: found.phone || user?.phone || '',
+              guardianPhone: found.guardianPhone || user?.guardianPhone || '',
+              createdAt: found.createdAt || new Date().toISOString(),
+            };
+            setMember(memberObj);
+
+            // Load receipts
+            const subs = await fetchMemberSubscriptions(memberObj.code);
+            setSubscriptions(subs);
+          } else {
+            // Build temporary preview member from user profile
+            setMember({
+              id: user?.id || 'user_child',
+              code: user?.code || 'JNOOD-MEMBER',
+              name: user?.name || 'كشاف جنود المسيح',
+              gender: 'MALE',
+              scarfStatus: 'RECEIVED',
+              birthDate: '2014-01-01',
+              gradeLevel: 'PREP_1',
+              squadName: 'كشاف',
+              guardianPhone: user?.guardianPhone || '',
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Error loading child home data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [user]);
 
   const categories = [
     { title: 'الروحانية', icon: '✝️' },
@@ -81,30 +131,46 @@ export const ChildHomeScreen = ({ navigation }: any) => {
 
       {/* Digital Scouting Card Preview */}
       <Text style={styles.sectionTitle}>بطاقة الكشاف الرقمية والكود</Text>
-      <ScoutCardPreview 
-        member={member} 
-        onPrint={() => navigation?.navigate('Subscriptions')}
-      />
+      {member && (
+        <ScoutCardPreview 
+          member={member} 
+          onPrint={() => navigation?.navigate('Subscriptions')}
+        />
+      )}
 
       {/* Official Receipts History in Scout Account */}
       <Text style={styles.sectionTitle}>سجل إيصالات الاشتراكات والرسوم المعتمدة 🧾</Text>
-      <View style={styles.receiptCard}>
-        <View style={styles.receiptTopRow}>
-          <View style={styles.receiptBadge}>
-            <Text style={styles.receiptBadgeText}>تم السداد بنجاح ✅</Text>
+      {subscriptions.length > 0 ? (
+        subscriptions.map((sub, idx) => (
+          <View key={idx} style={styles.receiptCard}>
+            <View style={styles.receiptTopRow}>
+              <View style={styles.receiptBadge}>
+                <Text style={styles.receiptBadgeText}>تم السداد بنجاح ✅</Text>
+              </View>
+              <Text style={styles.receiptNum}>رقم الإيصال: {sub.receiptNumber}</Text>
+            </View>
+            <Text style={styles.receiptMemberName}>{sub.memberName} - فرقة {member?.squadName || 'كشاف'}</Text>
+            <Text style={styles.receiptItemsSummary}>
+              {sub.annualSub ? '• اشتراك سنوي ' : ''}
+              {sub.festivalSub ? '• اشتراك مهرجان ' : ''}
+              {sub.wajla ? '• وجلة ' : ''}
+              {sub.badges ? '• شارات ' : ''}
+              {sub.discountPercentage > 0 ? `(خصم ${sub.discountPercentage}%)` : ''}
+            </Text>
+            <View style={styles.receiptDivider} />
+            <View style={styles.receiptBottomRow}>
+              <Text style={styles.receiptTotalPaid}>المبلغ المسدد: {sub.totalPaid || sub.subtotal} ج.م</Text>
+              <Text style={styles.receiptDate}>{sub.createdAt ? sub.createdAt.split('T')[0] : '2026-09-22'}</Text>
+            </View>
           </View>
-          <Text style={styles.receiptNum}>رقم الإيصال: REC-2026-448</Text>
+        ))
+      ) : (
+        <View style={styles.emptyReceiptsCard}>
+          <Text style={styles.emptyReceiptsIcon}>🧾</Text>
+          <Text style={styles.emptyReceiptsTitle}>لا توجد إيصالات سداد مسجلة حتى الآن</Text>
+          <Text style={styles.emptyReceiptsSub}>سيظهر الإيصال هنا فور اعتماده وسداده لدى مسؤول الخزينة الكشفية.</Text>
         </View>
-        <Text style={styles.receiptMemberName}>{member.name} - فرقة {member.squadName}</Text>
-        <Text style={styles.receiptItemsSummary}>
-          • اشتراك سنوي (2026) • اشتراك مهرجان • وجلة وشارات كشفية
-        </Text>
-        <View style={styles.receiptDivider} />
-        <View style={styles.receiptBottomRow}>
-          <Text style={styles.receiptTotalPaid}>المبلغ المسدد: 549 ج.م</Text>
-          <Text style={styles.receiptDate}>تاريخ الاعتماد: 2026-09-22</Text>
-        </View>
-      </View>
+      )}
 
       {/* Quick Navigation Buttons */}
       <View style={styles.quickGrid}>
@@ -351,5 +417,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     color: '#8B0000',
-  }
+  },
+  emptyReceiptsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  emptyReceiptsIcon: {
+    fontSize: 32,
+    marginBottom: 6,
+  },
+  emptyReceiptsTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  emptyReceiptsSub: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
 });

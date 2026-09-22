@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
   Modal,
   Alert,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { useMembersStore } from '../../store/membersStore';
 import { EventType, Member } from '../../types';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
-import { saveAttendanceToFirestore } from '../../services/firebaseService';
+import { saveAttendanceToFirestore, fetchAttendanceFromFirestore } from '../../services/firebaseService';
 
 const EVENT_OPTIONS: { id: EventType; title: string; icon: string; subtitle: string }[] = [
   { id: 'SCOUTING_DAY', title: 'يوم الكشافة', icon: '⛺', subtitle: 'النشاط الأسبوعي العام' },
@@ -84,13 +85,30 @@ const MemberRowItem = React.memo(
 );
 
 export const AttendanceManageScreen = () => {
-  const members = useMembersStore((s) => s.members);
+  const { members, loadMembersFromFirestore } = useMembersStore();
   const { records, markAttendance, importFromFingerprintExcel, getAttendanceStats } = useAttendanceStore();
 
   const [selectedEvent, setSelectedEvent] = useState<EventType>('SCOUTING_DAY');
-  const [selectedDate, setSelectedDate] = useState<string>('2026-09-22');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSquadFilter, setSelectedSquadFilter] = useState<string>('ALL');
+  const [loadingMembers, setLoadingMembers] = useState(false);
+
+  useEffect(() => {
+    async function init() {
+      setLoadingMembers(true);
+      await loadMembersFromFirestore();
+      try {
+        const firestoreRecords = await fetchAttendanceFromFirestore(selectedDate);
+        firestoreRecords.forEach((r) => markAttendance(r));
+      } catch (e) {
+        console.warn('Error fetching attendance from firestore:', e);
+      } finally {
+        setLoadingMembers(false);
+      }
+    }
+    init();
+  }, [selectedDate]);
 
   // Scanner modal state
   const [showScannerModal, setShowScannerModal] = useState(false);

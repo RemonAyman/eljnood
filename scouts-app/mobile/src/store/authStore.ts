@@ -5,10 +5,15 @@ interface AuthState {
   user: {
     id: string;
     name: string;
+    email?: string;
     code?: string;
     role: Role;
     phone?: string;
     guardianPhone?: string;
+    sonCode?: string;
+    sonName?: string;
+    sectionName?: string;
+    sectionLeaderName?: string;
   } | null;
   isAuthenticated: boolean;
   pinUnlocked: boolean;

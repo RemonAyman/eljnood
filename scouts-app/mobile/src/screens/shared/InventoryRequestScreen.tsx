@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { InventoryRequest } from '../../types';
+import { saveInventoryRequestToFirestore, fetchInventoryRequestsFromFirestore } from '../../services/firebaseService';
 
 const INVENTORY_CATEGORIES = [
   { id: 'TENTS', title: 'الخيام والمظلات', icon: '⛺', subtitle: 'خيام هرمية ومظلات معسكرات' },
@@ -36,42 +38,10 @@ const CHURCH_SERVICES = [
   'اجتماع الخريجين والشباب',
 ];
 
-const INITIAL_REQUESTS: InventoryRequest[] = [
-  {
-    id: 'req_1',
-    category: 'الخيام والمظلات',
-    itemName: '٤ خيام استكشاف + ٢ مظلة طهي كبيرة',
-    serviceName: 'مجموعة جنود المسيح الكشفية',
-    requesterName: 'القائد بيتر موريس',
-    pickupDatetime: '2026-10-01 08:00',
-    returnDatetime: '2026-10-04 18:00',
-    status: 'APPROVED',
-  },
-  {
-    id: 'req_2',
-    category: 'الطبول والموسيقى',
-    itemName: '٣ طبول كشفية كبيرة + ٢ بوق نحاسي',
-    serviceName: 'مجموعة جنود المسيح الكشفية',
-    requesterName: 'القائد كيرلس ميشيل',
-    pickupDatetime: '2026-09-25 15:00',
-    returnDatetime: '2026-09-25 21:00',
-    status: 'DELIVERED',
-  },
-  {
-    id: 'req_3',
-    category: 'الصوتيات والساوند',
-    itemName: 'سماعة محمولة + ٢ ميكروفون لاسلكي',
-    serviceName: 'خدمة مدارس الأحد (ابتدائي)',
-    requesterName: 'الأستاذ عماد فريد',
-    pickupDatetime: '2026-09-28 10:00',
-    returnDatetime: '2026-09-28 14:00',
-    status: 'PENDING',
-  },
-];
-
 export const InventoryRequestScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('TENTS');
-  const [requests, setRequests] = useState<InventoryRequest[]>(INITIAL_REQUESTS);
+  const [requests, setRequests] = useState<InventoryRequest[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // New Request Modal
   const [showModal, setShowModal] = useState(false);
@@ -80,6 +50,21 @@ export const InventoryRequestScreen = () => {
   const [requesterName, setRequesterName] = useState('');
   const [pickupDate, setPickupDate] = useState('2026-10-05 09:00');
   const [returnDate, setReturnDate] = useState('2026-10-07 18:00');
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const data = await fetchInventoryRequestsFromFirestore();
+        setRequests(data);
+      } catch (e) {
+        console.warn('Error loading inventory requests:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const getStatusBadge = (status: InventoryRequest['status']) => {
     switch (status) {
@@ -96,7 +81,7 @@ export const InventoryRequestScreen = () => {
     }
   };
 
-  const handleCreateRequest = () => {
+  const handleCreateRequest = async () => {
     if (!itemName.trim() || !requesterName.trim()) {
       Alert.alert('تنبيه', 'من فضلك املأ جميع الحقول المطلوبة (اسم الأداة ومقدم الطلب)');
       return;
@@ -115,11 +100,13 @@ export const InventoryRequestScreen = () => {
       status: 'PENDING',
     };
 
-    setRequests([newReq, ...requests]);
+    setRequests((prev) => [newReq, ...prev]);
     setShowModal(false);
     setItemName('');
     setRequesterName('');
-    Alert.alert('تم بنجاح 🎉', 'تم إرسال طلب استعارة العهدة لأمين المخزن الكشفي للموافقة.');
+
+    await saveInventoryRequestToFirestore(newReq);
+    Alert.alert('تم بنجاح 🎉', 'تم إرسال طلب استعارة العهدة لأمين المخزن الكشفي وحفظه.');
   };
 
   return (
