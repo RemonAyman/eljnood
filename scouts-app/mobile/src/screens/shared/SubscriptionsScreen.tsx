@@ -1,23 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator 
 } from 'react-native';
 import { useSubscriptionsStore } from '../../store/subscriptionsStore';
 import { useMembersStore } from '../../store/membersStore';
+import { useAuthStore } from '../../store/authStore';
 import { saveSubscriptionToFirestore } from '../../services/firebaseService';
+import { Member } from '../../types';
 
 export const SubscriptionsScreen = () => {
-  const members = useMembersStore((s) => s.members);
-  const { prices, records, applyDiscountCode, calculateTotal, addRecord } = useSubscriptionsStore();
+  const { members, loadMembersFromFirestore } = useMembersStore();
+  const currentUser = useAuthStore((s) => s.user);
+  const { prices, records, applyDiscountCode, calculateTotal, addRecord, updatePrices } = useSubscriptionsStore();
 
-  const [selectedMember, setSelectedMember] = useState(members[0]);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [memberMode, setMemberMode] = useState<'EXISTING' | 'NEW'>('EXISTING');
+  const [manualName, setManualName] = useState('');
+  const [manualCode, setManualCode] = useState(`JS-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   
   // Selected items state
   const [items, setItems] = useState({
     annualSub: true,
     festivalSub: true,
-    promisePartySub: true,
+    promisePartySub: false,
     scarfReplacement: false,
     wajla: true,
     badges: true,
@@ -34,6 +43,20 @@ export const SubscriptionsScreen = () => {
   // Receipt Modal
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<any>(null);
+
+  // Price Editor Modal (Admin / Cashier)
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [tempPrices, setTempPrices] = useState({ ...prices });
+
+  useEffect(() => {
+    loadMembersFromFirestore();
+  }, []);
+
+  useEffect(() => {
+    if (members.length > 0 && !selectedMember) {
+      setSelectedMember(members[0]);
+    }
+  }, [members]);
 
   const toggleItem = (key: keyof typeof items) => {
     setItems((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -52,22 +75,37 @@ export const SubscriptionsScreen = () => {
       setDiscountApplied(true);
       setShowPinModal(false);
       setPinInput('');
-      Alert.alert('تم بنجاح', `تم تفعيل خصم ${res.percentage}% بنجاح! 🔑`);
+      Alert.alert('تم بنجاح ✅', `تم تفعيل خصم ${res.percentage}% بنجاح! 🔑`);
     } else {
       Alert.alert('خطأ', res.error || 'فشل تطبيق الخصم');
     }
   };
 
+  const handleSavePrices = () => {
+    updatePrices(tempPrices);
+    setShowPriceModal(false);
+    Alert.alert('تم بنجاح ✅', 'تم تحديث لائحة أسعار الاشتراكات الرسمية بنجاح!');
+  };
+
   const handleConfirmPayment = () => {
+    const memberName = memberMode === 'EXISTING' ? selectedMember?.name : manualName.trim();
+    const memberCode = memberMode === 'EXISTING' ? selectedMember?.code : manualCode.trim();
+    const memberId = memberMode === 'EXISTING' ? selectedMember?.id || 'm_custom' : `m_${Date.now()}`;
+
+    if (!memberName) {
+      Alert.alert('تنبيه', 'يرجى اختيار أو كتابة اسم الكشاف لإصدار الإيصال');
+      return;
+    }
+
     if (totalPaid <= 0) {
       Alert.alert('تنبيه', 'يرجى اختيار بند واحد على الأقل للتحصيل');
       return;
     }
 
     const newRecord = addRecord({
-      memberId: selectedMember.id,
-      memberCode: selectedMember.code,
-      memberName: selectedMember.name,
+      memberId,
+      memberCode: memberCode || `JS-2026-000`,
+      memberName,
       year: selectedYear,
       annualSub: items.annualSub,
       festivalSub: items.festivalSub,
@@ -89,6 +127,11 @@ export const SubscriptionsScreen = () => {
     setShowReceiptModal(true);
   };
 
+  const filteredMembers = members.filter((m) =>
+    m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
+    m.code.toLowerCase().includes(memberSearchQuery.toLowerCase())
+  );
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header Banner */}
@@ -97,38 +140,124 @@ export const SubscriptionsScreen = () => {
           <Text style={styles.badgePillText}>🔒 خزينة ومصروفات معتمدة</Text>
         </View>
         <Text style={styles.headerTitle}>الماليات وحساب الاشتراكات</Text>
-        <Text style={styles.headerSub}>تحصيل الدفعات، الحسابات الفورية، وإصدار الإيصالات الحرارية</Text>
+        <Text style={styles.headerSub}>تحصيل الدفعات، الحسابات الفورية، وإصدار الإيصالات الرسمية</Text>
         
         <View style={styles.headerStatsRow}>
           <View style={styles.headerStatBox}>
-            <Text style={styles.statVal}>4,250 ج.م</Text>
-            <Text style={styles.statLbl}>مجموع اليوم</Text>
+            <Text style={styles.statVal}>{records.length > 0 ? `${records.reduce((a, b) => a + b.totalPaid, 0)} ج.م` : '0 ج.م'}</Text>
+            <Text style={styles.statLbl}>إجمالي المحصل</Text>
           </View>
           <View style={styles.headerStatBox}>
-            <Text style={styles.statVal}>18 إيصال</Text>
+            <Text style={styles.statVal}>{records.length} إيصال</Text>
             <Text style={styles.statLbl}>إيصالات صادرة</Text>
           </View>
           <View style={styles.headerStatBox}>
-            <Text style={styles.statVal}>%84</Text>
-            <Text style={styles.statLbl}>نسبة السداد</Text>
+            <TouchableOpacity 
+              style={styles.priceEditBtn} 
+              onPress={() => { setTempPrices({ ...prices }); setShowPriceModal(true); }}
+            >
+              <Text style={styles.priceEditBtnText}>⚙️ تعديل الأسعار</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      {/* Member Info & Year Selection */}
+      {/* Member Selection / Manual Mode */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>بيانات الكشاف والسنة المالية</Text>
-        
-        {/* Selected Member Quick View */}
-        <View style={styles.memberSelectRow}>
-          <View style={styles.memberAvatarCircle}>
-            <Text style={styles.memberAvatarText}>⚜️</Text>
-          </View>
-          <View style={styles.memberDetailsCol}>
-            <Text style={styles.selectedMemberName}>{selectedMember.name}</Text>
-            <Text style={styles.selectedMemberSub}>طليعة النسور • فرقة {selectedMember.squadName} ({selectedMember.code})</Text>
-          </View>
+
+        <View style={styles.modeTabsRow}>
+          <TouchableOpacity 
+            style={[styles.modeTab, memberMode === 'EXISTING' && styles.modeTabActive]}
+            onPress={() => setMemberMode('EXISTING')}
+          >
+            <Text style={[styles.modeTabText, memberMode === 'EXISTING' && styles.modeTabTextActive]}>
+              عضو مسجل (قديم)
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.modeTab, memberMode === 'NEW' && styles.modeTabActive]}
+            onPress={() => setMemberMode('NEW')}
+          >
+            <Text style={[styles.modeTabText, memberMode === 'NEW' && styles.modeTabTextActive]}>
+              عضو جديد / إدخال يدوي
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {memberMode === 'EXISTING' ? (
+          <>
+            {selectedMember ? (
+              <TouchableOpacity 
+                style={styles.memberSelectRow}
+                onPress={() => setShowMemberPicker(!showMemberPicker)}
+              >
+                <View style={styles.memberAvatarCircle}>
+                  <Text style={styles.memberAvatarText}>⚜️</Text>
+                </View>
+                <View style={styles.memberDetailsCol}>
+                  <Text style={styles.selectedMemberName}>{selectedMember.name}</Text>
+                  <Text style={styles.selectedMemberSub}>فرقة {selectedMember.squadName} ({selectedMember.code}) - اضغط للتغيير 🔄</Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={styles.emptyMemberPickBtn}
+                onPress={() => setShowMemberPicker(true)}
+              >
+                <Text style={styles.emptyMemberPickText}>🔍 اضغط هنا لاختيار كشاف من القائمة</Text>
+              </TouchableOpacity>
+            )}
+
+            {showMemberPicker && (
+              <View style={styles.pickerBox}>
+                <TextInput
+                  style={styles.pickerSearchInput}
+                  placeholder="🔍 ابحث بالاسم أو الكود..."
+                  placeholderTextColor="#888"
+                  value={memberSearchQuery}
+                  onChangeText={setMemberSearchQuery}
+                />
+                <ScrollView style={{ maxHeight: 150 }} nestedScrollEnabled>
+                  {filteredMembers.length > 0 ? (
+                    filteredMembers.map((m) => (
+                      <TouchableOpacity
+                        key={m.id}
+                        style={styles.pickerRow}
+                        onPress={() => {
+                          setSelectedMember(m);
+                          setShowMemberPicker(false);
+                        }}
+                      >
+                        <Text style={styles.pickerRowName}>{m.name}</Text>
+                        <Text style={styles.pickerRowSub}>فرقة {m.squadName} • {m.code}</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text style={styles.pickerEmptyText}>لا توجد نتائج</Text>
+                  )}
+                </ScrollView>
+              </View>
+            )}
+          </>
+        ) : (
+          <View style={{ marginTop: 8 }}>
+            <Text style={styles.inputLabel}>اسم العضو الجديد *</Text>
+            <TextInput
+              style={styles.manualInput}
+              placeholder="مثال: بيتر يوسف فايز"
+              value={manualName}
+              onChangeText={setManualName}
+            />
+            <Text style={styles.inputLabel}>كود الكشاف *</Text>
+            <TextInput
+              style={styles.manualInput}
+              placeholder="JS-2026-XXX"
+              value={manualCode}
+              onChangeText={setManualCode}
+            />
+          </View>
+        )}
 
         {/* Year Pills (2026 - 2029) */}
         <Text style={styles.subLabel}>اختر السنة المالية للمطابقة:</Text>
@@ -145,9 +274,6 @@ export const SubscriptionsScreen = () => {
                 <Text style={[styles.yearPillText, isSelected && styles.yearPillTextActive]}>
                   {year}
                 </Text>
-                <Text style={[styles.yearStatus, isSelected && styles.yearStatusActive]}>
-                  {year === 2026 ? '✓ مسدد' : 'غير مسدد'}
-                </Text>
               </TouchableOpacity>
             );
           })}
@@ -156,7 +282,18 @@ export const SubscriptionsScreen = () => {
 
       {/* Items Calculation Checklist */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>حاسبة البنود والاشتراكات المقررة</Text>
+        <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <Text style={[styles.cardTitle, { marginBottom: 0 }]}>حاسبة البنود والاشتراكات المقررة</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setTempPrices({ ...prices });
+              setShowPriceModal(true);
+            }}
+            style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: '#8B0000' }}
+          >
+            <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#8B0000' }}>⚙️ تعديل الأسعار</Text>
+          </TouchableOpacity>
+        </View>
 
         {[
           { key: 'annualSub' as const, title: 'اشتراك سنوي كشفي', desc: 'يشمل التأمين الكشفي وشهادة العضوية', price: prices.annualSub },
@@ -223,43 +360,45 @@ export const SubscriptionsScreen = () => {
           <Text style={styles.summaryVal}>{subtotal} ج.م</Text>
           <Text style={styles.summaryLbl}>المجموع الإجمالي (قبل الخصم):</Text>
         </View>
-        {discountApplied && (
+        {discountApplied && discountAmount > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryVal, { color: '#059669' }]}>- {discountAmount} ج.م ({discountPercent}%)</Text>
+            <Text style={[styles.summaryVal, { color: '#059669' }]}>-{discountAmount} ج.م ({discountPercent}%)</Text>
             <Text style={styles.summaryLbl}>قيمة الخصم المعتمد:</Text>
           </View>
         )}
         <View style={styles.divider} />
         <View style={styles.summaryRow}>
           <Text style={styles.totalNetVal}>{totalPaid} ج.م</Text>
-          <Text style={styles.totalNetLbl}>الصافي المطلوب تحصيله:</Text>
+          <Text style={styles.totalNetLbl}>المبلغ المطلوب تحصيله الآن:</Text>
         </View>
 
         <TouchableOpacity 
           style={styles.confirmPayBtn} 
           onPress={handleConfirmPayment}
-          activeOpacity={0.85}
+          activeOpacity={0.8}
         >
-          <Text style={styles.confirmPayBtnText}>🖨️ تأكيد السداد وطباعة الإيصال الفوري</Text>
+          <Text style={styles.confirmPayBtnText}>💰 تحصيل الدفعة وإصدار الإيصال الرسمي</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Secret PIN Modal */}
+      {/* Secret PIN Modal for Discount */}
       <Modal visible={showPinModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalIcon}>🔑</Text>
-            <Text style={styles.modalHeading}>موافقة مدير المجموعة والخزينة</Text>
-            <Text style={styles.modalSubtitle}>يرجى إدخال الرمز السري (PIN) لتفعيل الخصم الخاص بالكود {discountCodeInput}:</Text>
-            
+            <Text style={styles.modalHeading}>إدخال رمز تفويض الخصم</Text>
+            <Text style={styles.modalSubtitle}>
+              كود الخصم يتطلب إدخال الرمز السري الخاص بأمين الصندوق أو مدير الخدمة
+            </Text>
+
             <TextInput
               style={styles.pinInputField}
               placeholder="••••"
-              keyboardType="number-pad"
-              maxLength={4}
-              secureTextEntry
               value={pinInput}
               onChangeText={setPinInput}
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry
             />
 
             <View style={styles.modalBtnRow}>
@@ -274,6 +413,58 @@ export const SubscriptionsScreen = () => {
                 onPress={verifyPinAndApply}
               >
                 <Text style={styles.modalBtnConfirmText}>اعتماد الخصم</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Price Editor Modal (Admin / Cashier) */}
+      <Modal visible={showPriceModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalBox, { width: '92%', maxHeight: '85%' }]}>
+            <Text style={styles.modalIcon}>⚙️</Text>
+            <Text style={styles.modalHeading}>تعديل لائحة أسعار الاشتراكات</Text>
+            <Text style={styles.modalSubtitle}>
+              تعديل أسعار بنود الاشتراكات المقررة لكافة الفرق والأفواج
+            </Text>
+
+            <ScrollView style={{ width: '100%', marginVertical: 10 }}>
+              {[
+                { key: 'annualSub' as const, title: 'اشتراك سنوي كشفي' },
+                { key: 'festivalSub' as const, title: 'اشتراك مهرجان الكرازة' },
+                { key: 'promisePartySub' as const, title: 'اشتراك حفلة الوعد' },
+                { key: 'scarfReplacement' as const, title: 'بدل فاقد المنديل' },
+                { key: 'wajla' as const, title: 'وجلة خشبية' },
+                { key: 'badges' as const, title: 'شارات وترقيات' },
+              ].map((pItem) => (
+                <View key={pItem.key} style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{pItem.title}</Text>
+                  <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
+                    <TextInput
+                      style={{ backgroundColor: '#FAF7F2', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, width: 80, textAlign: 'center', fontWeight: 'bold', color: '#8B0000', fontSize: 14 }}
+                      keyboardType="numeric"
+                      value={String(tempPrices[pItem.key])}
+                      onChangeText={(val) => setTempPrices(prev => ({ ...prev, [pItem.key]: parseInt(val, 10) || 0 }))}
+                    />
+                    <Text style={{ fontSize: 12, color: '#6B7280', marginRight: 6 }}>ج.م</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity 
+                style={[styles.modalBtn, styles.modalBtnCancel]} 
+                onPress={() => setShowPriceModal(false)}
+              >
+                <Text style={styles.modalBtnCancelText}>إلغاء</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalBtn, styles.modalBtnConfirm]} 
+                onPress={handleSavePrices}
+              >
+                <Text style={styles.modalBtnConfirmText}>حفظ الأسعار</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -445,6 +636,125 @@ const styles = StyleSheet.create({
     color: '#8B0000',
     marginBottom: 12,
     textAlign: 'right',
+  },
+  priceEditBtn: {
+    backgroundColor: 'rgba(212, 163, 89, 0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D4A359',
+  },
+  priceEditBtnText: {
+    color: '#D4A359',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  modeTabsRow: {
+    flexDirection: 'row-reverse',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 12,
+  },
+  modeTabRow: {
+    flexDirection: 'row-reverse',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 12,
+  },
+  modeTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  modeTabActive: {
+    backgroundColor: '#8B0000',
+  },
+  modeTabText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#4B5563',
+  },
+  modeTabTextActive: {
+    color: '#FFFFFF',
+  },
+  emptyMemberPickBtn: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#8B0000',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  emptyMemberPickText: {
+    color: '#8B0000',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  pickerBox: {
+    backgroundColor: '#FAF7F2',
+    borderRadius: 12,
+    padding: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  pickerSearchInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    textAlign: 'right',
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  pickerRow: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    alignItems: 'flex-end',
+  },
+  pickerRowName: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  pickerRowSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  pickerEmptyText: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    paddingVertical: 10,
+    fontSize: 12,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#374151',
+    marginBottom: 4,
+    textAlign: 'right',
+  },
+  manualInput: {
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    textAlign: 'right',
+    fontSize: 13,
+    marginBottom: 10,
+    color: '#1F2937',
   },
   memberSelectRow: {
     flexDirection: 'row-reverse',

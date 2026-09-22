@@ -24,6 +24,7 @@ interface SubscriptionsState {
   applyDiscountCode: (code: string, secretPin?: string) => { success: boolean; percentage: number; error?: string };
   calculateTotal: (items: SubscriptionItemsInput, discountPercentage: number) => { subtotal: number; discountAmount: number; totalPaid: number };
   addRecord: (record: Omit<SubscriptionRecord, 'id' | 'receiptNumber' | 'createdAt'>) => SubscriptionRecord;
+  updatePrices: (newPrices: Partial<SubscriptionsState['prices']>) => void;
 }
 
 export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
@@ -87,5 +88,8 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     };
     set((state) => ({ records: [record, ...state.records] }));
     return record;
+  },
+  updatePrices: (newPrices) => {
+    set((state) => ({ prices: { ...state.prices, ...newPrices } }));
   },
 }));
