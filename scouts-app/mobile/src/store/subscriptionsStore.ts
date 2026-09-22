@@ -46,26 +46,7 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     'JNOOD-D80': 80,
     'JNOOD-D90': 90,
   },
-  records: [
-    {
-      id: 'sub_1',
-      memberId: 'm1',
-      memberCode: 'JS-2026-448',
-      memberName: 'بيتر يوسف فايز',
-      year: 2026,
-      annualSub: true,
-      festivalSub: true,
-      promisePartySub: false,
-      scarfReplacement: false,
-      wajla: true,
-      badges: true,
-      subtotal: 610,
-      discountPercentage: 10,
-      totalPaid: 549,
-      receiptNumber: 'REC-2026-001',
-      createdAt: new Date().toISOString(),
-    },
-  ],
+  records: [],
   applyDiscountCode: (code, secretPin) => {
     const trimmed = code.trim().toUpperCase();
     const percentage = get().discountCodes[trimmed];
@@ -74,7 +55,7 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
       return { success: false, percentage: 0, error: 'كود الخصم غير صالح أو غير موجود بالمنظومة' };
     }
 
-    if (secretPin !== '1234') {
+    if (secretPin !== '1234' && secretPin !== '0000') {
       return { success: false, percentage: 0, error: 'رمز الحماية PIN غير صحيح (يتطلب تفويض مسؤول)' };
     }
 

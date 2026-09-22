@@ -18,15 +18,8 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: {
-    id: 'user_1',
-    name: 'بيتر يوسف فايز',
-    code: 'JS-2026-448',
-    role: 'CHILD',
-    phone: '01012345678',
-    guardianPhone: '01229876543'
-  },
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   pinUnlocked: false,
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setPinUnlocked: (pinUnlocked) => set({ pinUnlocked }),

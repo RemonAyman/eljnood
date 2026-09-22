@@ -88,6 +88,66 @@ export async function saveUserToFirestore(userData: {
   }
 }
 
+/** Look up user or member in Firestore by email, code, phone, or uid */
+export async function findUserOrMemberInFirestore(identifier: string): Promise<any | null> {
+  try {
+    const cleanId = identifier.trim().toLowerCase();
+
+    // 1. Search in users collection
+    const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+    let matchedUser: any = null;
+    usersSnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const emailMatch = data.email && data.email.toLowerCase() === cleanId;
+      const codeMatch = data.code && data.code.toLowerCase() === cleanId;
+      const phoneMatch = data.phone && data.phone === cleanId;
+      const sonCodeMatch = data.sonCode && data.sonCode.toLowerCase() === cleanId;
+      if (emailMatch || codeMatch || phoneMatch || sonCodeMatch) {
+        matchedUser = { id: docSnap.id, ...data };
+      }
+    });
+
+    if (matchedUser) return matchedUser;
+
+    // 2. Search in members collection
+    const membersSnapshot = await getDocs(collection(db, COLLECTIONS.MEMBERS));
+    let matchedMember: any = null;
+    membersSnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const codeMatch = data.code && data.code.toLowerCase() === cleanId;
+      const phoneMatch = data.phone && data.phone === cleanId;
+      const guardianMatch = data.guardianPhone && data.guardianPhone === cleanId;
+      if (codeMatch || phoneMatch || guardianMatch) {
+        matchedMember = { id: docSnap.id, role: 'CHILD', ...data };
+      }
+    });
+
+    return matchedMember;
+  } catch (error: any) {
+    console.warn('⚠️ findUserOrMemberInFirestore error:', error.message);
+    return null;
+  }
+}
+
+export async function fetchMemberByCodeFromFirestore(code: string): Promise<Member | null> {
+  try {
+    const cleanCode = code.trim().toLowerCase();
+    const membersSnapshot = await getDocs(collection(db, COLLECTIONS.MEMBERS));
+    let found: Member | null = null;
+    membersSnapshot.forEach((docSnap) => {
+      const data = docSnap.data() as Member;
+      if (data.code && data.code.toLowerCase() === cleanCode) {
+        found = data;
+      }
+    });
+    return found;
+  } catch (error: any) {
+    console.warn('⚠️ fetchMemberByCodeFromFirestore error:', error.message);
+    return null;
+  }
+}
+
+
 // ─── 3. Subscriptions & Receipts Operations ──────────────────────────────────
 
 export async function saveSubscriptionToFirestore(record: SubscriptionRecord): Promise<boolean> {

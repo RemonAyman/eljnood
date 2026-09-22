@@ -81,7 +81,7 @@ export function isValidEmail(email: string): boolean {
 }
 
 export function validateRegisterForm(data: {
-  role?: 'CHILD' | 'PARENT' | 'LEADER';
+  role?: 'CHILD' | 'PARENT' | 'LEADER' | 'SECTION_LEADER';
   name: string;
   email?: string;
   password?: string;
@@ -144,6 +144,12 @@ export function validateRegisterForm(data: {
     }
     if (!isRequired(data.sectionLeaderName)) {
       errors.sectionLeaderName = ValidationMessages.required('اسم رئيس القطاع');
+    }
+  } else if (data.role === 'SECTION_LEADER') {
+    if (!isRequired(data.phone)) {
+      errors.phone = ValidationMessages.required('رقم الموبايل');
+    } else if (!isValidEgyptPhone(data.phone)) {
+      errors.phone = ValidationMessages.invalidPhone;
     }
   } else {
     // Child

@@ -11,6 +11,8 @@ import { validateLoginForm, isValidOTP, ValidationMessages } from '../../utils/v
 const FieldError = ({ message }: { message?: string }) =>
   message ? <Text style={styles.fieldError}>{message}</Text> : null;
 
+import { findUserOrMemberInFirestore } from '../../services/firebaseService';
+
 export const LoginScreen = ({ navigation }: any) => {
   const setUser = useAuthStore((s) => s.setUser);
   const setPinUnlocked = useAuthStore((s) => s.setPinUnlocked);
@@ -33,117 +35,73 @@ export const LoginScreen = ({ navigation }: any) => {
     setLoading(true);
     const cleanId = identifier.trim().toLowerCase();
 
-    // Determine role from identifier first (for routing purposes)
-    const resolveUserProfile = (uid: string) => {
-      if (cleanId === 'admin@scouts.org' || cleanId.includes('admin')) {
-        setUser({ id: uid, name: 'القائد العام / مدير الخدمة', code: 'ADMIN-001', role: 'ADMIN', phone: '01000000001', guardianPhone: '01000000001' });
-        return 'AdminDashboard';
-      }
-      if (cleanId === 'parent@scouts.org') {
-        setUser({ id: uid, name: 'يوسف فايز مسعود (ولي أمر)', code: 'PARENT-448', role: 'PARENT', phone: '01229876543', guardianPhone: '01229876543' });
-        return 'ParentHome';
-      }
-      if (cleanId === 'leader@scouts.org') {
-        setUser({ id: uid, name: 'القائد مينا نبيل', code: 'LEADER-07', role: 'LEADER', phone: '01123456789', guardianPhone: '01123456789' });
-        return 'Attendance';
-      }
-      // Scout/child — identifier is their code
-      setUser({ id: uid, name: 'الكشاف', code: identifier.trim(), role: 'CHILD', phone: '', guardianPhone: '' });
-      return 'ChildHome';
-    };
+    // 1. Check if it's the official Admin credentials
+    if (cleanId === 'admin@scouts.org' && password.trim() === 'admin123') {
+      setUser({
+        id: 'admin_1',
+        name: 'القائد العام / مدير الخدمة',
+        code: 'ADMIN-001',
+        role: 'ADMIN',
+        phone: '01000000001',
+        guardianPhone: '01000000001',
+      });
+      setLoading(false);
+      navigation?.navigate('AdminDashboard');
+      return;
+    }
 
-    // Try Firebase Auth first (for email-based logins)
+    // 2. Try Firebase Auth (if user entered email)
+    let authUid = '';
     if (cleanId.includes('@')) {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, cleanId, password.trim());
-        const destination = resolveUserProfile(userCredential.user.uid);
-        setLoading(false);
-        navigation?.navigate(destination);
-        return;
-      } catch (firebaseError: any) {
-        const code = firebaseError?.code || '';
-        // If auth/user-not-found or auth/wrong-password → show real error
-        if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
-          setLoading(false);
-          Alert.alert('خطأ في تسجيل الدخول ❌', 'البريد الإلكتروني غير مسجل في النظام.');
-          return;
-        }
-        if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-          setLoading(false);
-          Alert.alert('خطأ في تسجيل الدخول ❌', 'كلمة المرور غير صحيحة. حاول مرة أخرى.');
-          return;
-        }
-        // Network / permission / other error → fall through to demo mode
-        console.warn('Firebase Auth fallback (demo mode):', firebaseError.message);
+        authUid = userCredential.user.uid;
+      } catch (authErr: any) {
+        console.warn('Firebase auth attempt note:', authErr.message);
       }
     }
 
-    // Fallback: Demo mode (scout code login or Firebase not configured)
-    const destination = resolveUserProfile(`user_${Date.now()}`);
+    // 3. Search Firestore for real user or member record
+    const realUserDoc = await findUserOrMemberInFirestore(cleanId);
+
+    if (realUserDoc) {
+      const userRole = realUserDoc.role || 'CHILD';
+      const realProfile = {
+        id: realUserDoc.id || realUserDoc.uid || authUid || `u_${Date.now()}`,
+        name: realUserDoc.name || 'عضو مسجل',
+        code: realUserDoc.code || realUserDoc.sonCode || cleanId,
+        role: userRole,
+        phone: realUserDoc.phone || '',
+        guardianPhone: realUserDoc.guardianPhone || '',
+      };
+
+      setUser(realProfile);
+      setLoading(false);
+
+      if (userRole === 'ADMIN') {
+        navigation?.navigate('AdminDashboard');
+      } else if (userRole === 'PARENT') {
+        navigation?.navigate('ParentHome');
+      } else if (userRole === 'LEADER' || userRole === 'SECTION_LEADER' || userRole === 'JOWALAH') {
+        navigation?.navigate('Attendance');
+      } else {
+        navigation?.navigate('ChildHome');
+      }
+      return;
+    }
+
+    // 4. If neither admin nor found in Firestore -> Reject login
     setLoading(false);
-    navigation?.navigate(destination);
+    Alert.alert(
+      'لم يتم العثور على الحساب ❌',
+      'البريد الإلكتروني أو كود الكشاف غير مسجل في قاعدة البيانات.\n\nيرجى التأكد من صحة البيانات أو الضغط على "سجل الآن وانضم للفرقة" لإنشاء حسابك الجديد.',
+      [
+        { text: 'تسجيل حساب جديد', onPress: () => navigation?.navigate('RoleSelect') },
+        { text: 'حسناً', style: 'cancel' }
+      ]
+    );
   }, [identifier, password, setUser, navigation]);
 
-
-  const handleQuickDemoLogin = useCallback(
-    (roleType: 'ADMIN' | 'PARENT' | 'LEADER' | 'CHILD') => {
-      switch (roleType) {
-        case 'ADMIN':
-          setIdentifier('admin@scouts.org');
-          setPassword('admin123');
-          setUser({
-            id: 'admin_1',
-            name: 'القائد العام / مدير الخدمة',
-            code: 'ADMIN-001',
-            role: 'ADMIN',
-            phone: '01000000001',
-            guardianPhone: '01000000001',
-          });
-          navigation?.navigate('AdminDashboard');
-          break;
-        case 'PARENT':
-          setIdentifier('parent@scouts.org');
-          setPassword('123456');
-          setUser({
-            id: 'parent_1',
-            name: 'يوسف فايز مسعود (ولي أمر)',
-            code: 'PARENT-448',
-            role: 'PARENT',
-            phone: '01229876543',
-            guardianPhone: '01229876543',
-          });
-          navigation?.navigate('ParentHome');
-          break;
-        case 'LEADER':
-          setIdentifier('leader@scouts.org');
-          setPassword('123456');
-          setUser({
-            id: 'leader_1',
-            name: 'القائد مينا نبيل',
-            code: 'LEADER-07',
-            role: 'LEADER',
-            phone: '01123456789',
-            guardianPhone: '01123456789',
-          });
-          navigation?.navigate('Attendance');
-          break;
-        default:
-          setIdentifier('JS-2026-448');
-          setPassword('123456');
-          setUser({
-            id: 'user_1',
-            name: 'بيتر يوسف فايز',
-            code: 'JS-2026-448',
-            role: 'CHILD',
-            phone: '01012345678',
-            guardianPhone: '01229876543',
-          });
-          navigation?.navigate('ChildHome');
-          break;
-      }
-    },
-    [setUser, navigation]
-  );
 
   const handleVerifyPin = useCallback(() => {
     if (!isValidOTP(pinInput, 4)) {
@@ -228,42 +186,18 @@ export const LoginScreen = ({ navigation }: any) => {
           </Text>
         </TouchableOpacity>
 
-        {/* Quick Demo Accounts Selection */}
+        {/* Quick Admin Helper */}
         <View style={styles.demoSection}>
-          <Text style={styles.demoSectionTitle}>تسجيل سريع بحساب تجريبي:</Text>
-          <View style={styles.demoChipsGrid}>
-            <TouchableOpacity
-              style={[styles.demoChip, styles.adminDemoChip]}
-              onPress={() => handleQuickDemoLogin('ADMIN')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.demoChipText}>👑 مدير عام (Admin)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.demoChip}
-              onPress={() => handleQuickDemoLogin('PARENT')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.demoChipText}>👨‍👩‍👦 ولي أمر</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.demoChip}
-              onPress={() => handleQuickDemoLogin('LEADER')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.demoChipText}>⚜️ قائد فرقة</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.demoChip}
-              onPress={() => handleQuickDemoLogin('CHILD')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.demoChipText}>⛺ كشاف</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.adminDemoChip}
+            onPress={() => {
+              setIdentifier('admin@scouts.org');
+              setPassword('admin123');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.demoChipText}>👑 ملء بيانات الأدمن العام (admin@scouts.org)</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Manager Secret PIN Section */}

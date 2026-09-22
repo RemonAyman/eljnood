@@ -15,39 +15,7 @@ interface AttendanceState {
 }
 
 export const useAttendanceStore = create<AttendanceState>((set, get) => ({
-  records: [
-    {
-      id: 'att_1',
-      memberId: 'm1',
-      memberCode: 'JS-2026-448',
-      memberName: 'بيتر يوسف فايز',
-      date: '2026-09-22',
-      eventType: 'SCOUTING_DAY',
-      status: 'PRESENT',
-      recordedBy: 'الخادم مينا نبيل',
-    },
-    {
-      id: 'att_2',
-      memberId: 'm2',
-      memberCode: 'JS-2026-449',
-      memberName: 'مريم هاني كمال',
-      date: '2026-09-22',
-      eventType: 'SCOUTING_DAY',
-      status: 'PRESENT',
-      recordedBy: 'الخادم مينا نبيل',
-    },
-    {
-      id: 'att_3',
-      memberId: 'm3',
-      memberCode: 'JS-2026-450',
-      memberName: 'كيرلس عماد شوقي',
-      date: '2026-09-22',
-      eventType: 'SCOUTING_DAY',
-      status: 'EXCUSED',
-      excuseReason: 'مرض وعذر مسبق',
-      recordedBy: 'الخادم مينا نبيل',
-    },
-  ],
+  records: [],
   markAttendance: (newRecordData) => {
     const existingIndex = get().records.findIndex(
       (r) =>

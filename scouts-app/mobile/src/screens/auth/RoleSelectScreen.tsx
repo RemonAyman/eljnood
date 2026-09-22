@@ -43,11 +43,7 @@ export const RoleSelectScreen = ({ navigation }: any) => {
   ];
 
   const handleSelectRole = (roleOption: RoleOption) => {
-    if (roleOption.role === 'CHILD') {
-      navigation?.navigate('Register');
-    } else {
-      navigation?.navigate('Register');
-    }
+    navigation?.navigate('Register', { role: roleOption.role });
   };
 
   return (
