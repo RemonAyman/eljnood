@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator
 } from 'react-native';
@@ -165,9 +165,31 @@ export const LoginScreen = ({ navigation }: any) => {
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showOfficialList, setShowOfficialList] = useState(true);
+
+  // Security: Failed Attempts and Lockout
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  // Countdown timer for lockout
+  useEffect(() => {
+    let timer: any;
+    if (lockoutSeconds > 0) {
+      timer = setInterval(() => {
+        setLockoutSeconds((prev) => {
+          if (prev <= 1) {
+            setFailedAttempts(0);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [lockoutSeconds]);
 
   // Secret PIN Modal state
   const [showPinModal, setShowPinModal] = useState(false);
@@ -176,6 +198,8 @@ export const LoginScreen = ({ navigation }: any) => {
 
   // Perform Direct Login for Official Account
   const loginDirectlyWithAccount = useCallback((acc: OfficialAccount) => {
+    setFailedAttempts(0);
+    setLockoutSeconds(0);
     setUser({
       id: `official_${acc.id}`,
       name: acc.name,
@@ -190,7 +214,34 @@ export const LoginScreen = ({ navigation }: any) => {
     navigation?.navigate(acc.screen);
   }, [setUser, setPinUnlocked, navigation]);
 
+  const handleFailedLogin = useCallback((msg: string) => {
+    setLoading(false);
+    const newCount = failedAttempts + 1;
+    setFailedAttempts(newCount);
+
+    if (newCount >= 3) {
+      setLockoutSeconds(30);
+      Alert.alert(
+        '⛔ تم قفل تسجيل الدخول مؤقتاً',
+        'لقد استنفدت 3 محاولات خاطئة لكلمة المرور لحماية الحساب.\n\nيرجى الانتظار لمدة 30 ثانية لتتمكن من المحاولة مرة أخرى.'
+      );
+    } else {
+      Alert.alert(
+        'بيانات غير صحيحة ❌',
+        `${msg}\n\nالمحاولات المتبقية قبل القفل المؤقت: ${3 - newCount} من 3.`
+      );
+    }
+  }, [failedAttempts]);
+
   const handleLogin = useCallback(async () => {
+    if (lockoutSeconds > 0) {
+      Alert.alert(
+        'الحساب مقفل مؤقتاً ⏳',
+        `يرجى الانتظار ${lockoutSeconds} ثانية قبل إعادة المحاولة.`
+      );
+      return;
+    }
+
     const { valid, errors: formErrors } = validateLoginForm(identifier, password);
     setErrors(formErrors);
     if (!valid) return;
@@ -216,20 +267,13 @@ export const LoginScreen = ({ navigation }: any) => {
         cleanPass.length >= 4; // Allow any 4+ char password for registered official dev emails
 
       if (passMatches) {
+        setFailedAttempts(0);
+        setLockoutSeconds(0);
         loginDirectlyWithAccount(matchedAccount);
         setLoading(false);
         return;
       } else {
-        // Offer one-click login if wrong password
-        setLoading(false);
-        Alert.alert(
-          'تأكيد الدخول الرسمي 🛡️',
-          `أنت تحاول الدخول بحساب: ${matchedAccount.name}\n\nكلمة المرور الرسمية: ${matchedAccount.pass}`,
-          [
-            { text: 'دخول مباشر الآن ✅', onPress: () => loginDirectlyWithAccount(matchedAccount) },
-            { text: 'إلغاء', style: 'cancel' }
-          ]
-        );
+        handleFailedLogin(`كلمة المرور غير صحيحة للحساب الرسمي: ${matchedAccount.name}.`);
         return;
       }
     }
@@ -249,6 +293,8 @@ export const LoginScreen = ({ navigation }: any) => {
     const realUserDoc = await findUserOrMemberInFirestore(cleanId);
 
     if (realUserDoc) {
+      setFailedAttempts(0);
+      setLockoutSeconds(0);
       const userRole = realUserDoc.role || 'CHILD';
       const realProfile = {
         id: realUserDoc.id || realUserDoc.uid || authUid || `u_${Date.now()}`,
@@ -274,17 +320,9 @@ export const LoginScreen = ({ navigation }: any) => {
       return;
     }
 
-    // 4. If neither admin nor found in Firestore -> Reject login
-    setLoading(false);
-    Alert.alert(
-      'لم يتم العثور على الحساب ❌',
-      'البريد الإلكتروني أو كود الكشاف غير مسجل في قاعدة البيانات.\n\nيرجى التأكد من صحة البيانات أو اختيار حسابك الرسمي من قائمة الحسابات أدناه.',
-      [
-        { text: 'تسجيل حساب جديد', onPress: () => navigation?.navigate('RoleSelect') },
-        { text: 'حسناً', style: 'cancel' }
-      ]
-    );
-  }, [identifier, password, setUser, navigation, loginDirectlyWithAccount]);
+    // 4. If neither admin nor found in Firestore -> Reject login & increment failed attempts
+    handleFailedLogin('البريد الإلكتروني أو كود الكشاف غير مسجل في قاعدة البيانات.');
+  }, [identifier, password, setUser, navigation, loginDirectlyWithAccount, lockoutSeconds, handleFailedLogin]);
 
   const handleVerifyPin = useCallback(() => {
     if (!isValidOTP(pinInput, 4)) {
@@ -331,6 +369,19 @@ export const LoginScreen = ({ navigation }: any) => {
         <Text style={styles.cardTitle}>تسجيل الدخول للكشافة</Text>
         <Text style={styles.cardSub}>أهلاً بعودتك يا بطل، أدخل بياناتك للمتابعة</Text>
 
+        {/* Lockout Warning Banner */}
+        {lockoutSeconds > 0 && (
+          <View style={styles.lockoutBanner}>
+            <Text style={styles.lockoutIcon}>⏳</Text>
+            <View style={styles.lockoutTextWrap}>
+              <Text style={styles.lockoutTitle}>تم قفل تسجيل الدخول مؤقتاً</Text>
+              <Text style={styles.lockoutSub}>
+                استنفدت 3 محاولات خاطئة. انتظر <Text style={styles.lockoutTimer}>{lockoutSeconds}</Text> ثانية للمحاولة مجدداً.
+              </Text>
+            </View>
+          </View>
+        )}
+
         <Text style={styles.inputLabel}>كود الكشاف أو البريد الإلكتروني *</Text>
         <TextInput
           style={[styles.input, errors.identifier ? styles.inputError : null]}
@@ -348,26 +399,50 @@ export const LoginScreen = ({ navigation }: any) => {
             <Text style={styles.forgotLink}>نسيت كلمة السر؟</Text>
           </TouchableOpacity>
         </View>
-        <TextInput
-          style={[styles.input, errors.password ? styles.inputError : null]}
-          placeholder="••••••••"
-          secureTextEntry
-          value={password}
-          onChangeText={(t) => { setPassword(t); if (errors.password) setErrors(e => ({ ...e, password: '' })); }}
-          textAlign="right"
-        />
+
+        {/* Password input with Eye Toggle */}
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={[styles.passwordInput, errors.password ? styles.inputError : null]}
+            placeholder="••••••••"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={(t) => { setPassword(t); if (errors.password) setErrors(e => ({ ...e, password: '' })); }}
+            textAlign="right"
+          />
+          <TouchableOpacity
+            style={styles.eyeBtn}
+            onPress={() => setShowPassword(!showPassword)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '🙈'}</Text>
+          </TouchableOpacity>
+        </View>
         <FieldError message={errors.password} />
 
+        {failedAttempts > 0 && lockoutSeconds === 0 && (
+          <Text style={styles.remainingAttemptsText}>
+            ⚠️ انتبه: لديك {3 - failedAttempts} محاولات متبقية قبل القفل المؤقت.
+          </Text>
+        )}
+
         <TouchableOpacity
-          style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
+          style={[
+            styles.loginBtn,
+            (loading || lockoutSeconds > 0) && styles.loginBtnDisabled
+          ]}
           onPress={handleLogin}
           activeOpacity={0.8}
-          disabled={loading}
+          disabled={loading || lockoutSeconds > 0}
         >
           {loading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.loginBtnText}>تسجيل الدخول إلى حسابك ←</Text>
+            <Text style={styles.loginBtnText}>
+              {lockoutSeconds > 0
+                ? `انتظر (${lockoutSeconds} ثانية) ⏳`
+                : 'تسجيل الدخول إلى حسابك ←'}
+            </Text>
           )}
         </TouchableOpacity>
 
@@ -579,6 +654,40 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 16,
   },
+  lockoutBanner: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#F87171',
+    borderWidth: 1.5,
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  lockoutIcon: {
+    fontSize: 26,
+    marginLeft: 10,
+  },
+  lockoutTextWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  lockoutTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#991B1B',
+    marginBottom: 2,
+  },
+  lockoutSub: {
+    fontSize: 11,
+    color: '#7F1D1D',
+    lineHeight: 16,
+  },
+  lockoutTimer: {
+    fontWeight: 'bold',
+    fontSize: 13,
+    color: '#DC2626',
+  },
   inputLabel: {
     fontSize: 12,
     fontWeight: 'bold',
@@ -607,6 +716,31 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 4,
   },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  eyeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    fontSize: 18,
+  },
   inputError: {
     borderColor: '#EF4444',
     backgroundColor: '#FEF2F2',
@@ -617,12 +751,19 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 8,
   },
+  remainingAttemptsText: {
+    fontSize: 11,
+    color: '#D97706',
+    fontWeight: '600',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
   loginBtn: {
     backgroundColor: '#8B0000',
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 6,
     marginBottom: 16,
   },
   loginBtnDisabled: {
