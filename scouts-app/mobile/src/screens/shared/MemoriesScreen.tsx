@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  Image,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 
@@ -21,6 +22,7 @@ interface MemoryItem {
   commentsCount: number;
   type: 'PHOTO' | 'VIDEO' | 'ALBUM';
   coverEmoji: string;
+  coverImageUrl?: string;
   description: string;
 }
 
@@ -45,6 +47,7 @@ const INITIAL_MEMORIES: MemoryItem[] = [
     commentsCount: 28,
     type: 'ALBUM',
     coverEmoji: '🏕️',
+    coverImageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80',
     description: 'أجمل ٤ أيام من التخييم، طهي الخلاء، السمر الكشفي، وحفلات السمر حول النار.',
   },
   {
@@ -57,6 +60,7 @@ const INITIAL_MEMORIES: MemoryItem[] = [
     commentsCount: 15,
     type: 'PHOTO',
     coverEmoji: '🧣',
+    coverImageUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80',
     description: 'تسليم المنديل الكشفي لدفعة البراعم والأشبال الجدد مع تكريم القادة المتميزين.',
   },
   {
@@ -69,6 +73,7 @@ const INITIAL_MEMORIES: MemoryItem[] = [
     commentsCount: 19,
     type: 'ALBUM',
     coverEmoji: '🚌',
+    coverImageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
     description: 'صعود مغارة الأنبا أنطونيوس وأخذ بركة القديس مع يوم روحي وتاريخي لا ينسى.',
   },
   {
@@ -81,6 +86,7 @@ const INITIAL_MEMORIES: MemoryItem[] = [
     commentsCount: 42,
     type: 'PHOTO',
     coverEmoji: '🏆',
+    coverImageUrl: 'https://images.unsplash.com/photo-1496337589254-7e19d01cec44?w=800&q=80',
     description: 'فريق كشافة جنود المسيح يحصد كأس الريادة والابتكار الكشفي للمرة الثالثة على التوالي.',
   },
   {
@@ -93,7 +99,34 @@ const INITIAL_MEMORIES: MemoryItem[] = [
     commentsCount: 12,
     type: 'PHOTO',
     coverEmoji: '🕯️',
+    coverImageUrl: 'https://images.unsplash.com/photo-1510973005906-c5b1a0d6c5f4?w=800&q=80',
     description: 'صلاة وتسبحة خاشعة بمشاركة جميع فرق البراعم، الأشبال، الكشاف، والجوالة.',
+  },
+  {
+    id: 'm6',
+    category: 'SPIRITUAL',
+    title: 'خلوة قطاع الجوالة الروحية السنوية',
+    eventDate: 'مارس 2026',
+    location: 'دير الأنبا بيشوي - وادي النطرون',
+    likesCount: 73,
+    commentsCount: 9,
+    type: 'ALBUM',
+    coverEmoji: '🕊️',
+    coverImageUrl: 'https://images.unsplash.com/photo-1476611338391-6f395a0dd82e?w=800&q=80',
+    description: 'يوم روحي متكامل للجوالة والقادة مع القسيس المرشد وجلسات التأمل والصلاة.',
+  },
+  {
+    id: 'm7',
+    category: 'GROUP_PHOTOS',
+    title: 'صورة المجموعة التذكارية - اليوم الكشفي 2026',
+    eventDate: 'سبتمبر 2026',
+    location: 'ساحة الكنيسة الكبرى',
+    likesCount: 256,
+    commentsCount: 68,
+    type: 'PHOTO',
+    coverEmoji: '📸',
+    coverImageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80',
+    description: 'الصورة التذكارية الرسمية لأسرة مجموعة جنود المسيح الكشفية في اليوم الكشفي السنوي.',
   },
 ];
 
@@ -200,11 +233,22 @@ export const MemoriesScreen = () => {
                     activeOpacity={0.8}
                     onPress={() => setActiveMemory(item)}
                   >
-                    <Text style={styles.photoEmoji}>{item.coverEmoji}</Text>
+                    {item.coverImageUrl ? (
+                      <Image
+                        source={{ uri: item.coverImageUrl }}
+                        style={styles.coverImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text style={styles.photoEmoji}>{item.coverEmoji}</Text>
+                    )}
                     <View style={styles.photoBadge}>
                       <Text style={styles.photoBadgeText}>
-                        {item.type === 'ALBUM' ? '📁 ألبوم كامل' : '📷 صورة'}
+                        {item.type === 'ALBUM' ? '📁 ألبوم كامل' : item.type === 'VIDEO' ? '🎥 فيديو' : '📷 صورة'}
                       </Text>
+                    </View>
+                    <View style={styles.photoOverlayEmoji}>
+                      <Text>{item.coverEmoji}</Text>
                     </View>
                   </TouchableOpacity>
 
@@ -246,14 +290,30 @@ export const MemoriesScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.lightboxCard}>
             <View style={styles.lightboxVisual}>
-              <Text style={{ fontSize: 60 }}>{activeMemory?.coverEmoji}</Text>
+              {activeMemory?.coverImageUrl ? (
+                <Image
+                  source={{ uri: activeMemory.coverImageUrl }}
+                  style={{ width: '100%', height: '100%', borderRadius: 14 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={{ fontSize: 60 }}>{activeMemory?.coverEmoji}</Text>
+              )}
+              <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 11 }}>
+                  {activeMemory?.type === 'ALBUM' ? '📁 ألبوم' : activeMemory?.type === 'VIDEO' ? '🎥 فيديو' : '📷 صورة'}
+                </Text>
+              </View>
             </View>
             <Text style={styles.lightboxTitle}>{activeMemory?.title}</Text>
             <Text style={styles.lightboxMeta}>
               📍 {activeMemory?.location} • 📅 {activeMemory?.eventDate}
             </Text>
             <Text style={styles.lightboxDesc}>{activeMemory?.description}</Text>
-
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 14 }}>
+              <Text style={{ fontWeight: 'bold', color: '#DC2626' }}>❤️ {activeMemory?.likesCount} إعجاب</Text>
+              <Text style={{ fontWeight: 'bold', color: '#6B7280' }}>💬 {activeMemory?.commentsCount} تعليق</Text>
+            </View>
             <TouchableOpacity style={styles.lightboxCloseBtn} onPress={() => setActiveMemory(null)}>
               <Text style={styles.lightboxCloseBtnText}>إغلاق</Text>
             </TouchableOpacity>
@@ -367,8 +427,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    overflow: 'hidden',
+  },
+  coverImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   photoEmoji: { fontSize: 60 },
+  photoOverlayEmoji: {
+    position: 'absolute',
+    bottom: 10,
+    left: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
   photoBadge: {
     position: 'absolute',
     top: 12,

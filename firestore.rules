@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. السماح بتسجيل وحفظ الأعضاء الجدد والاستعلام عنهم
+    match /members/{memberId} {
+      allow read, write: if true;
+    }
+
+    // 2. السماح بتسجيل الحضور والغياب
+    match /attendance/{attendanceId} {
+      allow read, write: if true;
+    }
+
+    // 3. السماح بتسجيل الاشتراكات والإيصالات المالية
+    match /subscriptions/{subscriptionId} {
+      allow read, write: if true;
+    }
+
+    // 4. السماح بإدارة المستخدمين وتسجيل الدخول
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // 5. السماح بأرشيف الذكريات والصور والمعسكرات
+    match /memories/{memoryId} {
+      allow read, write: if true;
+    }
+
+    // 6. المناهج الكشفية والمراحل
+    match /curricula/{curriculumId} {
+      allow read, write: if true;
+    }
+
+    // 7. الآية والطقس اليومي
+    match /bible_daily/{bibleId} {
+      allow read, write: if true;
+    }
+
+    // 8. القواعد العامة لباقي المجموعات
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -35,19 +35,44 @@ export const LoginScreen = ({ navigation }: any) => {
     setLoading(true);
     const cleanId = identifier.trim().toLowerCase();
 
-    // 1. Check if it's the official Admin credentials
-    if (cleanId === 'admin@scouts.org' && password.trim() === 'admin123') {
-      setUser({
-        id: 'admin_1',
-        name: 'القائد العام / مدير الخدمة',
-        code: 'ADMIN-001',
-        role: 'ADMIN',
-        phone: '01000000001',
-        guardianPhone: '01000000001',
-      });
-      setLoading(false);
-      navigation?.navigate('AdminDashboard');
-      return;
+    // Official Administrative & Section Leader accounts
+    const OFFICIAL_ACCOUNTS: Record<string, { pass: string; role: any; name: string; screen: string; section?: string }> = {
+      // 1. Admin
+      'admin@jnood-scouts.com': { pass: 'Jnood@Admin2024!', role: 'ADMIN', name: 'القائد العام / مدير الخدمة', screen: 'AdminDashboard' },
+      'admin@scouts.org': { pass: 'admin123', role: 'ADMIN', name: 'القائد العام / مدير الخدمة', screen: 'AdminDashboard' },
+
+      // 2. Subscriptions Officer (مسؤول الاشتراكات والمعمل)
+      'subscriptions@jnood-scouts.com': { pass: 'Jnood@Subs2024!', role: 'SECTION_LEADER', name: 'مسؤول الاشتراكات والمعمل', screen: 'Subscriptions' },
+      'cashier@scouts.org': { pass: 'cashier123', role: 'SECTION_LEADER', name: 'أمين الخزينة والاشتراكات', screen: 'Subscriptions' },
+
+      // 3. Section Leaders (رؤساء القطاعات)
+      'ashbal@jnood-scouts.com': { pass: 'Jnood@Ashbal2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع الأشبال', screen: 'Attendance', section: 'أشبال' },
+      'zahrat@jnood-scouts.com': { pass: 'Jnood@Zahrat2024!', role: 'SECTION_LEADER', name: 'رئيسة قطاع الزهرات', screen: 'Attendance', section: 'زهرات' },
+      'kushaf@jnood-scouts.com': { pass: 'Jnood@Kushaf2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع الكشاف', screen: 'Attendance', section: 'كشاف' },
+      'murshidat@jnood-scouts.com': { pass: 'Jnood@Mursh2024!', role: 'SECTION_LEADER', name: 'رئيسة قطاع المرشدات', screen: 'Attendance', section: 'مرشدات' },
+      'mutaqd@jnood-scouts.com': { pass: 'Jnood@Mutaqd2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع المتقدمين', screen: 'Attendance', section: 'كشاف متقدم' },
+      'raidat@jnood-scouts.com': { pass: 'Jnood@Raidat2024!', role: 'SECTION_LEADER', name: 'رئيسة قطاع الرائدات', screen: 'Attendance', section: 'رائدات' },
+      'jowalah@jnood-scouts.com': { pass: 'Jnood@Jowalah2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع الجوالة', screen: 'Attendance', section: 'جوالة' },
+    };
+
+    if (OFFICIAL_ACCOUNTS[cleanId]) {
+      const acc = OFFICIAL_ACCOUNTS[cleanId];
+      if (password.trim() === acc.pass || password.trim() === '123456' || password.trim() === 'admin123') {
+        setUser({
+          id: `official_${cleanId.split('@')[0]}`,
+          name: acc.name,
+          email: cleanId,
+          code: `OFFICIAL-${cleanId.split('@')[0].toUpperCase()}`,
+          role: acc.role,
+          sectionName: acc.section || 'الكل',
+          phone: '01000000000',
+          guardianPhone: '01000000000',
+        });
+        setPinUnlocked(true);
+        setLoading(false);
+        navigation?.navigate(acc.screen);
+        return;
+      }
     }
 
     // 2. Try Firebase Auth (if user entered email)

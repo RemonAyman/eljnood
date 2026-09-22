@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal } from 'react-native';
 import { Member } from '../../types';
 
 interface ScoutCardPreviewProps {
@@ -8,6 +8,8 @@ interface ScoutCardPreviewProps {
 }
 
 export const ScoutCardPreview: React.FC<ScoutCardPreviewProps> = ({ member, onPrint }) => {
+  const [showQrModal, setShowQrModal] = useState(false);
+
   const getScarfBadge = () => {
     switch (member.scarfStatus) {
       case 'RECEIVED':
@@ -16,17 +18,20 @@ export const ScoutCardPreview: React.FC<ScoutCardPreviewProps> = ({ member, onPr
         return { text: '❌ لم يستلم المنديل', bg: '#FEF3C7', color: '#92400E' };
       case 'WITHDRAWN':
         return { text: '⚠️ مسحوب المنديل', bg: '#FEE2E2', color: '#991B1B' };
+      default:
+        return { text: '🧣 عضو كشفي معتمد', bg: '#D1FAE5', color: '#065F46' };
     }
   };
 
   const scarf = getScarfBadge();
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(member.code)}`;
 
   return (
     <View style={styles.cardContainer}>
       {/* Header Banner */}
       <View style={styles.headerBanner}>
         <Text style={styles.groupTitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.churchTitle}>مجموعة جنود المسيح الكشفية</Text>
+        <Text style={styles.churchTitle}>بطاقة العضوية والرمز الكشفي الرسمي</Text>
       </View>
 
       {/* Profile Section */}
@@ -43,12 +48,16 @@ export const ScoutCardPreview: React.FC<ScoutCardPreviewProps> = ({ member, onPr
           </View>
         </View>
 
-        {/* Photo */}
+        {/* Photo with fallback */}
         <View style={styles.avatarContainer}>
-          <Image
-            source={{ uri: member.avatarBase64 || 'https://via.placeholder.com/100' }}
-            style={styles.avatar}
-          />
+          {member.avatarBase64 ? (
+            <Image source={{ uri: member.avatarBase64 }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarEmoji}>{member.gender === 'FEMALE' ? '👧' : '👦'}</Text>
+              <Text style={styles.avatarBadgeText}>كشاف</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -58,20 +67,60 @@ export const ScoutCardPreview: React.FC<ScoutCardPreviewProps> = ({ member, onPr
         {member.phone && <Text style={styles.detailText}>📱 الطفل: {member.phone}</Text>}
       </View>
 
-      {/* QR Code Placeholder */}
-      <View style={styles.qrSection}>
+      {/* Real QR Code Section with tap to zoom */}
+      <TouchableOpacity 
+        style={styles.qrSection} 
+        onPress={() => setShowQrModal(true)}
+        activeOpacity={0.85}
+      >
         <View style={styles.qrBox}>
-          <Text style={styles.qrCodeIcon}>🏁 QR CODE</Text>
+          <Image
+            source={{ uri: qrUrl }}
+            style={styles.qrImage}
+            resizeMode="contain"
+          />
           <Text style={styles.qrSubText}>{member.code}</Text>
+          <Text style={styles.qrTapHint}>🔍 اضغط لتكبير الـ QR لتسجيل الحضور</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Action Button */}
       {onPrint && (
         <TouchableOpacity style={styles.printBtn} onPress={onPrint} activeOpacity={0.8}>
-          <Text style={styles.printBtnText}>🖨️ طباعة الكارنيه مباشرة</Text>
+          <Text style={styles.printBtnText}>🧾 سداد الاشتراكات والإيصالات</Text>
         </TouchableOpacity>
       )}
+
+      {/* QR Code Fullscreen Modal */}
+      <Modal visible={showQrModal} transparent animationType="fade">
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowQrModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>كود الحضور الكشفي (QR Code)</Text>
+            <Text style={styles.modalSub}>{member.name} • {member.squadName}</Text>
+            <View style={styles.modalQrWrapper}>
+              <Image
+                source={{ uri: qrUrl }}
+                style={styles.modalQrImage}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.modalCodeText}>{member.code}</Text>
+            <Text style={styles.modalInstruction}>
+              قرّب هذا الكود من جهاز قارئ الباركود أو كاميرا قائد القطاع لتسجيل حضورك
+            </Text>
+            <TouchableOpacity 
+              style={styles.modalCloseBtn}
+              onPress={() => setShowQrModal(false)}
+            >
+              <Text style={styles.modalCloseBtnText}>إغلاق</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -154,14 +203,31 @@ const styles = StyleSheet.create({
   avatarContainer: {
     width: 80,
     height: 90,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: '#D4A359',
     overflow: 'hidden',
+    backgroundColor: '#FEF2F2',
   },
   avatar: {
     width: '100%',
     height: '100%',
+  },
+  avatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+  },
+  avatarEmoji: {
+    fontSize: 34,
+  },
+  avatarBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#8B0000',
+    marginTop: 2,
   },
   detailsBox: {
     backgroundColor: '#FAF7F2',
@@ -181,21 +247,27 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   qrBox: {
-    backgroundColor: '#FAF7F2',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#E5E7EB',
     padding: 12,
     alignItems: 'center',
-    width: 140,
+    width: 170,
   },
-  qrCodeIcon: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#8B0000',
+  qrImage: {
+    width: 120,
+    height: 120,
+    backgroundColor: '#FFFFFF',
   },
   qrSubText: {
-    fontSize: 10,
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#8B0000',
+    marginTop: 6,
+  },
+  qrTapHint: {
+    fontSize: 9,
     color: '#6B7280',
     marginTop: 4,
   },
@@ -210,5 +282,70 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#8B0000',
+    marginBottom: 4,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: '#4B5563',
+    marginBottom: 16,
+  },
+  modalQrWrapper: {
+    padding: 12,
+    backgroundColor: '#FAF7F2',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#D4A359',
+    marginBottom: 12,
+  },
+  modalQrImage: {
+    width: 220,
+    height: 220,
+  },
+  modalCodeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8B0000',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  modalInstruction: {
+    fontSize: 11,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 18,
+    lineHeight: 16,
+  },
+  modalCloseBtn: {
+    backgroundColor: '#8B0000',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalCloseBtnText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
