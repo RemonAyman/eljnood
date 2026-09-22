@@ -168,7 +168,6 @@ export const LoginScreen = ({ navigation }: any) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [showOfficialList, setShowOfficialList] = useState(true);
 
   // Security: Failed Attempts and Lockout
   const [failedAttempts, setFailedAttempts] = useState(0);
@@ -446,58 +445,7 @@ export const LoginScreen = ({ navigation }: any) => {
           )}
         </TouchableOpacity>
 
-        {/* Official Accounts Quick Login Hub */}
-        <View style={styles.officialHeaderRow}>
-          <TouchableOpacity
-            style={styles.toggleOfficialBtn}
-            onPress={() => setShowOfficialList(!showOfficialList)}
-          >
-            <Text style={styles.toggleOfficialText}>
-              {showOfficialList ? '🔼 إخفاء الحسابات' : '🔽 إظهار الحسابات'}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.officialSectionTitle}>👑 الحسابات الرسمية المعتمدة</Text>
-        </View>
 
-        {showOfficialList && (
-          <View style={styles.officialAccountsGrid}>
-            <Text style={styles.officialHint}>
-              اضغط على أي حساب للدخول المباشر الفوري أو ملء البيانات تلقائياً:
-            </Text>
-
-            {OFFICIAL_SCOUT_ACCOUNTS.map((acc) => (
-              <View key={acc.id} style={[styles.accountCard, { borderLeftColor: acc.color }]}>
-                <View style={styles.accountInfoRow}>
-                  <Text style={styles.accountIcon}>{acc.icon}</Text>
-                  <View style={styles.accountTextWrap}>
-                    <Text style={[styles.accountCategory, { color: acc.color }]}>{acc.category}</Text>
-                    <Text style={styles.accountEmail}>{acc.email}</Text>
-                    <Text style={styles.accountPass}>🔑 {acc.pass}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.accountActionsRow}>
-                  <TouchableOpacity
-                    style={[styles.quickFillBtn]}
-                    onPress={() => {
-                      setIdentifier(acc.email);
-                      setPassword(acc.pass);
-                    }}
-                  >
-                    <Text style={styles.quickFillText}>✍️ ملء</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.directLoginBtn, { backgroundColor: acc.color }]}
-                    onPress={() => loginDirectlyWithAccount(acc)}
-                  >
-                    <Text style={styles.directLoginText}>⚡ دخول فوري</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
 
         {/* Manager Secret PIN Section */}
         <View style={styles.divider} />
