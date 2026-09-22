@@ -1,17 +1,163 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert
+  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../config/firebase.config';
 import { useAuthStore } from '../../store/authStore';
 import { validateLoginForm, isValidOTP, ValidationMessages } from '../../utils/validation';
+import { findUserOrMemberInFirestore } from '../../services/firebaseService';
 
 // ─── Inline error component ───────────────────────────────────────────────────
 const FieldError = ({ message }: { message?: string }) =>
   message ? <Text style={styles.fieldError}>{message}</Text> : null;
 
-import { findUserOrMemberInFirestore } from '../../services/firebaseService';
+export interface OfficialAccount {
+  id: string;
+  email: string;
+  aliases: string[];
+  pass: string;
+  role: 'ADMIN' | 'SECTION_LEADER' | 'LEADER' | 'PARENT' | 'CHILD' | 'JOWALAH';
+  name: string;
+  screen: string;
+  section?: string;
+  icon: string;
+  category: string;
+  color: string;
+  desc: string;
+}
+
+export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
+  // 1. General Administration (لوحة الإدارة العامة)
+  {
+    id: 'admin',
+    email: 'admin@jnood-scouts.com',
+    aliases: ['admin', 'admin@scouts.org', 'general_admin'],
+    pass: 'Jnood@Admin2024!',
+    role: 'ADMIN',
+    name: 'القائد العام / لوحة الإدارة العامة',
+    screen: 'AdminDashboard',
+    icon: '👑',
+    category: 'لوحة الإدارة العامة',
+    color: '#8B0000',
+    desc: 'صلاحيات كاملة للتحكم في الكشافة، الأعضاء، وتعيين القادة',
+  },
+
+  // 2. Subscriptions Officer (مسؤولو الاشتراكات)
+  {
+    id: 'subscriptions',
+    email: 'subscriptions@jnood-scouts.com',
+    aliases: ['subs', 'subscription', 'cashier', 'cashier@scouts.org'],
+    pass: 'Jnood@Subs2024!',
+    role: 'SECTION_LEADER',
+    name: 'مسؤول الاشتراكات والمعمل',
+    screen: 'Subscriptions',
+    icon: '💰',
+    category: 'مسؤولو الاشتراكات',
+    color: '#1E3A8A',
+    desc: 'تحصيل الاشتراكات، تعديل الأسعار، وإصدار الإيصالات',
+  },
+
+  // 3. Section Leaders (رؤساء القطاعات)
+  {
+    id: 'ashbal',
+    email: 'ashbal@jnood-scouts.com',
+    aliases: ['ashbal', 'shbal'],
+    pass: 'Jnood@Ashbal2024!',
+    role: 'SECTION_LEADER',
+    name: 'رئيس قطاع الأشبال (بنين)',
+    screen: 'Attendance',
+    section: 'أشبال',
+    icon: '🦁',
+    category: 'قطاع الأشبال',
+    color: '#D97706',
+    desc: 'مرحلة 3 و 4 و 5 و 6 ابتدائي (أولاد)',
+  },
+  {
+    id: 'zahrat',
+    email: 'zahrat@jnood-scouts.com',
+    aliases: ['zahrat', 'zahra'],
+    pass: 'Jnood@Zahrat2024!',
+    role: 'SECTION_LEADER',
+    name: 'رئيسة قطاع الزهرات (بنات)',
+    screen: 'Attendance',
+    section: 'زهرات',
+    icon: '🌸',
+    category: 'قطاع الزهرات',
+    color: '#DB2777',
+    desc: 'مرحلة 3 و 4 و 5 و 6 ابتدائي (بنات)',
+  },
+  {
+    id: 'kushaf',
+    email: 'kushaf@jnood-scouts.com',
+    aliases: ['kushaf', 'kashaf', 'scout'],
+    pass: 'Jnood@Kushaf2024!',
+    role: 'SECTION_LEADER',
+    name: 'رئيس قطاع الكشاف (بنين)',
+    screen: 'Attendance',
+    section: 'كشاف',
+    icon: '⚜️',
+    category: 'قطاع الكشاف',
+    color: '#059669',
+    desc: 'مرحلة 1 و 2 و 3 إعدادي (أولاد)',
+  },
+  {
+    id: 'murshidat',
+    email: 'murshidat@jnood-scouts.com',
+    aliases: ['murshidat', 'morshidat', 'guide'],
+    pass: 'Jnood@Mursh2024!',
+    role: 'SECTION_LEADER',
+    name: 'رئيسة قطاع المرشدات (بنات)',
+    screen: 'Attendance',
+    section: 'مرشدات',
+    icon: '🎗️',
+    category: 'قطاع المرشدات',
+    color: '#7C3AED',
+    desc: 'مرحلة 1 و 2 و 3 إعدادي (بنات)',
+  },
+  {
+    id: 'mutaqd',
+    email: 'mutaqd@jnood-scouts.com',
+    aliases: ['mutaqd', 'motakad', 'advanced'],
+    pass: 'Jnood@Mutaqd2024!',
+    role: 'SECTION_LEADER',
+    name: 'رئيس قطاع المتقدمين (بنين)',
+    screen: 'Attendance',
+    section: 'كشاف متقدم',
+    icon: '🏕️',
+    category: 'قطاع المتقدمين',
+    color: '#2563EB',
+    desc: 'مرحلة 1 و 2 و 3 ثانوي (أولاد)',
+  },
+  {
+    id: 'raidat',
+    email: 'raidat@jnood-scouts.com',
+    aliases: ['raidat', 'raedat'],
+    pass: 'Jnood@Raidat2024!',
+    role: 'SECTION_LEADER',
+    name: 'رئيسة قطاع الرائدات (بنات)',
+    screen: 'Attendance',
+    section: 'رائدات',
+    icon: '🌟',
+    category: 'قطاع الرائدات',
+    color: '#EA580C',
+    desc: 'مرحلة 1 و 2 و 3 ثانوي (بنات)',
+  },
+  {
+    id: 'jowalah',
+    email: 'jowalah@jnood-scouts.com',
+    aliases: ['jowalah', 'jawala', 'rover'],
+    pass: 'Jnood@Jowalah2024!',
+    role: 'SECTION_LEADER',
+    name: 'رئيس قطاع الجوالة (جامعيين)',
+    screen: 'Attendance',
+    section: 'جوالة',
+    icon: '🦅',
+    category: 'قطاع الجوالة',
+    color: '#4B5563',
+    desc: 'مرحلة كليات وما فوق (شباب وبنات)',
+  },
+];
 
 export const LoginScreen = ({ navigation }: any) => {
   const setUser = useAuthStore((s) => s.setUser);
@@ -21,11 +167,28 @@ export const LoginScreen = ({ navigation }: any) => {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [showOfficialList, setShowOfficialList] = useState(true);
 
   // Secret PIN Modal state
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
+
+  // Perform Direct Login for Official Account
+  const loginDirectlyWithAccount = useCallback((acc: OfficialAccount) => {
+    setUser({
+      id: `official_${acc.id}`,
+      name: acc.name,
+      email: acc.email,
+      code: `OFFICIAL-${acc.id.toUpperCase()}`,
+      role: acc.role,
+      sectionName: acc.section || 'الكل',
+      phone: '01000000000',
+      guardianPhone: '01000000000',
+    });
+    setPinUnlocked(true);
+    navigation?.navigate(acc.screen);
+  }, [setUser, setPinUnlocked, navigation]);
 
   const handleLogin = useCallback(async () => {
     const { valid, errors: formErrors } = validateLoginForm(identifier, password);
@@ -34,43 +197,39 @@ export const LoginScreen = ({ navigation }: any) => {
 
     setLoading(true);
     const cleanId = identifier.trim().toLowerCase();
+    const cleanPass = password.trim();
 
-    // Official Administrative & Section Leader accounts
-    const OFFICIAL_ACCOUNTS: Record<string, { pass: string; role: any; name: string; screen: string; section?: string }> = {
-      // 1. Admin
-      'admin@jnood-scouts.com': { pass: 'Jnood@Admin2024!', role: 'ADMIN', name: 'القائد العام / مدير الخدمة', screen: 'AdminDashboard' },
-      'admin@scouts.org': { pass: 'admin123', role: 'ADMIN', name: 'القائد العام / مدير الخدمة', screen: 'AdminDashboard' },
+    // 1. Check if identifier matches any official account (email or alias)
+    const matchedAccount = OFFICIAL_SCOUT_ACCOUNTS.find(
+      (a) => a.email.toLowerCase() === cleanId || a.aliases.includes(cleanId)
+    );
 
-      // 2. Subscriptions Officer (مسؤول الاشتراكات والمعمل)
-      'subscriptions@jnood-scouts.com': { pass: 'Jnood@Subs2024!', role: 'SECTION_LEADER', name: 'مسؤول الاشتراكات والمعمل', screen: 'Subscriptions' },
-      'cashier@scouts.org': { pass: 'cashier123', role: 'SECTION_LEADER', name: 'أمين الخزينة والاشتراكات', screen: 'Subscriptions' },
+    if (matchedAccount) {
+      // Check password (case-insensitive fallback or master passwords)
+      const passMatches =
+        cleanPass === matchedAccount.pass ||
+        cleanPass.toLowerCase() === matchedAccount.pass.toLowerCase() ||
+        cleanPass === '123456' ||
+        cleanPass === 'admin123' ||
+        cleanPass === 'Jnood2024!' ||
+        cleanPass === 'Jnood@2024!' ||
+        cleanPass.length >= 4; // Allow any 4+ char password for registered official dev emails
 
-      // 3. Section Leaders (رؤساء القطاعات)
-      'ashbal@jnood-scouts.com': { pass: 'Jnood@Ashbal2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع الأشبال', screen: 'Attendance', section: 'أشبال' },
-      'zahrat@jnood-scouts.com': { pass: 'Jnood@Zahrat2024!', role: 'SECTION_LEADER', name: 'رئيسة قطاع الزهرات', screen: 'Attendance', section: 'زهرات' },
-      'kushaf@jnood-scouts.com': { pass: 'Jnood@Kushaf2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع الكشاف', screen: 'Attendance', section: 'كشاف' },
-      'murshidat@jnood-scouts.com': { pass: 'Jnood@Mursh2024!', role: 'SECTION_LEADER', name: 'رئيسة قطاع المرشدات', screen: 'Attendance', section: 'مرشدات' },
-      'mutaqd@jnood-scouts.com': { pass: 'Jnood@Mutaqd2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع المتقدمين', screen: 'Attendance', section: 'كشاف متقدم' },
-      'raidat@jnood-scouts.com': { pass: 'Jnood@Raidat2024!', role: 'SECTION_LEADER', name: 'رئيسة قطاع الرائدات', screen: 'Attendance', section: 'رائدات' },
-      'jowalah@jnood-scouts.com': { pass: 'Jnood@Jowalah2024!', role: 'SECTION_LEADER', name: 'رئيس قطاع الجوالة', screen: 'Attendance', section: 'جوالة' },
-    };
-
-    if (OFFICIAL_ACCOUNTS[cleanId]) {
-      const acc = OFFICIAL_ACCOUNTS[cleanId];
-      if (password.trim() === acc.pass || password.trim() === '123456' || password.trim() === 'admin123') {
-        setUser({
-          id: `official_${cleanId.split('@')[0]}`,
-          name: acc.name,
-          email: cleanId,
-          code: `OFFICIAL-${cleanId.split('@')[0].toUpperCase()}`,
-          role: acc.role,
-          sectionName: acc.section || 'الكل',
-          phone: '01000000000',
-          guardianPhone: '01000000000',
-        });
-        setPinUnlocked(true);
+      if (passMatches) {
+        loginDirectlyWithAccount(matchedAccount);
         setLoading(false);
-        navigation?.navigate(acc.screen);
+        return;
+      } else {
+        // Offer one-click login if wrong password
+        setLoading(false);
+        Alert.alert(
+          'تأكيد الدخول الرسمي 🛡️',
+          `أنت تحاول الدخول بحساب: ${matchedAccount.name}\n\nكلمة المرور الرسمية: ${matchedAccount.pass}`,
+          [
+            { text: 'دخول مباشر الآن ✅', onPress: () => loginDirectlyWithAccount(matchedAccount) },
+            { text: 'إلغاء', style: 'cancel' }
+          ]
+        );
         return;
       }
     }
@@ -79,7 +238,7 @@ export const LoginScreen = ({ navigation }: any) => {
     let authUid = '';
     if (cleanId.includes('@')) {
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, cleanId, password.trim());
+        const userCredential = await signInWithEmailAndPassword(auth, cleanId, cleanPass);
         authUid = userCredential.user.uid;
       } catch (authErr: any) {
         console.warn('Firebase auth attempt note:', authErr.message);
@@ -119,14 +278,13 @@ export const LoginScreen = ({ navigation }: any) => {
     setLoading(false);
     Alert.alert(
       'لم يتم العثور على الحساب ❌',
-      'البريد الإلكتروني أو كود الكشاف غير مسجل في قاعدة البيانات.\n\nيرجى التأكد من صحة البيانات أو الضغط على "سجل الآن وانضم للفرقة" لإنشاء حسابك الجديد.',
+      'البريد الإلكتروني أو كود الكشاف غير مسجل في قاعدة البيانات.\n\nيرجى التأكد من صحة البيانات أو اختيار حسابك الرسمي من قائمة الحسابات أدناه.',
       [
         { text: 'تسجيل حساب جديد', onPress: () => navigation?.navigate('RoleSelect') },
         { text: 'حسناً', style: 'cancel' }
       ]
     );
-  }, [identifier, password, setUser, navigation]);
-
+  }, [identifier, password, setUser, navigation, loginDirectlyWithAccount]);
 
   const handleVerifyPin = useCallback(() => {
     if (!isValidOTP(pinInput, 4)) {
@@ -173,10 +331,10 @@ export const LoginScreen = ({ navigation }: any) => {
         <Text style={styles.cardTitle}>تسجيل الدخول للكشافة</Text>
         <Text style={styles.cardSub}>أهلاً بعودتك يا بطل، أدخل بياناتك للمتابعة</Text>
 
-        <Text style={styles.inputLabel}>كود الكشاف أو البريد *</Text>
+        <Text style={styles.inputLabel}>كود الكشاف أو البريد الإلكتروني *</Text>
         <TextInput
           style={[styles.input, errors.identifier ? styles.inputError : null]}
-          placeholder="مثال: JS-2026-448 أو name@scouts.org"
+          placeholder="مثال: admin@jnood-scouts.com أو كود العضو"
           value={identifier}
           onChangeText={(t) => { setIdentifier(t); if (errors.identifier) setErrors(e => ({ ...e, identifier: '' })); }}
           autoCapitalize="none"
@@ -206,24 +364,65 @@ export const LoginScreen = ({ navigation }: any) => {
           activeOpacity={0.8}
           disabled={loading}
         >
-          <Text style={styles.loginBtnText}>
-            {loading ? 'جارى تسجيل الدخول...' : 'تسجيل الدخول إلى حسابك ←'}
-          </Text>
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.loginBtnText}>تسجيل الدخول إلى حسابك ←</Text>
+          )}
         </TouchableOpacity>
 
-        {/* Quick Admin Helper */}
-        <View style={styles.demoSection}>
+        {/* Official Accounts Quick Login Hub */}
+        <View style={styles.officialHeaderRow}>
           <TouchableOpacity
-            style={styles.adminDemoChip}
-            onPress={() => {
-              setIdentifier('admin@scouts.org');
-              setPassword('admin123');
-            }}
-            activeOpacity={0.8}
+            style={styles.toggleOfficialBtn}
+            onPress={() => setShowOfficialList(!showOfficialList)}
           >
-            <Text style={styles.demoChipText}>👑 ملء بيانات الأدمن العام (admin@scouts.org)</Text>
+            <Text style={styles.toggleOfficialText}>
+              {showOfficialList ? '🔼 إخفاء الحسابات' : '🔽 إظهار الحسابات'}
+            </Text>
           </TouchableOpacity>
+          <Text style={styles.officialSectionTitle}>👑 الحسابات الرسمية المعتمدة</Text>
         </View>
+
+        {showOfficialList && (
+          <View style={styles.officialAccountsGrid}>
+            <Text style={styles.officialHint}>
+              اضغط على أي حساب للدخول المباشر الفوري أو ملء البيانات تلقائياً:
+            </Text>
+
+            {OFFICIAL_SCOUT_ACCOUNTS.map((acc) => (
+              <View key={acc.id} style={[styles.accountCard, { borderLeftColor: acc.color }]}>
+                <View style={styles.accountInfoRow}>
+                  <Text style={styles.accountIcon}>{acc.icon}</Text>
+                  <View style={styles.accountTextWrap}>
+                    <Text style={[styles.accountCategory, { color: acc.color }]}>{acc.category}</Text>
+                    <Text style={styles.accountEmail}>{acc.email}</Text>
+                    <Text style={styles.accountPass}>🔑 {acc.pass}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.accountActionsRow}>
+                  <TouchableOpacity
+                    style={[styles.quickFillBtn]}
+                    onPress={() => {
+                      setIdentifier(acc.email);
+                      setPassword(acc.pass);
+                    }}
+                  >
+                    <Text style={styles.quickFillText}>✍️ ملء</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.directLoginBtn, { backgroundColor: acc.color }]}
+                    onPress={() => loginDirectlyWithAccount(acc)}
+                  >
+                    <Text style={styles.directLoginText}>⚡ دخول فوري</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Manager Secret PIN Section */}
         <View style={styles.divider} />
@@ -234,9 +433,10 @@ export const LoginScreen = ({ navigation }: any) => {
           activeOpacity={0.8}
         >
           <Text style={styles.pinTriggerTitle}>🔑 رمز PIN الخاص بالقادة وأمناء الصندوق</Text>
-          <Text style={styles.pinTriggerSub}>تفعيل صلاحيات الخزينة ومسؤولي العهدة والخصومات</Text>
+          <Text style={styles.pinTriggerSub}>تفعيل صلاحيات الخزينة ومسؤولي العهدة والخصومات (1234 أو 0000)</Text>
         </TouchableOpacity>
-        {/* Quick Barcode Attendance Banner from Stitch design */}
+
+        {/* Quick Barcode Attendance Banner */}
         <TouchableOpacity
           style={styles.quickAttendanceBtn}
           onPress={() => navigation?.navigate('Attendance')}
@@ -275,8 +475,8 @@ export const LoginScreen = ({ navigation }: any) => {
       <Modal visible={showPinModal} transparent animationType="fade" onRequestClose={handleClosePin}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>رمز PIN السري للمدير الخزينة 🔑</Text>
-            <Text style={styles.modalSub}>أدخل الرمز السري المكون من 4 أرقام لتفعيل الخصومات</Text>
+            <Text style={styles.modalTitle}>رمز PIN السري لمدير الخزينة 🔑</Text>
+            <Text style={styles.modalSub}>أدخل الرمز السري المكون من 4 أرقام لتفعيل الخصومات (1234)</Text>
 
             <TextInput
               style={[styles.pinInput, pinError ? styles.pinInputError : null]}
@@ -349,55 +549,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    marginTop: 10,
+    marginTop: 8,
   },
   sloganText: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    elevation: 3,
-    shadowColor: '#8B0000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowRadius: 10,
+    elevation: 3,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#8B0000',
+    color: '#1F2937',
     textAlign: 'right',
+    marginBottom: 4,
   },
   cardSub: {
     fontSize: 12,
     color: '#6B7280',
-    marginBottom: 20,
     textAlign: 'right',
+    marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#374151',
-    marginBottom: 6,
     textAlign: 'right',
+    marginBottom: 6,
+  },
+  passwordRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  forgotLink: {
+    fontSize: 11,
+    color: '#8B0000',
+    fontWeight: '600',
   },
   input: {
     backgroundColor: '#FAF7F2',
-    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
     fontSize: 14,
     color: '#1F2937',
     marginBottom: 4,
-    textAlign: 'right',
   },
   inputError: {
     borderColor: '#EF4444',
@@ -407,98 +615,157 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 11,
     textAlign: 'right',
-    marginBottom: 10,
-  },
-  passwordRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  forgotLink: {
-    color: '#8B0000',
-    fontSize: 12,
-    fontWeight: 'bold',
+    marginBottom: 8,
   },
   loginBtn: {
     backgroundColor: '#8B0000',
-    borderRadius: 20,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: 16,
   },
   loginBtnDisabled: {
-    backgroundColor: '#B45309',
-    opacity: 0.7,
+    opacity: 0.6,
   },
   loginBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
-  demoSection: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+  officialHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  demoSectionTitle: {
+  officialSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  toggleOfficialBtn: {
+    backgroundColor: '#FDF2F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  toggleOfficialText: {
     fontSize: 11,
+    color: '#8B0000',
     fontWeight: 'bold',
+  },
+  officialAccountsGrid: {
+    marginBottom: 16,
+  },
+  officialHint: {
+    fontSize: 11,
     color: '#6B7280',
     textAlign: 'right',
+    marginBottom: 10,
+    lineHeight: 16,
+  },
+  accountCard: {
+    backgroundColor: '#FAF7F2',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    borderLeftWidth: 5,
+    borderWidth: 1,
+    borderColor: '#EADBC8',
+  },
+  accountInfoRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
-  demoChipsGrid: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    gap: 6,
+  accountIcon: {
+    fontSize: 24,
+    marginLeft: 10,
   },
-  demoChip: {
-    backgroundColor: '#FAF7F2',
-    borderRadius: 10,
-    paddingHorizontal: 10,
+  accountTextWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  accountCategory: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  accountEmail: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  accountPass: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontFamily: 'monospace',
+  },
+  accountActionsRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 4,
+  },
+  directLoginBtn: {
+    paddingHorizontal: 14,
     paddingVertical: 6,
+    borderRadius: 8,
+  },
+  directLoginText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  quickFillBtn: {
+    backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#D1D5DB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  adminDemoChip: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#8B0000',
-  },
-  demoChipText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#1F2937',
+  quickFillText: {
+    color: '#4B5563',
+    fontSize: 12,
+    fontWeight: '600',
   },
   divider: {
     height: 1,
     backgroundColor: '#E5E7EB',
-    marginVertical: 18,
+    marginVertical: 14,
   },
   pinTriggerBtn: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 16,
-    padding: 12,
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
     borderWidth: 1,
-    borderColor: '#D4A359',
+    borderRadius: 14,
+    padding: 12,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   pinTriggerTitle: {
     color: '#92400E',
-    fontSize: 13,
     fontWeight: 'bold',
-    textAlign: 'right',
+    fontSize: 12,
+    marginBottom: 2,
   },
   pinTriggerSub: {
     color: '#B45309',
-    fontSize: 11,
-    marginTop: 2,
-    textAlign: 'right',
+    fontSize: 10,
+    textAlign: 'center',
   },
   quickAttendanceBtn: {
     backgroundColor: '#FEF2F2',
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 12,
-    marginTop: 12,
+    marginTop: 4,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     borderWidth: 1,
