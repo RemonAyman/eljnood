@@ -7,6 +7,7 @@ import { Gender, ScarfStatus, GradeLevel } from '../../types';
 import { calculateSquad } from '../../utils/squadCalculator';
 import { useMembersStore } from '../../store/membersStore';
 import { validateRegisterForm } from '../../utils/validation';
+import { saveMemberToFirestore } from '../../services/firebaseService';
 
 const FieldError = ({ message }: { message?: string }) =>
   message ? <Text style={styles.fieldError}>{message}</Text> : null;
@@ -67,7 +68,9 @@ export const RegisterScreen = ({ navigation }: any) => {
     { value: 'GRADUATE', label: 'خريج', icon: '🏅' }
   ];
 
-  const handleSubmit = useCallback(() => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = useCallback(async () => {
     const { valid, errors: formErrors } = validateRegisterForm({ name, code, guardianPhone, phone });
     setErrors(formErrors);
     if (!valid) {
@@ -75,7 +78,8 @@ export const RegisterScreen = ({ navigation }: any) => {
       return;
     }
 
-    addMember({
+    setSubmitting(true);
+    const newMemberData = {
       name,
       code,
       gender,
@@ -88,13 +92,46 @@ export const RegisterScreen = ({ navigation }: any) => {
       region,
       street,
       buildingNo,
-      addressDescription
-    });
+      addressDescription,
+    };
 
-    Alert.alert('نجاح', `تم تسجيل الكشاف بنجاح ورُبط بفرقة (${calculatedSquad})!`, [
-      { text: 'حسناً', onPress: () => navigation?.navigate('Login') }
-    ]);
-  }, [name, code, gender, scarfStatus, gradeLevel, guardianPhone, phone, region, street, buildingNo, addressDescription, calculatedSquad, addMember, navigation]);
+    // 1. Add to local Zustand store
+    const localMember = addMember(newMemberData);
+
+    // 2. Push to Cloud Firestore (Real Firebase database)
+    const savedToCloud = await saveMemberToFirestore(localMember);
+
+    setSubmitting(false);
+
+    if (savedToCloud) {
+      Alert.alert(
+        'نجاح ✅',
+        `تم تسجيل الكشاف وحفظه في سحابة فايربيس (Firestore) بنجاح!\nالفرقة: (${calculatedSquad})\nالكود: ${code}`,
+        [{ text: 'حسناً', onPress: () => navigation?.navigate('Login') }]
+      );
+    } else {
+      Alert.alert(
+        'تم الحفظ محلياً ⚠️',
+        `تم تسجيل الكشاف في التطبيق، ولكن تأكد من ضبط قواعد فايربيس (Rules) لتفعيل المزامنة السحابية.\nالفرقة: (${calculatedSquad})`,
+        [{ text: 'حسناً', onPress: () => navigation?.navigate('Login') }]
+      );
+    }
+  }, [
+    name,
+    code,
+    gender,
+    scarfStatus,
+    gradeLevel,
+    guardianPhone,
+    phone,
+    region,
+    street,
+    buildingNo,
+    addressDescription,
+    calculatedSquad,
+    addMember,
+    navigation,
+  ]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

@@ -1,9 +1,44 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { seedInitialFirestoreData, fetchMembersFromFirestore } from '../../services/firebaseService';
+import { useMembersStore } from '../../store/membersStore';
 
 export const AdminDashboardScreen = ({ navigation }: any) => {
+  const { members, loadMembersFromFirestore } = useMembersStore();
+  const [seeding, setSeeding] = useState(false);
+
+  // Load real members from Firestore on mount
+  useEffect(() => {
+    loadMembersFromFirestore();
+  }, []);
+
+  const handleSeedFirestore = useCallback(async () => {
+    Alert.alert(
+      '🔥 تهيئة فايربيس',
+      'سيتم إنشاء جداول البيانات الأساسية (أعضاء، مستخدمين، حضور، اشتراكات) في فايربيس للمرة الأولى. هل أنت متأكد؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تهيئة الآن 🔥',
+          style: 'destructive',
+          onPress: async () => {
+            setSeeding(true);
+            const result = await seedInitialFirestoreData();
+            setSeeding(false);
+            if (result.success) {
+              Alert.alert('✅ تم بنجاح', result.message);
+              loadMembersFromFirestore(); // Reload after seeding
+            } else {
+              Alert.alert('❌ خطأ', result.message + '\n\nتأكد من تعديل قواعد فايربيس للسماح بالكتابة');
+            }
+          },
+        },
+      ]
+    );
+  }, [loadMembersFromFirestore]);
+
   const metrics = [
-    { title: 'إجمالي الأعضاء المقيدين', value: '1,248', sub: 'من KG لـ خريج', icon: '👨‍👦' },
+    { title: 'إجمالي الأعضاء المقيدين', value: members.length > 0 ? `${members.length.toLocaleString('ar-EG')}` : '1,248', sub: 'من KG لـ خريج', icon: '👨‍👦' },
     { title: 'نسبة الحضور والانضباط', value: '94.2%', sub: 'الشهر الحالي', icon: '📊' },
     { title: 'إجمالي الإيرادات المحصلة', value: '384,500 ج.م', sub: 'موسم 2026', icon: '💰' },
     { title: 'القادة والجوالة النشطين', value: '86 قائد', sub: 'خدمة مستمرة', icon: '⚜️' },
@@ -37,8 +72,22 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
         <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - كنيسة العذراء مريم</Text>
       </View>
 
+      {/* Firebase Initialize Button — Admin Only */}
+      <TouchableOpacity
+        style={[styles.seedBtn, seeding && styles.seedBtnDisabled]}
+        onPress={handleSeedFirestore}
+        activeOpacity={0.8}
+        disabled={seeding}
+      >
+        <Text style={styles.seedBtnText}>
+          {seeding ? '⏳ جاري تهيئة قاعدة البيانات...' : '🔥 تهيئة وزرع بيانات فايربيس (أول مرة فقط)'}
+        </Text>
+        <Text style={styles.seedBtnSub}>ينشئ جداول: أعضاء · مستخدمين · حضور · اشتراكات</Text>
+      </TouchableOpacity>
+
       {/* KPI Metrics Row */}
       <Text style={styles.sectionTitle}>مؤشرات الأداء العامة</Text>
+
       <View style={styles.metricsGrid}>
         {metrics.map((m, idx) => (
           <View key={idx} style={styles.metricCard}>
@@ -90,6 +139,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF7F2',
+  },
+  seedBtn: {
+    backgroundColor: '#7F1D1D',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#991B1B',
+    alignItems: 'center',
+  },
+  seedBtnDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#B45309',
+  },
+  seedBtnText: {
+    color: '#FEF2F2',
+    fontSize: 13,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  seedBtnSub: {
+    color: '#FCA5A5',
+    fontSize: 10,
+    marginTop: 3,
+    textAlign: 'center',
   },
   content: {
     padding: 16,

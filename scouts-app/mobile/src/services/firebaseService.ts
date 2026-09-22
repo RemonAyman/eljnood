@@ -1,0 +1,203 @@
+import {
+  collection,
+  doc,
+  setDoc,
+  addDoc,
+  getDocs,
+  getDoc,
+  updateDoc,
+  onSnapshot,
+  query,
+  orderBy,
+} from 'firebase/firestore';
+import { db } from '../config/firebase.config';
+import { Member, AttendanceRecord, SubscriptionRecord } from '../types';
+
+// ─── Collections Names ────────────────────────────────────────────────────────
+export const COLLECTIONS = {
+  MEMBERS: 'members',
+  USERS: 'users',
+  ATTENDANCE: 'attendance',
+  SUBSCRIPTIONS: 'subscriptions',
+  CHAT_MESSAGES: 'chat_messages',
+  ROOM_RESERVATIONS: 'room_reservations',
+  INVENTORY_REQUESTS: 'inventory_requests',
+} as const;
+
+// ─── 1. Members Operations ───────────────────────────────────────────────────
+
+/** Save or create a member in Cloud Firestore */
+export async function saveMemberToFirestore(member: Member): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.MEMBERS, member.code || member.id);
+    await setDoc(docRef, {
+      ...member,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    console.log('✅ Member successfully saved to Firestore:', member.code);
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save member error (check security rules):', error.message);
+    return false;
+  }
+}
+
+/** Fetch all members from Cloud Firestore */
+export async function fetchMembersFromFirestore(): Promise<Member[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.MEMBERS));
+    const members: Member[] = [];
+    snapshot.forEach((docSnap) => {
+      members.push(docSnap.data() as Member);
+    });
+    return members;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch members error:', error.message);
+    return [];
+  }
+}
+
+// ─── 2. Attendance Operations ────────────────────────────────────────────────
+
+export async function saveAttendanceToFirestore(record: AttendanceRecord): Promise<boolean> {
+  try {
+    const docId = `${record.memberId}_${record.date}_${record.eventType}`;
+    const docRef = doc(db, COLLECTIONS.ATTENDANCE, docId);
+    await setDoc(docRef, record, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save attendance error:', error.message);
+    return false;
+  }
+}
+
+// ─── 3. Seed Initial Data (ينشئ المجموعات والجداول فوراً في فايربيس) ─────────
+
+export async function seedInitialFirestoreData(): Promise<{ success: boolean; message: string }> {
+  try {
+    // 1. Initial Members
+    const sampleMembers: Member[] = [
+      {
+        id: 'm1',
+        code: 'JS-2026-448',
+        name: 'بيتر يوسف فايز',
+        gender: 'MALE',
+        scarfStatus: 'RECEIVED',
+        birthDate: '2012-09-15',
+        gradeLevel: 'PREP_1',
+        squadName: 'كشاف',
+        phone: '01012345678',
+        guardianPhone: '01229876543',
+        region: 'أسيوط - حي الجمهورية',
+        buildingNo: 'عمارة الأمل 3',
+        street: 'شارع الكنيسة',
+        addressDescription: 'متفرع من شارع الجمهورية، الدور الثالث',
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'm2',
+        code: 'JS-2026-449',
+        name: 'كيرلس مينا شحاتة',
+        gender: 'MALE',
+        scarfStatus: 'NOT_RECEIVED',
+        birthDate: '2015-04-10',
+        gradeLevel: 'GRADE_4',
+        squadName: 'أشبال',
+        guardianPhone: '01223344556',
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'm3',
+        code: 'JS-2026-450',
+        name: 'مارينا يوسف',
+        gender: 'FEMALE',
+        scarfStatus: 'WITHDRAWN',
+        birthDate: '2011-01-20',
+        gradeLevel: 'PREP_2',
+        squadName: 'مرشدات',
+        guardianPhone: '01099887766',
+        createdAt: new Date().toISOString(),
+      },
+    ];
+
+    for (const m of sampleMembers) {
+      await setDoc(doc(db, COLLECTIONS.MEMBERS, m.code), m, { merge: true });
+    }
+
+    // 2. Initial Users / Roles
+    const sampleUsers = [
+      {
+        uid: 'admin_1',
+        name: 'القائد العام / مدير الخدمة',
+        email: 'admin@scouts.org',
+        role: 'ADMIN',
+        code: 'ADMIN-001',
+        phone: '01000000001',
+      },
+      {
+        uid: 'leader_1',
+        name: 'القائد مينا نبيل',
+        email: 'leader@scouts.org',
+        role: 'LEADER',
+        code: 'LEADER-07',
+        phone: '01123456789',
+      },
+      {
+        uid: 'parent_1',
+        name: 'يوسف فايز مسعود',
+        email: 'parent@scouts.org',
+        role: 'PARENT',
+        code: 'PARENT-448',
+        phone: '01229876543',
+      },
+    ];
+
+    for (const u of sampleUsers) {
+      await setDoc(doc(db, COLLECTIONS.USERS, u.uid), u, { merge: true });
+    }
+
+    // 3. Initial Sample Attendance
+    await setDoc(
+      doc(db, COLLECTIONS.ATTENDANCE, 'sample_attendance_1'),
+      {
+        memberId: 'm1',
+        memberName: 'بيتر يوسف فايز',
+        memberCode: 'JS-2026-448',
+        date: new Date().toISOString().split('T')[0],
+        eventType: 'SCOUTING_DAY',
+        status: 'PRESENT',
+        recordedBy: 'القائد مينا (المسؤول)',
+        timestamp: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    // 4. Initial Sample Subscription Record
+    await setDoc(
+      doc(db, COLLECTIONS.SUBSCRIPTIONS, 'REC-2026-001'),
+      {
+        receiptNumber: 'REC-2026-001',
+        memberName: 'جورج سامي رزق',
+        memberCode: 'JS-2026-102',
+        squadName: 'كشاف',
+        annualSub: true,
+        totalAmount: 549,
+        netAmount: 549,
+        status: 'PAID',
+        cashierName: 'أمين الخزينة جورج',
+        date: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    return {
+      success: true,
+      message: 'تم إنشاء وتهيئة جداول فايربيس (members, users, attendance, subscriptions) بنجاح!',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: `خطأ في الاتصال بفايربيس: ${error.message}`,
+    };
+  }
+}

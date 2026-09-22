@@ -61,6 +61,7 @@ export interface AttendanceRecord {
   status: 'PRESENT' | 'ABSENT' | 'EXCUSED';
   excuseReason?: string;
   recordedBy: string;
+  timestamp?: string; // ISO string, for Firestore ordering
 }
 
 export interface SubscriptionRecord {

@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert
 } from 'react-native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../config/firebase.config';
 import { useAuthStore } from '../../store/authStore';
 import { validateLoginForm, isValidOTP, ValidationMessages } from '../../utils/validation';
 
@@ -23,70 +25,65 @@ export const LoginScreen = ({ navigation }: any) => {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
 
-  const handleLogin = useCallback(() => {
+  const handleLogin = useCallback(async () => {
     const { valid, errors: formErrors } = validateLoginForm(identifier, password);
     setErrors(formErrors);
     if (!valid) return;
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const cleanId = identifier.trim().toLowerCase();
+    const cleanId = identifier.trim().toLowerCase();
 
-      // 1. Admin Authentication
-      if (cleanId === 'admin@scouts.org' || cleanId === 'admin' || cleanId.includes('admin')) {
-        setUser({
-          id: 'admin_1',
-          name: 'القائد العام / مدير الخدمة',
-          code: 'ADMIN-001',
-          role: 'ADMIN',
-          phone: '01000000001',
-          guardianPhone: '01000000001',
-        });
-        navigation?.navigate('AdminDashboard');
-        return;
+    // Determine role from identifier first (for routing purposes)
+    const resolveUserProfile = (uid: string) => {
+      if (cleanId === 'admin@scouts.org' || cleanId.includes('admin')) {
+        setUser({ id: uid, name: 'القائد العام / مدير الخدمة', code: 'ADMIN-001', role: 'ADMIN', phone: '01000000001', guardianPhone: '01000000001' });
+        return 'AdminDashboard';
       }
-
-      // 2. Parent Authentication
-      if (cleanId === 'parent@scouts.org' || cleanId === 'parent' || cleanId.startsWith('0122')) {
-        setUser({
-          id: 'parent_1',
-          name: 'يوسف فايز مسعود (ولي أمر)',
-          code: 'PARENT-448',
-          role: 'PARENT',
-          phone: '01229876543',
-          guardianPhone: '01229876543',
-        });
-        navigation?.navigate('ParentHome');
-        return;
+      if (cleanId === 'parent@scouts.org') {
+        setUser({ id: uid, name: 'يوسف فايز مسعود (ولي أمر)', code: 'PARENT-448', role: 'PARENT', phone: '01229876543', guardianPhone: '01229876543' });
+        return 'ParentHome';
       }
-
-      // 3. Leader Authentication
-      if (cleanId === 'leader@scouts.org' || cleanId === 'leader' || cleanId.includes('leader')) {
-        setUser({
-          id: 'leader_1',
-          name: 'القائد مينا نبيل',
-          code: 'LEADER-07',
-          role: 'LEADER',
-          phone: '01123456789',
-          guardianPhone: '01123456789',
-        });
-        navigation?.navigate('Attendance');
-        return;
+      if (cleanId === 'leader@scouts.org') {
+        setUser({ id: uid, name: 'القائد مينا نبيل', code: 'LEADER-07', role: 'LEADER', phone: '01123456789', guardianPhone: '01123456789' });
+        return 'Attendance';
       }
+      // Scout/child — identifier is their code
+      setUser({ id: uid, name: 'الكشاف', code: identifier.trim(), role: 'CHILD', phone: '', guardianPhone: '' });
+      return 'ChildHome';
+    };
 
-      // 4. Default: Scout / Child Member
-      setUser({
-        id: 'user_1',
-        name: 'بيتر يوسف فايز',
-        code: identifier.trim(),
-        role: 'CHILD',
-        phone: '01012345678',
-        guardianPhone: '01229876543',
-      });
-      navigation?.navigate('ChildHome');
-    }, 450);
+    // Try Firebase Auth first (for email-based logins)
+    if (cleanId.includes('@')) {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, cleanId, password.trim());
+        const destination = resolveUserProfile(userCredential.user.uid);
+        setLoading(false);
+        navigation?.navigate(destination);
+        return;
+      } catch (firebaseError: any) {
+        const code = firebaseError?.code || '';
+        // If auth/user-not-found or auth/wrong-password → show real error
+        if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
+          setLoading(false);
+          Alert.alert('خطأ في تسجيل الدخول ❌', 'البريد الإلكتروني غير مسجل في النظام.');
+          return;
+        }
+        if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+          setLoading(false);
+          Alert.alert('خطأ في تسجيل الدخول ❌', 'كلمة المرور غير صحيحة. حاول مرة أخرى.');
+          return;
+        }
+        // Network / permission / other error → fall through to demo mode
+        console.warn('Firebase Auth fallback (demo mode):', firebaseError.message);
+      }
+    }
+
+    // Fallback: Demo mode (scout code login or Firebase not configured)
+    const destination = resolveUserProfile(`user_${Date.now()}`);
+    setLoading(false);
+    navigation?.navigate(destination);
   }, [identifier, password, setUser, navigation]);
+
 
   const handleQuickDemoLogin = useCallback(
     (roleType: 'ADMIN' | 'PARENT' | 'LEADER' | 'CHILD') => {

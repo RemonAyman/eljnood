@@ -14,6 +14,7 @@ import { useAttendanceStore } from '../../store/attendanceStore';
 import { useMembersStore } from '../../store/membersStore';
 import { EventType, Member } from '../../types';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { saveAttendanceToFirestore } from '../../services/firebaseService';
 
 const EVENT_OPTIONS: { id: EventType; title: string; icon: string; subtitle: string }[] = [
   { id: 'SCOUTING_DAY', title: 'يوم الكشافة', icon: '⛺', subtitle: 'النشاط الأسبوعي العام' },
@@ -134,7 +135,8 @@ export const AttendanceManageScreen = () => {
         return;
       }
 
-      markAttendance({
+      const attendanceRecord = {
+        id: `${member.id}_${selectedDate}_${selectedEvent}`,
         memberId: member.id,
         memberName: member.name,
         memberCode: member.code,
@@ -142,10 +144,20 @@ export const AttendanceManageScreen = () => {
         eventType: selectedEvent,
         status,
         recordedBy: 'القائد مينا (المسؤول)',
-      });
+        timestamp: new Date().toISOString(),
+      };
+
+      // 1. Save locally (immediate UI update)
+      markAttendance(attendanceRecord);
+
+      // 2. Sync to Firestore in background (fire-and-forget)
+      saveAttendanceToFirestore(attendanceRecord).catch((e) =>
+        console.warn('Attendance sync error:', e)
+      );
     },
     [selectedDate, selectedEvent, markAttendance]
   );
+
 
   const handleSaveExcuse = () => {
     if (!targetMember) return;
