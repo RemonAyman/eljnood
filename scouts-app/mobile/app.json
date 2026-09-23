@@ -26,6 +26,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2fe808e9-237d-4dae-9ec4-b5250ab99852"
+      }
+    },
+    "owner": "remonaymananes"
   }
 }
