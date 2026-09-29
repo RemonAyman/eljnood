@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "365768489083",
+    "project_id": "eljnood",
+    "storage_bucket": "eljnood.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365768489083:android:13f712b6d768871fb58ade",
+        "android_client_info": {
+          "package_name": "com.jnood.scoutsapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7C2nkInbCsxXvbVlQhMUluvvDJpZSg3Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
