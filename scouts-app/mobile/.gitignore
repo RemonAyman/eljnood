@@ -1,0 +1,23 @@
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Android build outputs & caches
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.cxx/
+android/app/.cxx/
+
+# iOS build outputs & caches
+ios/build/
+ios/Pods/
+*.xcworkspace
+*.xcuserdata
+
+# Logs & temp
+*.log
+.DS_Store
+Thumbs.db
