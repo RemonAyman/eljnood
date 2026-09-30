@@ -10,18 +10,11 @@ import {
   Platform,
   FlatList,
 } from 'react-native';
-import { useChatStore } from '../../store/chatStore';
+import { useChatStore, getAvailableChatRoomsForUser } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { ChatMessage, Role } from '../../types';
 import { subscribeToChatMessages, sendChatMessageToFirestore } from '../../services/firebaseService';
-
-const ROOM_OPTIONS = [
-  { id: 'GENERAL', title: 'الغرفة العامة', icon: '📢', subtitle: 'إعلانات وأنشطة المجموعة ككل (الجميع)' },
-  { id: 'SECTION_ROOM', title: 'غرفة القطاع', icon: '⛺', subtitle: 'أبناء وقادة القطاع الخاص بك' },
-  { id: 'LEADERS_ROOM', title: 'قادة وجوالة القطاع', icon: '⚜️', subtitle: 'التنسيق والتحضير للخدمة' },
-  { id: 'MANAGERS_ROOM', title: 'رؤساء القطاعات والإدارة', icon: '🛡️', subtitle: 'الاجتماعات والقرارات المركزية' },
-];
 
 const getRoleBadge = (role: Role) => {
   switch (role) {
@@ -44,6 +37,15 @@ const getRoleBadge = (role: Role) => {
 
 const ChatBubbleItem = React.memo(({ msg, isMe }: { msg: ChatMessage; isMe: boolean }) => {
   const roleBadge = getRoleBadge(msg.senderRole);
+  const timeFormatted = useMemo(() => {
+    if (!msg.createdAt) return '';
+    try {
+      const d = new Date(msg.createdAt);
+      return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }, [msg.createdAt]);
 
   return (
     <View
@@ -88,6 +90,11 @@ const ChatBubbleItem = React.memo(({ msg, isMe }: { msg: ChatMessage; isMe: bool
         >
           {msg.content}
         </Text>
+        {timeFormatted ? (
+          <Text style={[styles.timeText, isMe ? styles.myTimeText : styles.otherTimeText]}>
+            {timeFormatted}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -102,11 +109,35 @@ export const ChatRoomsScreen = () => {
   const [isRecording, setIsRecording] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
+  // Dynamically compute rooms available for current logged-in user
+  const userAvailableRooms = useMemo(() => {
+    return getAvailableChatRoomsForUser(currentUser);
+  }, [currentUser]);
+
+  const roomOptions = useMemo(() => {
+    return userAvailableRooms.map((r) => ({
+      id: r.id,
+      title: r.title,
+      icon: r.icon,
+      subtitle: r.subtitle,
+    }));
+  }, [userAvailableRooms]);
+
+  // Ensure current room is valid for this user
+  useEffect(() => {
+    const isCurrentValid = userAvailableRooms.some((r) => r.id === currentRoomId);
+    if (!isCurrentValid && userAvailableRooms.length > 0) {
+      setRoom(userAvailableRooms[0].id);
+    }
+  }, [userAvailableRooms, currentRoomId, setRoom]);
+
   // Subscribe to real-time messages in Cloud Firestore
   useEffect(() => {
     const unsubscribe = subscribeToChatMessages(currentRoomId, (cloudMsgs) => {
       if (cloudMsgs && cloudMsgs.length > 0) {
         setFirestoreMessages(cloudMsgs as ChatMessage[]);
+      } else {
+        setFirestoreMessages([]);
       }
     });
 
@@ -229,13 +260,18 @@ export const ChatRoomsScreen = () => {
       <View style={styles.header}>
         <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
         <Text style={styles.headerTitle}>غرف التواصل والشات اللحظي 💬</Text>
+        {currentUser?.sectionName ? (
+          <Text style={styles.headerUserTag}>
+            قطاعك الحالي: {currentUser.sectionName}
+          </Text>
+        ) : null}
       </View>
 
       {/* Room Selector using IconCardSelector */}
       <View style={styles.roomSelectorCard}>
         <Text style={styles.sectionTitle}>اختر الغرفة الكشفية:</Text>
         <IconCardSelector
-          options={ROOM_OPTIONS}
+          options={roomOptions}
           selectedId={currentRoomId}
           onSelect={(id) => setRoom(id)}
         />
@@ -326,6 +362,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  headerUserTag: {
+    color: '#E5E7EB',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 4,
   },
   roomSelectorCard: {
     backgroundColor: '#FFFFFF',
@@ -424,6 +466,17 @@ const styles = StyleSheet.create({
   },
   otherMessageContent: {
     color: '#1F2937',
+  },
+  timeText: {
+    fontSize: 9,
+    marginTop: 4,
+    textAlign: 'left',
+  },
+  myTimeText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  otherTimeText: {
+    color: '#9CA3AF',
   },
   mediaImagePlaceholder: {
     backgroundColor: 'rgba(0,0,0,0.06)',

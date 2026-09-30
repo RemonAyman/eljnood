@@ -300,6 +300,7 @@ export const LoginScreen = ({ navigation }: any) => {
         name: realUserDoc.name || 'عضو مسجل',
         code: realUserDoc.code || realUserDoc.sonCode || cleanId,
         role: userRole,
+        sectionName: realUserDoc.sectionName || realUserDoc.squadName || realUserDoc.section || 'كشاف',
         phone: realUserDoc.phone || '',
         guardianPhone: realUserDoc.guardianPhone || '',
       };

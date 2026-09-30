@@ -182,6 +182,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         code: code.trim(),
         phone: childPhone.trim(),
         guardianPhone: guardianPhone.trim(),
+        sectionName: calculatedSquad,
       });
 
       setUser({
@@ -189,6 +190,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         name: name.trim(),
         code: code.trim(),
         role: 'CHILD',
+        sectionName: calculatedSquad,
         phone: childPhone.trim(),
         guardianPhone: guardianPhone.trim(),
       });
@@ -209,6 +211,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         guardianPhone: parentPhone.trim(),
         sonName: sonName.trim(),
         sonCode: sonCode.trim(),
+        sectionName: 'أشبال',
       });
 
       setUser({
@@ -216,6 +219,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         name: parentName.trim(),
         code: sonCode.trim(),
         role: 'PARENT',
+        sectionName: 'أشبال',
         phone: parentPhone.trim(),
         guardianPhone: parentPhone.trim(),
       });
@@ -243,6 +247,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         name: leaderName.trim(),
         code: `LEADER-${Math.floor(10 + Math.random() * 90)}`,
         role: 'LEADER',
+        sectionName: servingSection,
         phone: leaderPhone.trim(),
         guardianPhone: leaderPhone.trim(),
       });
