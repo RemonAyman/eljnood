@@ -13,18 +13,17 @@ import {
 } from 'react-native';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { useMembersStore } from '../../store/membersStore';
+import { useAuthStore } from '../../store/authStore';
 import { EventType, Member } from '../../types';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { saveAttendanceToFirestore, fetchAttendanceFromFirestore } from '../../services/firebaseService';
 
 const EVENT_OPTIONS: { id: EventType; title: string; icon: string; subtitle: string }[] = [
-  { id: 'SCOUTING_DAY', title: 'يوم الكشافة', icon: '⛺', subtitle: 'النشاط الأسبوعي العام' },
-  { id: 'BIBLE_STUDY', title: 'درس الكتاب', icon: '📖', subtitle: 'دراسة كلمة الله' },
-  { id: 'CAMP', title: 'المعسكر الكشفي', icon: '🏕️', subtitle: 'المعسكر السنوي / الدوري' },
-  { id: 'TASBEHA', title: 'التسبحة والقداس', icon: '🕯️', subtitle: 'النشاط الروحي' },
-  { id: 'LEADERS_MEETING', title: 'اجتماع القادة', icon: '⚜️', subtitle: 'التخطيط والمتابعة' },
-  { id: 'JOWALAH_MEETING', title: 'اجتماع الجوالة', icon: '🧭', subtitle: 'عشيرة الجوالة' },
-  { id: 'SECTIONS_JOINT_MEETING', title: 'لقاء الفروع المشترك', icon: '🤝', subtitle: 'تجمع القطاعات' },
+  { id: 'SCOUTING_DAY', title: 'اليوم الكشفي (الأعضاء)', icon: '⛺', subtitle: 'حضور وماليات الأطفال' },
+  { id: 'SCOUTING_DAY_LEADERS' as any, title: 'اليوم الكشفي (القادة والجوالة)', icon: '⚜️', subtitle: 'حضور القادة والجوالة باليوم' },
+  { id: 'LEADERS_MEETING', title: 'اجتماع القادة والجوالة', icon: '🗣️', subtitle: 'غياب اجتماعات القادة' },
+  { id: 'CAMP', title: 'المعسكر الكشفي', icon: '🏕️', subtitle: 'المعسكرات الكشفية' },
+  { id: 'BIBLE_STUDY', title: 'درس الكتاب والتثقيف', icon: '📖', subtitle: 'المناهج والأنشطة الروحية' },
 ];
 
 const MemberRowItem = React.memo(
@@ -45,7 +44,7 @@ const MemberRowItem = React.memo(
             <Text style={styles.memberCodeBadge}>{member.code}</Text>
             <Text style={styles.memberSquadBadge}>فرقة {member.squadName}</Text>
             <Text style={styles.scarfIcon}>
-              {member.scarfStatus === 'RECEIVED' ? '🧣' : member.scarfStatus === 'WITHDRAWN' ? '⚠️' : '❌'}
+              {member.scarfStatus === 'RECEIVED' ? '<ctrl42>' : member.scarfStatus === 'WITHDRAWN' ? '⚠️' : '❌'}
             </Text>
           </View>
         </View>
@@ -86,12 +85,19 @@ const MemberRowItem = React.memo(
 
 export const AttendanceManageScreen = () => {
   const { members, loadMembersFromFirestore } = useMembersStore();
-  const { records, markAttendance, importFromFingerprintExcel, getAttendanceStats } = useAttendanceStore();
+  const { records, markAttendance, getAttendanceStats } = useAttendanceStore();
+  const currentUser = useAuthStore((s) => s.user);
 
   const [selectedEvent, setSelectedEvent] = useState<EventType>('SCOUTING_DAY');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSquadFilter, setSelectedSquadFilter] = useState<string>('ALL');
+  
+  // Default filter to current section leader's sector if assigned
+  const defaultSquadFilter = currentUser?.sectionName && currentUser.sectionName !== 'الكل'
+    ? currentUser.sectionName 
+    : 'ALL';
+
+  const [selectedSquadFilter, setSelectedSquadFilter] = useState<string>(defaultSquadFilter);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
   useEffect(() => {
@@ -110,9 +116,13 @@ export const AttendanceManageScreen = () => {
     init();
   }, [selectedDate]);
 
-  // Scanner modal state
+  // QR Scanner modal state
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [scannedCodeInput, setScannedCodeInput] = useState('');
+
+  // Fingerprint Excel import modal state
+  const [showExcelModal, setShowExcelModal] = useState(false);
+  const [excelTextData, setExcelTextData] = useState('');
 
   // Excuse modal state
   const [showExcuseModal, setShowExcuseModal] = useState(false);
@@ -130,9 +140,16 @@ export const AttendanceManageScreen = () => {
         m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.code.toLowerCase().includes(searchQuery.toLowerCase());
       const matchSquad = selectedSquadFilter === 'ALL' || m.squadName === selectedSquadFilter;
+
+      // If taking leaders attendance
+      if (selectedEvent === ('SCOUTING_DAY_LEADERS' as any) || selectedEvent === 'LEADERS_MEETING') {
+        const isLeader = m.squadName === 'قادة' || m.squadName === 'جوالة' || (m as any).role === 'LEADER' || (m as any).role === 'JOWALAH';
+        return matchSearch && isLeader;
+      }
+
       return matchSearch && matchSquad;
     });
-  }, [members, searchQuery, selectedSquadFilter]);
+  }, [members, searchQuery, selectedSquadFilter, selectedEvent]);
 
   const getMemberStatus = useCallback(
     (memberId: string) => {
@@ -161,54 +178,63 @@ export const AttendanceManageScreen = () => {
         date: selectedDate,
         eventType: selectedEvent,
         status,
-        recordedBy: 'القائد مينا (المسؤول)',
+        recordedBy: currentUser?.name || 'رئيس القطاع المسؤول',
         timestamp: new Date().toISOString(),
       };
 
       // 1. Save locally (immediate UI update)
       markAttendance(attendanceRecord);
 
-      // 2. Sync to Firestore in background (fire-and-forget)
+      // 2. Sync to Firestore in background
       saveAttendanceToFirestore(attendanceRecord).catch((e) =>
         console.warn('Attendance sync error:', e)
       );
     },
-    [selectedDate, selectedEvent, markAttendance]
+    [selectedDate, selectedEvent, markAttendance, currentUser]
   );
-
 
   const handleSaveExcuse = () => {
     if (!targetMember) return;
-    markAttendance({
+    const attRec = {
+      id: `${targetMember.id}_${selectedDate}_${selectedEvent}`,
       memberId: targetMember.id,
       memberName: targetMember.name,
       memberCode: targetMember.code,
       date: selectedDate,
       eventType: selectedEvent,
-      status: 'EXCUSED',
-      excuseReason: excuseText || 'عذر مسبق معتمد',
-      recordedBy: 'القائد مينا (المسؤول)',
-    });
+      status: 'EXCUSED' as const,
+      excuseReason: excuseText || 'عذر مسبق معتمد من رئيس القطاع',
+      recordedBy: currentUser?.name || 'رئيس القطاع المسؤول',
+      timestamp: new Date().toISOString(),
+    };
+    markAttendance(attRec);
+    saveAttendanceToFirestore(attRec);
     setShowExcuseModal(false);
     setTargetMember(null);
   };
 
   const handleSimulateQRScan = () => {
     if (!scannedCodeInput.trim()) {
-      Alert.alert('تنبيه', 'من فضلك أدخل أو امسح كود الكشاف');
+      Alert.alert('تنبيه', 'من فضلك أدخل أو امسح كود الكشاف QR');
       return;
     }
-    const found = members.find((m) => m.code.toLowerCase() === scannedCodeInput.trim().toLowerCase());
+    const cleanCode = scannedCodeInput.trim().toLowerCase();
+    const found = members.find((m) => m.code.toLowerCase() === cleanCode);
     if (found) {
-      markAttendance({
+      const attRec = {
+        id: `${found.id}_${selectedDate}_${selectedEvent}`,
         memberId: found.id,
         memberName: found.name,
         memberCode: found.code,
         date: selectedDate,
         eventType: selectedEvent,
-        status: 'PRESENT',
+        status: 'PRESENT' as const,
         recordedBy: 'قارئ الباركود / QR Scanner',
-      });
+        timestamp: new Date().toISOString(),
+      };
+      markAttendance(attRec);
+      saveAttendanceToFirestore(attRec);
+
       Alert.alert('تم بنجاح ✅', `تم تسجيل حضور: ${found.name} (${found.squadName})`);
       setScannedCodeInput('');
       setShowScannerModal(false);
@@ -217,21 +243,47 @@ export const AttendanceManageScreen = () => {
     }
   };
 
-  const handleImportFingerprint = () => {
-    Alert.alert(
-      'استيراد بصمة الحضور (Excel / الجهاز)',
-      'هل تريد استيراد سجلات البصمة الإلكترونية لليوم ومطابقتها مع قاعدة بيانات الكشافة؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'استيراد الآن 📥',
-          onPress: () => {
-            const count = importFromFingerprintExcel(selectedDate, selectedEvent);
-            Alert.alert('نجاح الاستيراد', `تم استيراد ومطابقة ${count} بصمة بنجاح! 🎉`);
-          },
-        },
-      ]
-    );
+  // Process Excel/CSV text from fingerprint device
+  const handleProcessFingerprintExcel = async () => {
+    if (!excelTextData.trim()) {
+      Alert.alert('تنبيه', 'يرجى لصق بيانات أو أرقام البصمة من شيت الأكسيل أولاً');
+      return;
+    }
+
+    const lines = excelTextData.split('\n');
+    let markedCount = 0;
+
+    for (const line of lines) {
+      const cleanLine = line.trim().toLowerCase();
+      if (!cleanLine) continue;
+
+      // Extract codes matching JS-2026-xxx or digits
+      const matchedMember = members.find((m) => {
+        return cleanLine.includes(m.code.toLowerCase()) || cleanLine.includes(m.name.toLowerCase());
+      });
+
+      if (matchedMember) {
+        const attRec = {
+          id: `${matchedMember.id}_${selectedDate}_${selectedEvent}`,
+          memberId: matchedMember.id,
+          memberName: matchedMember.name,
+          memberCode: matchedMember.code,
+          date: selectedDate,
+          eventType: selectedEvent,
+          status: 'PRESENT' as const,
+          recordedBy: 'جهاز البصمة (Fingerprint Excel)',
+          timestamp: new Date().toISOString(),
+        };
+
+        markAttendance(attRec);
+        await saveAttendanceToFirestore(attRec);
+        markedCount++;
+      }
+    }
+
+    setShowExcelModal(false);
+    setExcelTextData('');
+    Alert.alert('تم بنجاح ✅', `تم استيراد ومطابقة ${markedCount} سجل بصمة بنجاح إلى قاعدة بيانات فايربيس! 🎉`);
   };
 
   return (
@@ -240,12 +292,17 @@ export const AttendanceManageScreen = () => {
       <View style={styles.header}>
         <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
         <Text style={styles.headerTitle}>سجل التحضير والغياب الذكي 📋</Text>
+        {currentUser?.sectionName ? (
+          <Text style={styles.headerUserTag}>
+            رئيس قطاع: {currentUser.sectionName} 👑
+          </Text>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Event Selector using Horizontal Card Selector */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>1️⃣ اختر الفعالية أو النشاط</Text>
+          <Text style={styles.sectionTitle}>1️⃣ اختر الفعالية أو نوع الاجتماع</Text>
           <IconCardSelector
             options={EVENT_OPTIONS}
             selectedId={selectedEvent}
@@ -256,7 +313,7 @@ export const AttendanceManageScreen = () => {
         {/* Date & Stats Bar */}
         <View style={styles.statsCard}>
           <View style={styles.dateRow}>
-            <Text style={styles.dateLabel}>📅 تاريخ التحضير:</Text>
+            <Text style={styles.dateLabel}>📅 تاريخ التحضير والغياب:</Text>
             <View style={styles.dateBadge}>
               <Text style={styles.dateText}>{selectedDate}</Text>
             </View>
@@ -282,13 +339,13 @@ export const AttendanceManageScreen = () => {
           </View>
         </View>
 
-        {/* Quick Actions (QR Scanner & Fingerprint Import) */}
+        {/* Quick Actions (QR Scanner & Fingerprint Excel Import) */}
         <View style={styles.actionButtonsRow}>
           <TouchableOpacity style={styles.scannerBtn} onPress={() => setShowScannerModal(true)}>
-            <Text style={styles.scannerBtnText}>📷 مسح كود QR / الباركود</Text>
+            <Text style={styles.scannerBtnText}>📷 مسح كود QR الكشفي</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.excelBtn} onPress={handleImportFingerprint}>
-            <Text style={styles.excelBtnText}>📊 استيراد البصمة / Excel</Text>
+          <TouchableOpacity style={styles.excelBtn} onPress={() => setShowExcelModal(true)}>
+            <Text style={styles.excelBtnText}>📊 رفع شيت البصمة Excel</Text>
           </TouchableOpacity>
         </View>
 
@@ -296,7 +353,7 @@ export const AttendanceManageScreen = () => {
         <View style={styles.searchSection}>
           <TextInput
             style={styles.searchInput}
-            placeholder="🔍 ابحث بالاسم أو الكود (مثال: JNOOD-001)..."
+            placeholder="🔍 ابحث بالاسم أو كود العضوية..."
             placeholderTextColor="#888"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -319,37 +376,42 @@ export const AttendanceManageScreen = () => {
 
         {/* Members Roster & Attendance Toggles */}
         <View style={styles.rosterCard}>
-          <Text style={styles.sectionTitle}>قائمة الكشافين ({filteredMembers.length})</Text>
+          <Text style={styles.sectionTitle}>قائمة الأعضاء والقادة ({filteredMembers.length})</Text>
 
-          {filteredMembers.map((member) => (
-            <MemberRowItem
-              key={member.id}
-              member={member}
-              currentStatus={getMemberStatus(member.id)}
-              onQuickMark={handleQuickMark}
-            />
-          ))}
+          {loadingMembers ? (
+            <ActivityIndicator size="large" color="#8B0000" style={{ marginVertical: 20 }} />
+          ) : filteredMembers.length > 0 ? (
+            filteredMembers.map((member) => (
+              <MemberRowItem
+                key={member.id}
+                member={member}
+                currentStatus={getMemberStatus(member.id)}
+                onQuickMark={handleQuickMark}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyRosterText}>لا يوجد أعضاء مطابقون للفلتر الحالي</Text>
+          )}
         </View>
       </ScrollView>
 
-
-      {/* QR Scanner Simulation Modal */}
+      {/* QR Scanner Modal */}
       <Modal visible={showScannerModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>📷 ماسح الـ QR والباركود الذكي</Text>
+            <Text style={styles.modalTitle}>📷 ماسح الـ QR والباركود الكشفي</Text>
             <Text style={styles.modalSubtitle}>
-              وجّه الكاميرا نحو كارت الكشاف أو أدخل الكود الكشفي للتحضير الفوري:
+              وجّه الكاميرا نحو كارت الكشاف أو أدخل كود العضوية للتحضير الفوري:
             </Text>
 
             <View style={styles.scannerBox}>
               <Text style={styles.scannerIcon}>📸</Text>
-              <Text style={styles.scannerTip}>الكاميرا نشطة لقراءة البطاقات الكشفية</Text>
+              <Text style={styles.scannerTip}>الكاميرا نشطة لقراءة بطاقات الـ QR الكشفية</Text>
             </View>
 
             <TextInput
               style={styles.modalInput}
-              placeholder="أو اكتب الكود (مثال: JNOOD-001)"
+              placeholder="أو اكتب الكود (مثال: JS-2026-448)"
               placeholderTextColor="#888"
               value={scannedCodeInput}
               onChangeText={setScannedCodeInput}
@@ -368,12 +430,42 @@ export const AttendanceManageScreen = () => {
         </View>
       </Modal>
 
+      {/* Fingerprint Excel Text Modal */}
+      <Modal visible={showExcelModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>📊 استيراد بيانات جهاز البصمة Excel</Text>
+            <Text style={styles.modalSubtitle}>
+              انسخ والصق نصوص شيت الأكسيل المصدر من جهاز البصمة للتحضير الفوري:
+            </Text>
+
+            <TextInput
+              style={[styles.modalInput, { height: 140, textAlignVertical: 'top' }]}
+              placeholder="انسخ والصق بيانات شيت الأكسيل أو أكواد البصمة هنا..."
+              placeholderTextColor="#888"
+              value={excelTextData}
+              onChangeText={setExcelTextData}
+              multiline
+            />
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleProcessFingerprintExcel}>
+                <Text style={styles.modalConfirmBtnText}>تفريغ واستيراد البصمة 📥</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowExcelModal(false)}>
+                <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Excuse Details Modal */}
       <Modal visible={showExcuseModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>⚠️ تسجيل اعتذار</Text>
-            <Text style={styles.modalSubtitle}>الكشاف: {targetMember?.name}</Text>
+            <Text style={styles.modalSubtitle}>الكشاف / القائد: {targetMember?.name}</Text>
 
             <TextInput
               style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]}
@@ -403,15 +495,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAF7F2' },
   header: {
     backgroundColor: '#8B0000',
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 14,
     paddingHorizontal: 20,
     alignItems: 'center',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  headerSubtitle: { color: '#D4A359', fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
-  headerTitle: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
+  headerSubtitle: { color: '#D4A359', fontSize: 12, fontWeight: 'bold', marginBottom: 2 },
+  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  headerUserTag: { color: '#E5E7EB', fontSize: 11, marginTop: 4 },
   content: { padding: 16, paddingBottom: 40 },
   sectionCard: {
     backgroundColor: '#FFF',
@@ -422,7 +515,7 @@ const styles = StyleSheet.create({
     borderColor: '#EADBC8',
     elevation: 2,
   },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#8B0000', marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#8B0000', marginBottom: 12, textAlign: 'right' },
   statsCard: {
     backgroundColor: '#FFF',
     borderRadius: 16,
@@ -432,12 +525,12 @@ const styles = StyleSheet.create({
     borderColor: '#EADBC8',
   },
   dateRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  dateLabel: { fontSize: 14, fontWeight: 'bold', color: '#444' },
+  dateLabel: { fontSize: 13, fontWeight: 'bold', color: '#444' },
   dateBadge: {
     backgroundColor: '#8B0000',
     paddingHorizontal: 12,
@@ -445,7 +538,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   dateText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
-  statsGrid: { flexDirection: 'row', justifyContent: 'space-between' },
+  statsGrid: { flexDirection: 'row-reverse', justifyContent: 'space-between' },
   statBox: {
     flex: 1,
     marginHorizontal: 3,
@@ -456,7 +549,7 @@ const styles = StyleSheet.create({
   statNum: { fontSize: 18, fontWeight: 'bold' },
   statTitle: { fontSize: 11, fontWeight: 'bold', marginTop: 2 },
   actionButtonsRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     marginBottom: 16,
   },
@@ -466,20 +559,20 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 12,
     alignItems: 'center',
-    marginRight: 6,
+    marginLeft: 6,
     elevation: 3,
   },
-  scannerBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
+  scannerBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
   excelBtn: {
     flex: 1,
     backgroundColor: '#1E3A8A',
     paddingVertical: 13,
     borderRadius: 12,
     alignItems: 'center',
-    marginLeft: 6,
+    marginRight: 6,
     elevation: 3,
   },
-  excelBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
+  excelBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
   searchSection: { marginBottom: 16 },
   searchInput: {
     backgroundColor: '#FFF',
@@ -488,12 +581,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'right',
     color: '#333',
     marginBottom: 10,
   },
-  squadFilterScroll: { flexDirection: 'row' },
+  squadFilterScroll: { flexDirection: 'row-reverse' },
   squadChip: {
     backgroundColor: '#FFF',
     borderWidth: 1,
@@ -501,7 +594,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    marginRight: 8,
+    marginLeft: 8,
   },
   squadChipActive: { backgroundColor: '#8B0000', borderColor: '#8B0000' },
   squadChipText: { fontSize: 12, color: '#666', fontWeight: '600' },
@@ -513,17 +606,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EADBC8',
   },
+  emptyRosterText: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    paddingVertical: 20,
+    fontSize: 12,
+  },
   memberRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  memberInfo: { flex: 1, marginRight: 8 },
-  memberName: { fontSize: 15, fontWeight: 'bold', color: '#1F2937', textAlign: 'right' },
-  memberSubRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, flexWrap: 'wrap' },
+  memberInfo: { flex: 1, marginLeft: 8, alignItems: 'flex-end' },
+  memberName: { fontSize: 14, fontWeight: 'bold', color: '#1F2937', textAlign: 'right' },
+  memberSubRow: { flexDirection: 'row-reverse', alignItems: 'center', marginTop: 4, flexWrap: 'wrap' },
   memberCodeBadge: {
     backgroundColor: '#F3F4F6',
     color: '#4B5563',
@@ -532,7 +631,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
-    marginRight: 6,
+    marginLeft: 6,
   },
   memberSquadBadge: {
     backgroundColor: '#FEF3C7',
@@ -542,10 +641,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
-    marginRight: 6,
+    marginLeft: 6,
   },
   scarfIcon: { fontSize: 14 },
-  statusButtonsGroup: { flexDirection: 'row' },
+  statusButtonsGroup: { flexDirection: 'row-reverse' },
   statusBtn: {
     borderWidth: 1,
     borderColor: '#D1D5DB',
@@ -553,7 +652,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 6,
     borderRadius: 8,
-    marginLeft: 4,
+    marginRight: 4,
   },
   statusBtnPresentActive: { backgroundColor: '#16A34A', borderColor: '#16A34A' },
   statusBtnExcusedActive: { backgroundColor: '#D97706', borderColor: '#D97706' },
@@ -574,11 +673,11 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  modalTitle: { fontSize: 17, fontWeight: 'bold', color: '#8B0000', marginBottom: 6 },
-  modalSubtitle: { fontSize: 13, color: '#666', textAlign: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 16, fontWeight: 'bold', color: '#8B0000', marginBottom: 6 },
+  modalSubtitle: { fontSize: 12, color: '#666', textAlign: 'center', marginBottom: 16 },
   scannerBox: {
     width: '100%',
-    height: 120,
+    height: 110,
     backgroundColor: '#111827',
     borderRadius: 16,
     justifyContent: 'center',
@@ -588,36 +687,37 @@ const styles = StyleSheet.create({
     borderColor: '#D4A359',
     borderStyle: 'dashed',
   },
-  scannerIcon: { fontSize: 40, marginBottom: 6 },
-  scannerTip: { color: '#9CA3AF', fontSize: 12 },
+  scannerIcon: { fontSize: 36, marginBottom: 6 },
+  scannerTip: { color: '#9CA3AF', fontSize: 11 },
   modalInput: {
     width: '100%',
     borderWidth: 1,
     borderColor: '#D4A359',
     borderRadius: 12,
     padding: 12,
-    fontSize: 14,
+    fontSize: 13,
     color: '#333',
     textAlign: 'right',
     marginBottom: 16,
+    backgroundColor: '#FAF7F2',
   },
-  modalBtnRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between' },
+  modalBtnRow: { flexDirection: 'row-reverse', width: '100%', justifyContent: 'space-between' },
   modalConfirmBtn: {
     flex: 1,
     backgroundColor: '#8B0000',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
-    marginLeft: 6,
+    marginRight: 6,
   },
-  modalConfirmBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  modalConfirmBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
   modalCancelBtn: {
     flex: 1,
     backgroundColor: '#E5E7EB',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
-    marginRight: 6,
+    marginLeft: 6,
   },
-  modalCancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 14 },
+  modalCancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 13 },
 });
