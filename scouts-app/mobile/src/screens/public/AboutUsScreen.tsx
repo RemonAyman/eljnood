@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 
 interface Goal {
@@ -47,7 +48,11 @@ export const AboutUsScreen = ({ navigation }: any) => {
       {/* Header Emblem Card */}
       <View style={styles.headerCard}>
         <View style={styles.emblemBadge}>
-          <Text style={styles.emblemText}>⚜️</Text>
+          <Image
+            source={require('../../../assets/logo.jpeg')}
+            style={styles.emblemImage}
+            resizeMode="contain"
+          />
         </View>
         <Text style={styles.title}>من نحن؟</Text>
         <Text style={styles.subTitle}>مجموعة جنود المسيح الكشفية - الفوج الأول</Text>
@@ -121,16 +126,22 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   emblemBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#D4A359',
+    overflow: 'hidden',
+    padding: 2,
   },
-  emblemText: {
-    fontSize: 32,
+  emblemImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   title: {
     color: '#FFFFFF',

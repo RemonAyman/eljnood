@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Role } from '../../types';
 
 interface RoleOption {
@@ -51,7 +51,11 @@ export const RoleSelectScreen = ({ navigation }: any) => {
       {/* Curved Header Banner */}
       <View style={styles.header}>
         <View style={styles.logoCircle}>
-          <Text style={styles.logoText}>⚜️</Text>
+          <Image
+            source={require('../../../assets/logo.jpeg')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
         <Text style={styles.headerTitle}>انضم لأسرة جنود المسيح الكشفية</Text>
         <Text style={styles.headerSub}>
@@ -111,16 +115,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logoCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#D4A359',
+    overflow: 'hidden',
+    padding: 2,
   },
-  logoText: {
-    fontSize: 32,
+  logoImage: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
   },
   headerTitle: {
     color: '#FFFFFF',

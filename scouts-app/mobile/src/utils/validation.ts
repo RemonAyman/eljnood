@@ -93,6 +93,7 @@ export function validateRegisterForm(data: {
   sonCode?: string;
   sectionName?: string;
   sectionLeaderName?: string;
+  addressDescription?: string;
 }): ValidationResult {
   const errors: Record<string, string> = {};
 

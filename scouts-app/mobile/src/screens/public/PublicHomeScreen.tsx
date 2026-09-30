@@ -61,7 +61,13 @@ export const PublicHomeScreen = ({ navigation }: any) => {
       <View style={styles.heroCard}>
         <View style={styles.badgeRow}>
           <Text style={styles.churchBadge}>مجموعة جنود المسيح الكشفية</Text>
-          <Text style={styles.scoutEmblem}>⚜️</Text>
+          <View style={styles.scoutLogoCircle}>
+            <Image
+              source={require('../../../assets/logo.jpeg')}
+              style={styles.scoutLogoImage}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         <Text style={styles.heroPreTitle}>معاً نَخدم ونَبني</Text>
@@ -229,8 +235,22 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  scoutEmblem: {
-    fontSize: 24,
+  scoutLogoCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+    overflow: 'hidden',
+    padding: 2,
+  },
+  scoutLogoImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
   heroPreTitle: {
     color: '#D4A359',

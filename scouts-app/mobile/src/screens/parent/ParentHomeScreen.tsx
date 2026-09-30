@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, Image 
 } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useMembersStore } from '../../store/membersStore';
@@ -163,6 +163,13 @@ export const ParentHomeScreen = ({ navigation }: any) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header Banner */}
       <View style={styles.header}>
+        <View style={styles.headerLogoCircle}>
+          <Image
+            source={require('../../../assets/logo.jpeg')}
+            style={styles.headerLogoImage}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={styles.headerTitle}>لوحة متابعة أولياء الأمور 👨‍👩‍👧</Text>
         <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - متابعة الأبناء والأنشطة والماليات</Text>
       </View>
@@ -363,6 +370,24 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: 'center',
     marginBottom: 12,
+  },
+  headerLogoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#D4A359',
+    overflow: 'hidden',
+    padding: 2,
+  },
+  headerLogoImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   headerTitle: {
     color: '#FFFFFF',

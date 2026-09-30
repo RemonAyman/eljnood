@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator
+  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator, Image
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../config/firebase.config';
@@ -355,7 +355,11 @@ export const LoginScreen = ({ navigation }: any) => {
       {/* Curved Header Banner */}
       <View style={styles.header}>
         <View style={styles.logoCircle}>
-          <Text style={styles.logoText}>⚜️</Text>
+          <Image
+            source={require('../../../assets/logo.jpeg')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
         <Text style={styles.groupTitle}>مجموعة جنود المسيح الكشفية</Text>
         <Text style={styles.churchSub}>النظام الكشفي المركزي الموحد</Text>
@@ -547,16 +551,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   logoCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#D4A359',
+    overflow: 'hidden',
+    padding: 2,
   },
-  logoText: {
-    fontSize: 32,
+  logoImage: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
   },
   groupTitle: {
     color: '#FFFFFF',

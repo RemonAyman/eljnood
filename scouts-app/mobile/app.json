@@ -19,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#8B0000"
+        "backgroundColor": "#FAF7F2"
       },
       "package": "com.jnood.scoutsapp",
       "googleServicesFile": "./google-services.json"

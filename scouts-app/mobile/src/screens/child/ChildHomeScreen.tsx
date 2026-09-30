@@ -86,7 +86,14 @@ export const ChildHomeScreen = ({ navigation }: any) => {
         <TouchableOpacity style={styles.menuBtn}>
           <Text style={styles.menuIcon}>☰</Text>
         </TouchableOpacity>
-        <Text style={styles.topTitle}>مجموعة جنود المسيح الكشفية</Text>
+        <View style={styles.topHeaderTitleRow}>
+          <Image
+            source={require('../../../assets/logo.jpeg')}
+            style={styles.topLogoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.topTitle}>مجموعة جنود المسيح الكشفية</Text>
+        </View>
         <TouchableOpacity style={styles.bellBtn}>
           <Text style={styles.bellIcon}>🔔</Text>
         </TouchableOpacity>
@@ -233,8 +240,20 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#8B0000',
   },
+  topHeaderTitleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+  },
+  topLogoImage: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+  },
   topTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#8B0000',
   },

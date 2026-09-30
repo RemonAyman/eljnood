@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { IconCardSelector, SelectorOption } from '../../components/ui/IconCardSelector';
 import { Gender, ScarfStatus, GradeLevel, SquadName } from '../../types';
@@ -302,7 +303,14 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       >
         {/* Header Banner */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>إنشاء حساب كشفي جديد ⚜️</Text>
+          <View style={styles.headerLogoCircle}>
+            <Image
+              source={require('../../../assets/logo.jpeg')}
+              style={styles.headerLogoImage}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.headerTitle}>إنشاء حساب كشفي جديد</Text>
           <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية</Text>
         </View>
 
@@ -645,6 +653,24 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: 'center',
     marginBottom: 16,
+  },
+  headerLogoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#D4A359',
+    overflow: 'hidden',
+    padding: 2,
+  },
+  headerLogoImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   headerTitle: {
     color: '#FFFFFF',
