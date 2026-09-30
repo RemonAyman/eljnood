@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 interface CurriculumItem {
   id: string;
@@ -130,7 +131,7 @@ const LEADERBOARD = [
   { rank: '5', name: 'ديفيد رامي', squad: 'متقدم', points: 245, badge: 'نجم التخييم' },
 ];
 
-export const CurriculaScreen = () => {
+export const CurriculaScreen = ({ navigation }: any) => {
   const [selectedSquad, setSelectedSquad] = useState<string>('ASHBAL');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -428,6 +429,7 @@ export const CurriculaScreen = () => {
           </View>
         </View>
       </Modal>
+      <BottomNavBar navigation={navigation} currentRoute="Curricula" />
     </View>
   );
 };
@@ -445,7 +447,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: { color: '#D4A359', fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
   headerTitle: { color: '#FFF', fontSize: 19, fontWeight: 'bold' },
-  content: { padding: 16, paddingBottom: 40 },
+  content: { padding: 16, paddingBottom: 90 },
   verseCard: {
     backgroundColor: '#FFFBEB',
     borderRadius: 16,

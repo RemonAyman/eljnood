@@ -6,6 +6,8 @@ import { ScoutCardPreview } from '../../components/card_print/ScoutCardPreview';
 import { fetchMemberByCodeFromFirestore, findUserOrMemberInFirestore, fetchMemberSubscriptions } from '../../services/firebaseService';
 import { Member, SubscriptionRecord } from '../../types';
 
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+
 export const ChildHomeScreen = ({ navigation }: any) => {
   const user = useAuthStore((s) => s.user);
   const getMemberByCode = useMembersStore((s) => s.getMemberByCode);
@@ -80,7 +82,8 @@ export const ChildHomeScreen = ({ navigation }: any) => {
   ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Top Header */}
       <View style={styles.topHeader}>
         <TouchableOpacity style={styles.menuBtn}>
@@ -215,6 +218,8 @@ export const ChildHomeScreen = ({ navigation }: any) => {
       </View>
 
     </ScrollView>
+      <BottomNavBar navigation={navigation} currentRoute="Home" />
+    </View>
   );
 };
 
@@ -225,7 +230,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   topHeader: {
     flexDirection: 'row-reverse',

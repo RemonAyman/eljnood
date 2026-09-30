@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, Image 
 } from 'react-native';
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 import { useAuthStore } from '../../store/authStore';
 import { useMembersStore } from '../../store/membersStore';
 import { useAttendanceStore } from '../../store/attendanceStore';
@@ -160,7 +161,8 @@ export const ParentHomeScreen = ({ navigation }: any) => {
   }, [activeChild, subscriptionsMap]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header Banner */}
       <View style={styles.header}>
         <View style={styles.headerLogoCircle}>
@@ -352,6 +354,8 @@ export const ParentHomeScreen = ({ navigation }: any) => {
         </View>
       </Modal>
     </ScrollView>
+      <BottomNavBar navigation={navigation} currentRoute="Home" />
+    </View>
   );
 };
 
@@ -362,7 +366,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   header: {
     backgroundColor: '#8B0000',

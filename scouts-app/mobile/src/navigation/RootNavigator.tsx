@@ -19,6 +19,7 @@ import { MemoriesScreen } from '../screens/shared/MemoriesScreen';
 import { InventoryRequestScreen } from '../screens/shared/InventoryRequestScreen';
 import { RoomReservationScreen } from '../screens/shared/RoomReservationScreen';
 import { ScoutingPlanScreen } from '../screens/shared/ScoutingPlanScreen';
+import { UserProfileScreen } from '../screens/shared/UserProfileScreen';
 
 // Public Showcase Screens (from Stitch design)
 import { PublicHomeScreen } from '../screens/public/PublicHomeScreen';
@@ -152,6 +153,11 @@ export function RootNavigator() {
           name="ScoutingPlan"
           component={ScoutingPlanScreen}
           options={{ title: 'الخطة السنوية الكشفية' }}
+        />
+        <Stack.Screen
+          name="UserProfile"
+          component={UserProfileScreen}
+          options={{ title: 'الملف الشخصي والحساب' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

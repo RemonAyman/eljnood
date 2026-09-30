@@ -73,6 +73,7 @@ export async function saveUserToFirestore(userData: {
   sectionLeaderName?: string;
   sonName?: string;
   sonCode?: string;
+  password?: string;
 }): Promise<boolean> {
   try {
     const docRef = doc(db, COLLECTIONS.USERS, userData.uid);
