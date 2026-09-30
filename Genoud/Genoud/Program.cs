@@ -20,6 +20,8 @@ namespace Genoud
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+                    webBuilder.UseUrls($"http://0.0.0.0:{port}");
                     webBuilder.UseStartup<Startup>();
                 });
     }

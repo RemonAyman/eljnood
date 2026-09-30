@@ -2,7 +2,10 @@
  * API Client for .NET Web API Backend (Genoud)
  */
 
-export const DEFAULT_API_BASE_URL = 'http://10.0.2.2:5000/api';
+export const PRODUCTION_CLOUD_API_URL = 'https://genoud-scouts-api.onrender.com/api';
+export const LOCAL_EMULATOR_API_URL = 'http://10.0.2.2:5000/api';
+
+export const DEFAULT_API_BASE_URL = LOCAL_EMULATOR_API_URL;
 
 let currentApiUrl = DEFAULT_API_BASE_URL;
 let authToken: string | null = null;

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: genoud-scouts-api
+    env: docker
+    dockerfilePath: ./Genoud/Dockerfile
+    region: frankfurt
+    plan: free
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: genoud-db
+          property: connectionString
+      - key: Jwt__Key
+        value: Genoud_SuperSecretKey_2026_Scout_928374!
+      - key: Jwt__Issuer
+        value: Genoud
+      - key: Jwt__Audience
+        value: GenoudUsers
+
+databases:
+  - name: genoud-db
+    databaseName: GenoudDb
+    user: postgres
+    region: frankfurt
+    plan: free
