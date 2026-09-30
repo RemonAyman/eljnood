@@ -15,6 +15,7 @@ import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { ChatMessage, Role } from '../../types';
 import { subscribeToChatMessages, sendChatMessageToFirestore } from '../../services/firebaseService';
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 const getRoleBadge = (role: Role) => {
   switch (role) {
@@ -100,7 +101,7 @@ const ChatBubbleItem = React.memo(({ msg, isMe }: { msg: ChatMessage; isMe: bool
   );
 });
 
-export const ChatRoomsScreen = () => {
+export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const { currentRoomId, messages, sendMessage, setRoom } = useChatStore();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -333,6 +334,7 @@ export const ChatRoomsScreen = () => {
           <Text style={styles.sendButtonText}>إرسال</Text>
         </TouchableOpacity>
       </View>
+      <BottomNavBar navigation={navigation} currentRoute="ChatRooms" />
     </KeyboardAvoidingView>
   );
 };
@@ -518,7 +520,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 68,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     gap: 6,

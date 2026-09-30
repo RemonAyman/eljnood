@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { seedInitialFirestoreData, fetchMembersFromFirestore } from '../../services/firebaseService';
 import { useMembersStore } from '../../store/membersStore';
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 export const AdminDashboardScreen = ({ navigation }: any) => {
   const { members, loadMembersFromFirestore } = useMembersStore();
@@ -65,80 +66,83 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
   ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLogoCircle}>
-          <Image
-            source={require('../../../assets/logo.jpeg')}
-            style={styles.headerLogoImage}
-            resizeMode="contain"
-          />
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 80 }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLogoCircle}>
+            <Image
+              source={require('../../../assets/logo.jpeg')}
+              style={styles.headerLogoImage}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.headerTitle}>لوحة القيادة الإدارية وسجل النشاط المركزي 🛡️</Text>
+          <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - الإدارة العامة</Text>
         </View>
-        <Text style={styles.headerTitle}>لوحة القيادة الإدارية وسجل النشاط المركزي 🛡️</Text>
-        <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - الإدارة العامة</Text>
-      </View>
 
-      {/* Firebase Initialize Button — Admin Only */}
-      <TouchableOpacity
-        style={[styles.seedBtn, seeding && styles.seedBtnDisabled]}
-        onPress={handleSeedFirestore}
-        activeOpacity={0.8}
-        disabled={seeding}
-      >
-        <Text style={styles.seedBtnText}>
-          {seeding ? '⏳ جاري تهيئة قاعدة البيانات...' : '🔥 تهيئة وزرع بيانات فايربيس (أول مرة فقط)'}
-        </Text>
-        <Text style={styles.seedBtnSub}>ينشئ جداول: أعضاء · مستخدمين · حضور · اشتراكات</Text>
-      </TouchableOpacity>
+        {/* Firebase Initialize Button — Admin Only */}
+        <TouchableOpacity
+          style={[styles.seedBtn, seeding && styles.seedBtnDisabled]}
+          onPress={handleSeedFirestore}
+          activeOpacity={0.8}
+          disabled={seeding}
+        >
+          <Text style={styles.seedBtnText}>
+            {seeding ? '⏳ جاري تهيئة قاعدة البيانات...' : '🔥 تهيئة وزرع بيانات فايربيس (أول مرة فقط)'}
+          </Text>
+          <Text style={styles.seedBtnSub}>ينشئ جداول: أعضاء · مستخدمين · حضور · اشتراكات</Text>
+        </TouchableOpacity>
 
-      {/* KPI Metrics Row */}
-      <Text style={styles.sectionTitle}>مؤشرات الأداء العامة</Text>
+        {/* KPI Metrics Row */}
+        <Text style={styles.sectionTitle}>مؤشرات الأداء العامة</Text>
 
-      <View style={styles.metricsGrid}>
-        {metrics.map((m, idx) => (
-          <View key={idx} style={styles.metricCard}>
-            <Text style={styles.metricIcon}>{m.icon}</Text>
-            <Text style={styles.metricValue}>{m.value}</Text>
-            <Text style={styles.metricTitle}>{m.title}</Text>
-            <Text style={styles.metricSub}>{m.sub}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Quick Access Modules Grid */}
-      <Text style={styles.sectionTitle}>أقسام ووحدات المنظومة الكشفية (10 أقسام)</Text>
-      <View style={styles.modulesGrid}>
-        {adminModules.map((mod, idx) => (
-          <TouchableOpacity
-            key={idx}
-            style={[styles.moduleCard, { borderColor: mod.color }]}
-            activeOpacity={0.8}
-            onPress={() => navigation?.navigate(mod.route)}
-          >
-            <View style={[styles.moduleIconCircle, { backgroundColor: mod.color }]}>
-              <Text style={styles.moduleIcon}>{mod.icon}</Text>
+        <View style={styles.metricsGrid}>
+          {metrics.map((m, idx) => (
+            <View key={idx} style={styles.metricCard}>
+              <Text style={styles.metricIcon}>{m.icon}</Text>
+              <Text style={styles.metricValue}>{m.value}</Text>
+              <Text style={styles.metricTitle}>{m.title}</Text>
+              <Text style={styles.metricSub}>{m.sub}</Text>
             </View>
-            <Text style={styles.moduleTitle}>{mod.title}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          ))}
+        </View>
 
-      {/* Activity Log Section */}
-      <Text style={styles.sectionTitle}>سجل الأنشطة والمتابعة اللحظية (Activity Log)</Text>
-      <View style={styles.logCard}>
-        {activityLog.map((item) => (
-          <View key={item.id} style={styles.logItem}>
-            <View style={styles.logHeader}>
-              <Text style={styles.logName}>{item.name} ({item.role})</Text>
-              <Text style={styles.logTime}>{item.time}</Text>
+        {/* Quick Access Modules Grid */}
+        <Text style={styles.sectionTitle}>أقسام ووحدات المنظومة الكشفية (10 أقسام)</Text>
+        <View style={styles.modulesGrid}>
+          {adminModules.map((mod, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={[styles.moduleCard, { borderColor: mod.color }]}
+              activeOpacity={0.8}
+              onPress={() => navigation?.navigate(mod.route)}
+            >
+              <View style={[styles.moduleIconCircle, { backgroundColor: mod.color }]}>
+                <Text style={styles.moduleIcon}>{mod.icon}</Text>
+              </View>
+              <Text style={styles.moduleTitle}>{mod.title}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Activity Log Section */}
+        <Text style={styles.sectionTitle}>سجل الأنشطة والمتابعة اللحظية (Activity Log)</Text>
+        <View style={styles.logCard}>
+          {activityLog.map((item) => (
+            <View key={item.id} style={styles.logItem}>
+              <View style={styles.logHeader}>
+                <Text style={styles.logName}>{item.name} ({item.role})</Text>
+                <Text style={styles.logTime}>{item.time}</Text>
+              </View>
+              <Text style={styles.logAction}>⚡ {item.action}</Text>
+              <Text style={styles.logIp}>IP Address: {item.ip}</Text>
             </View>
-            <Text style={styles.logAction}>⚡ {item.action}</Text>
-            <Text style={styles.logIp}>IP Address: {item.ip}</Text>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+          ))}
+        </View>
+      </ScrollView>
+      <BottomNavBar navigation={navigation} currentRoute="AdminDashboard" />
+    </View>
   );
 };
 

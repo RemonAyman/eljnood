@@ -17,6 +17,7 @@ import { useAuthStore } from '../../store/authStore';
 import { EventType, Member } from '../../types';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { saveAttendanceToFirestore, fetchAttendanceFromFirestore } from '../../services/firebaseService';
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 const EVENT_OPTIONS: { id: EventType; title: string; icon: string; subtitle: string }[] = [
   { id: 'SCOUTING_DAY', title: 'اليوم الكشفي (الأعضاء)', icon: '⛺', subtitle: 'حضور وماليات الأطفال' },
@@ -83,7 +84,7 @@ const MemberRowItem = React.memo(
   }
 );
 
-export const AttendanceManageScreen = () => {
+export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => {
   const { members, loadMembersFromFirestore } = useMembersStore();
   const { records, markAttendance, getAttendanceStats } = useAttendanceStore();
   const currentUser = useAuthStore((s) => s.user);
@@ -487,6 +488,8 @@ export const AttendanceManageScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <BottomNavBar navigation={navigation} currentRoute="Attendance" />
     </View>
   );
 };

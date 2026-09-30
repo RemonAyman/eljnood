@@ -7,10 +7,11 @@ import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector, SelectorOption } from '../../components/ui/IconCardSelector';
 import { saveFollowUpToFirestore, fetchFollowUpsFromFirestore } from '../../services/firebaseService';
 import { Member } from '../../types';
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 type VisitType = 'PHONE' | 'HOME_VISIT' | 'OCCASION';
 
-export const FollowUpScreen = () => {
+export const FollowUpScreen = ({ navigation }: { navigation?: any }) => {
   const { members, loadMembersFromFirestore } = useMembersStore();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -110,185 +111,188 @@ export const FollowUpScreen = () => {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header Banner */}
-      <View style={styles.header}>
-        <View style={styles.badgePill}>
-          <Text style={styles.badgePillText}>مؤشرات الرعاية والافتقاد</Text>
-        </View>
-        <Text style={styles.headerTitle}>منظومة الرعاية والافتقاد الكشفي</Text>
-        <Text style={styles.headerSub}>متابعة المخدومين، الزيارات الأسرية، ورعاية الحالات الخاصة</Text>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statVal}>{history.length}</Text>
-            <Text style={styles.statLbl}>إجمالي الافتقادات</Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 80 }]}>
+        {/* Header Banner */}
+        <View style={styles.header}>
+          <View style={styles.badgePill}>
+            <Text style={styles.badgePillText}>مؤشرات الرعاية والافتقاد</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statVal}>{members.length}</Text>
-            <Text style={styles.statLbl}>الكشافين المقيدين</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statVal}>
-              {history.filter((h) => h.visitType === 'OCCASION').length}
-            </Text>
-            <Text style={styles.statLbl}>حالات ومناسبات</Text>
-          </View>
-        </View>
-      </View>
+          <Text style={styles.headerTitle}>منظومة الرعاية والافتقاد الكشفي</Text>
+          <Text style={styles.headerSub}>متابعة المخدومين، الزيارات الأسرية، ورعاية الحالات الخاصة</Text>
 
-      {/* New Follow-Up Form Card */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>تسجيل تقرير افتقاد كشفي جديد</Text>
-
-        <Text style={styles.inputLabel}>اختر المخدوم الكشفي *</Text>
-        {selectedMember ? (
-          <TouchableOpacity 
-            style={styles.memberBox}
-            onPress={() => setShowMemberPicker(!showMemberPicker)}
-          >
-            <Text style={styles.memberBoxName}>👦 {selectedMember.name}</Text>
-            <Text style={styles.memberBoxSub}>فرقة {selectedMember.squadName} ({selectedMember.code}) - اضغط للتغيير 🔄</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity 
-            style={styles.memberBoxEmpty}
-            onPress={() => setShowMemberPicker(true)}
-          >
-            <Text style={styles.memberBoxEmptyText}>⚠️ اضغط هنا لاختيار الكشاف من القائمة</Text>
-          </TouchableOpacity>
-        )}
-
-        {showMemberPicker && (
-          <View style={styles.pickerContainer}>
-            <TextInput
-              style={styles.pickerSearch}
-              placeholder="🔍 ابحث عن الكشاف بالاسم أو الكود..."
-              placeholderTextColor="#888"
-              value={memberSearch}
-              onChangeText={setMemberSearch}
-            />
-            <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
-              {filteredMemberList.length > 0 ? (
-                filteredMemberList.map((m) => (
-                  <TouchableOpacity
-                    key={m.id}
-                    style={styles.pickerItem}
-                    onPress={() => {
-                      setSelectedMember(m);
-                      setShowMemberPicker(false);
-                    }}
-                  >
-                    <Text style={styles.pickerItemName}>{m.name}</Text>
-                    <Text style={styles.pickerItemSub}>فرقة {m.squadName} • {m.code}</Text>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <Text style={styles.pickerEmpty}>لا يوجد أعضاء متطابقين مع البحث</Text>
-              )}
-            </ScrollView>
-          </View>
-        )}
-
-        <Text style={styles.inputLabel}>الخادم الأساسي المكلف بالتقرير *</Text>
-        <TextInput
-          style={styles.input}
-          value={primaryLeader}
-          onChangeText={setPrimaryLeader}
-        />
-
-        <Text style={styles.inputLabel}>الخدام المشاركون في الافتقاد (اختياري)</Text>
-        <TextInput
-          style={styles.input}
-          value={coLeaders}
-          onChangeText={setCoLeaders}
-          placeholder="مثال: الخادم مينا، الخادم كيرلس"
-        />
-
-        {/* Visit Type Horizontal Icon Card Selector */}
-        <IconCardSelector
-          label="نوع الافتقاد المعتمد *"
-          options={visitOptions}
-          selectedValue={visitType}
-          onSelect={(val) => setVisitType(val as VisitType)}
-        />
-
-        {visitType === 'OCCASION' && (
-          <>
-            <Text style={styles.inputLabel}>تفاصيل المناسبة أو الحالة (عملية/إصابة/مرض/نجاح) *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="مثال: إجراء عملية جراحية، تكريم مدرسي، عزاء..."
-              value={occasionReason}
-              onChangeText={setOccasionReason}
-            />
-          </>
-        )}
-
-        <Text style={styles.inputLabel}>ملاحظات الزيارة ومحاور التقرير الكشفي *</Text>
-        <TextInput
-          style={[styles.input, { height: 90 }]}
-          placeholder="اكتب خلاصة الزيارة مع الأسرة، والاتفاق على القداس والأنشطة..."
-          multiline
-          value={notes}
-          onChangeText={setNotes}
-        />
-
-        <TouchableOpacity 
-          style={styles.saveBtn} 
-          onPress={handleSaveFollowUp} 
-          activeOpacity={0.85}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text style={styles.saveBtnText}>💾 حفظ واعتماد تقرير الافتقاد</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* History Stream */}
-      <Text style={styles.sectionHeading}>سجل وتقارير الافتقاد السابقة ({history.length})</Text>
-      {loadingHistory ? (
-        <View style={{ padding: 20, alignItems: 'center' }}>
-          <ActivityIndicator color="#8B0000" size="small" />
-          <Text style={{ fontSize: 12, color: '#666', marginTop: 6 }}>جاري تحميل سجلات الافتقاد...</Text>
-        </View>
-      ) : history.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyCardIcon}>📋</Text>
-          <Text style={styles.emptyCardTitle}>لا توجد تقارير افتقاد مسجلة حتى الآن</Text>
-          <Text style={styles.emptyCardSub}>استخدم النموذج أعلاه لتسجيل أول تقرير زيارة أو مكالمة هاتفية.</Text>
-        </View>
-      ) : (
-        history.map((item) => (
-          <View key={item.id} style={styles.historyCard}>
-            <View style={styles.historyTopRow}>
-              <View style={styles.historyBadge}>
-                <Text style={styles.historyBadgeText}>
-                  {item.visitType === 'PHONE' ? '📞' : item.visitType === 'HOME_VISIT' ? '🏠' : '🎈'} {item.visitTypeLabel}
-                </Text>
-              </View>
-              <View style={styles.historyNameCol}>
-                <Text style={styles.historyName}>{item.memberName}</Text>
-                <Text style={styles.historySquad}>{item.squad}</Text>
-              </View>
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statVal}>{history.length}</Text>
+              <Text style={styles.statLbl}>إجمالي الافتقادات</Text>
             </View>
-            <Text style={styles.historyNotes}>{item.notes}</Text>
-            {item.occasionReason ? (
-              <Text style={{ fontSize: 11, color: '#92400E', fontWeight: 'bold', textAlign: 'right', marginBottom: 4 }}>
-                📌 المناسبة: {item.occasionReason}
+            <View style={styles.statBox}>
+              <Text style={styles.statVal}>{members.length}</Text>
+              <Text style={styles.statLbl}>الكشافين المقيدين</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statVal}>
+                {history.filter((h) => h.visitType === 'OCCASION').length}
               </Text>
-            ) : null}
-            <View style={styles.historyFooter}>
-              <Text style={styles.historyLeader}>👤 {item.leader}</Text>
-              <Text style={styles.historyDate}>⏱️ {item.date}</Text>
+              <Text style={styles.statLbl}>حالات ومناسبات</Text>
             </View>
           </View>
-        ))
-      )}
-    </ScrollView>
+        </View>
+
+        {/* New Follow-Up Form Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>تسجيل تقرير افتقاد كشفي جديد</Text>
+
+          <Text style={styles.inputLabel}>اختر المخدوم الكشفي *</Text>
+          {selectedMember ? (
+            <TouchableOpacity 
+              style={styles.memberBox}
+              onPress={() => setShowMemberPicker(!showMemberPicker)}
+            >
+              <Text style={styles.memberBoxName}>👦 {selectedMember.name}</Text>
+              <Text style={styles.memberBoxSub}>فرقة {selectedMember.squadName} ({selectedMember.code}) - اضغط للتغيير 🔄</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={styles.memberBoxEmpty}
+              onPress={() => setShowMemberPicker(true)}
+            >
+              <Text style={styles.memberBoxEmptyText}>⚠️ اضغط هنا لاختيار الكشاف من القائمة</Text>
+            </TouchableOpacity>
+          )}
+
+          {showMemberPicker && (
+            <View style={styles.pickerContainer}>
+              <TextInput
+                style={styles.pickerSearch}
+                placeholder="🔍 ابحث عن الكشاف بالاسم أو الكود..."
+                placeholderTextColor="#888"
+                value={memberSearch}
+                onChangeText={setMemberSearch}
+              />
+              <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+                {filteredMemberList.length > 0 ? (
+                  filteredMemberList.map((m) => (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={styles.pickerItem}
+                      onPress={() => {
+                        setSelectedMember(m);
+                        setShowMemberPicker(false);
+                      }}
+                    >
+                      <Text style={styles.pickerItemName}>{m.name}</Text>
+                      <Text style={styles.pickerItemSub}>فرقة {m.squadName} • {m.code}</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text style={styles.pickerEmpty}>لا يوجد أعضاء متطابقين مع البحث</Text>
+                )}
+              </ScrollView>
+            </View>
+          )}
+
+          <Text style={styles.inputLabel}>الخادم الأساسي المكلف بالتقرير *</Text>
+          <TextInput
+            style={styles.input}
+            value={primaryLeader}
+            onChangeText={setPrimaryLeader}
+          />
+
+          <Text style={styles.inputLabel}>الخدام المشاركون في الافتقاد (اختياري)</Text>
+          <TextInput
+            style={styles.input}
+            value={coLeaders}
+            onChangeText={setCoLeaders}
+            placeholder="مثال: الخادم مينا، الخادم كيرلس"
+          />
+
+          {/* Visit Type Horizontal Icon Card Selector */}
+          <IconCardSelector
+            label="نوع الافتقاد المعتمد *"
+            options={visitOptions}
+            selectedValue={visitType}
+            onSelect={(val) => setVisitType(val as VisitType)}
+          />
+
+          {visitType === 'OCCASION' && (
+            <>
+              <Text style={styles.inputLabel}>تفاصيل المناسبة أو الحالة (عملية/إصابة/مرض/نجاح) *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="مثال: إجراء عملية جراحية، تكريم مدرسي، عزاء..."
+                value={occasionReason}
+                onChangeText={setOccasionReason}
+              />
+            </>
+          )}
+
+          <Text style={styles.inputLabel}>ملاحظات الزيارة ومحاور التقرير الكشفي *</Text>
+          <TextInput
+            style={[styles.input, { height: 90 }]}
+            placeholder="اكتب خلاصة الزيارة مع الأسرة، والاتفاق على القداس والأنشطة..."
+            multiline
+            value={notes}
+            onChangeText={setNotes}
+          />
+
+          <TouchableOpacity 
+            style={styles.saveBtn} 
+            onPress={handleSaveFollowUp} 
+            activeOpacity={0.85}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.saveBtnText}>💾 حفظ واعتماد تقرير الافتقاد</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* History Stream */}
+        <Text style={styles.sectionHeading}>سجل وتقارير الافتقاد السابقة ({history.length})</Text>
+        {loadingHistory ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator color="#8B0000" size="small" />
+            <Text style={{ fontSize: 12, color: '#666', marginTop: 6 }}>جاري تحميل سجلات الافتقاد...</Text>
+          </View>
+        ) : history.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyCardIcon}>📋</Text>
+            <Text style={styles.emptyCardTitle}>لا توجد تقارير افتقاد مسجلة حتى الآن</Text>
+            <Text style={styles.emptyCardSub}>استخدم النموذج أعلاه لتسجيل أول تقرير زيارة أو مكالمة هاتفية.</Text>
+          </View>
+        ) : (
+          history.map((item) => (
+            <View key={item.id} style={styles.historyCard}>
+              <View style={styles.historyTopRow}>
+                <View style={styles.historyBadge}>
+                  <Text style={styles.historyBadgeText}>
+                    {item.visitType === 'PHONE' ? '📞' : item.visitType === 'HOME_VISIT' ? '🏠' : '🎈'} {item.visitTypeLabel}
+                  </Text>
+                </View>
+                <View style={styles.historyNameCol}>
+                  <Text style={styles.historyName}>{item.memberName}</Text>
+                  <Text style={styles.historySquad}>{item.squad}</Text>
+                </View>
+              </View>
+              <Text style={styles.historyNotes}>{item.notes}</Text>
+              {item.occasionReason ? (
+                <Text style={{ fontSize: 11, color: '#92400E', fontWeight: 'bold', textAlign: 'right', marginBottom: 4 }}>
+                  📌 المناسبة: {item.occasionReason}
+                </Text>
+              ) : null}
+              <View style={styles.historyFooter}>
+                <Text style={styles.historyLeader}>👤 {item.leader}</Text>
+                <Text style={styles.historyDate}>⏱️ {item.date}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+      <BottomNavBar navigation={navigation} currentRoute="FollowUp" />
+    </View>
   );
 };
 

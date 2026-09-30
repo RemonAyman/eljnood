@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 interface MemoryItem {
   id: string;
@@ -130,7 +131,7 @@ const INITIAL_MEMORIES: MemoryItem[] = [
   },
 ];
 
-export const MemoriesScreen = () => {
+export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('CAMPS');
   const [memories, setMemories] = useState<MemoryItem[]>(INITIAL_MEMORIES);
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
@@ -364,6 +365,8 @@ export const MemoriesScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <BottomNavBar navigation={navigation} currentRoute="Memories" />
     </View>
   );
 };
