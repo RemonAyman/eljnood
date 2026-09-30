@@ -125,6 +125,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         guardianPhone,
         phone: childPhone,
         code,
+        addressDescription,
       };
     } else if (activeRole === 'PARENT') {
       validationData = {
@@ -454,15 +455,16 @@ export const RegisterScreen = ({ navigation, route }: any) => {
               </View>
             </View>
 
-            <Text style={styles.inputLabel}>وصف تفصيلي للعنوان [اختياري]</Text>
+            <Text style={styles.inputLabel}>وصف تفصيلي للعنوان * [إجباري]</Text>
             <TextInput
-              style={[styles.input, { height: 60 }]}
-              placeholder="مثال: الدور الثالث شقة 5"
+              style={[styles.input, { height: 60 }, errors.addressDescription ? styles.inputError : null]}
+              placeholder="مثال: الدور الثالث شقة 5 بالقرب من الكنيسة"
               multiline
               value={addressDescription}
-              onChangeText={setAddressDescription}
+              onChangeText={(t) => { setAddressDescription(t); if (errors.addressDescription) setErrors(e => ({ ...e, addressDescription: '' })); }}
               textAlign="right"
             />
+            <FieldError message={errors.addressDescription} />
           </View>
         )}
 

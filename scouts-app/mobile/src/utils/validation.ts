@@ -159,6 +159,10 @@ export function validateRegisterForm(data: {
       errors.guardianPhone = ValidationMessages.invalidPhone;
     }
 
+    if (data.addressDescription !== undefined && !isRequired(data.addressDescription)) {
+      errors.addressDescription = ValidationMessages.required('تفاصيل العنوان');
+    }
+
     if (data.phone && data.phone.trim() && !isValidEgyptPhone(data.phone)) {
       errors.phone = ValidationMessages.invalidPhone;
     }

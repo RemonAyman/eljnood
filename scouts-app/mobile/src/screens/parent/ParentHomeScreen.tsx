@@ -1,100 +1,232 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal 
+} from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useMembersStore } from '../../store/membersStore';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { ScoutCardPreview } from '../../components/card_print/ScoutCardPreview';
-import { fetchMemberByCodeFromFirestore, findUserOrMemberInFirestore, fetchMemberSubscriptions } from '../../services/firebaseService';
+import { 
+  fetchMemberByCodeFromFirestore, 
+  findUserOrMemberInFirestore, 
+  fetchMemberSubscriptions,
+  fetchMembersFromFirestore,
+  saveUserToFirestore
+} from '../../services/firebaseService';
 import { Member, SubscriptionRecord } from '../../types';
 
 export const ParentHomeScreen = ({ navigation }: any) => {
   const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
   const getMemberAttendanceRate = useAttendanceStore((s) => s.getMemberAttendanceRate);
 
   const [loading, setLoading] = useState(true);
-  const [member, setMember] = useState<Member | null>(null);
-  const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([]);
-  const [searchSonCode, setSearchSonCode] = useState('');
+  const [childrenList, setChildrenList] = useState<Member[]>([]);
+  const [selectedChildIndex, setSelectedChildIndex] = useState<number>(0);
+  const [subscriptionsMap, setSubscriptionsMap] = useState<Record<string, SubscriptionRecord[]>>({});
+
+  // Add / Link Child Modal State
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkInputCode, setLinkInputCode] = useState('');
   const [linking, setLinking] = useState(false);
 
-  const loadChildData = async (codeOrPhone: string) => {
-    if (!codeOrPhone) {
+  // Load all linked children for this parent
+  const loadParentChildren = useCallback(async () => {
+    if (!user) {
       setLoading(false);
       return;
     }
+
     setLoading(true);
     try {
-      let found = await fetchMemberByCodeFromFirestore(codeOrPhone);
-      if (!found) {
-        const userOrMem = await findUserOrMemberInFirestore(codeOrPhone);
-        if (userOrMem) {
-          found = userOrMem;
+      const parentPhone = user.guardianPhone || user.phone || '';
+      const initialCode = user.code || user.sonCode || '';
+      const matchedChildren: Member[] = [];
+
+      // 1. Search all members matching guardian phone
+      if (parentPhone) {
+        const allMembers = await fetchMembersFromFirestore();
+        allMembers.forEach((m) => {
+          if (m.guardianPhone === parentPhone || m.phone === parentPhone) {
+            if (!matchedChildren.some((c) => c.code === m.code)) {
+              matchedChildren.push(m);
+            }
+          }
+        });
+      }
+
+      // 2. Search initial son code if not already found
+      if (initialCode && !matchedChildren.some((c) => c.code === initialCode)) {
+        const found = await fetchMemberByCodeFromFirestore(initialCode);
+        if (found) {
+          matchedChildren.push(found);
         }
       }
 
-      if (found) {
-        setMember(found);
-        const subs = await fetchMemberSubscriptions(found.code);
-        setSubscriptions(subs);
-      }
-    } catch (e) {
-      console.warn('Error loading child data:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setChildrenList(matchedChildren);
 
-  useEffect(() => {
-    const target = user?.sonCode || user?.code || user?.phone || '';
-    if (target) {
-      loadChildData(target);
-    } else {
+      // Fetch subscriptions for all children
+      const subsObj: Record<string, SubscriptionRecord[]> = {};
+      for (const child of matchedChildren) {
+        const subs = await fetchMemberSubscriptions(child.code);
+        subsObj[child.code] = subs;
+      }
+      setSubscriptionsMap(subsObj);
+    } catch (e) {
+      console.warn('Error loading parent children:', e);
+    } finally {
       setLoading(false);
     }
   }, [user]);
 
-  const handleLinkSon = async () => {
-    if (!searchSonCode.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال كود الكشاف أو رقم الهاتف');
+  useEffect(() => {
+    loadParentChildren();
+  }, [loadParentChildren]);
+
+  // Handle linking another child by Scout Code or Phone
+  const handleLinkNewChild = async () => {
+    if (!linkInputCode.trim()) {
+      Alert.alert('تنبيه', 'يرجى إدخال الكود الكشفي للابن أو رقم الموبايل');
       return;
     }
+
     setLinking(true);
-    await loadChildData(searchSonCode.trim());
-    setLinking(false);
+    try {
+      const cleanInput = linkInputCode.trim();
+      let foundMember = await fetchMemberByCodeFromFirestore(cleanInput);
+
+      if (!foundMember) {
+        const userOrMem = await findUserOrMemberInFirestore(cleanInput);
+        if (userOrMem && userOrMem.code) {
+          foundMember = await fetchMemberByCodeFromFirestore(userOrMem.code);
+        }
+      }
+
+      if (foundMember) {
+        // Check if already linked
+        if (childrenList.some((c) => c.code === foundMember!.code)) {
+          Alert.alert('مربوط بالفعل ℹ️', `الابن (${foundMember.name}) مربوط بالفعل في حسابك!`);
+        } else {
+          const updatedList = [...childrenList, foundMember];
+          setChildrenList(updatedList);
+          setSelectedChildIndex(updatedList.length - 1);
+
+          // Fetch subs for new child
+          const subs = await fetchMemberSubscriptions(foundMember.code);
+          setSubscriptionsMap((prev) => ({ ...prev, [foundMember!.code]: subs }));
+
+          // Save link to user profile in Firestore
+          if (user) {
+            await saveUserToFirestore({
+              uid: user.id,
+              name: user.name,
+              email: user.email || '',
+              role: user.role,
+              phone: user.phone,
+              guardianPhone: user.guardianPhone,
+              sonName: foundMember.name,
+              sonCode: foundMember.code,
+            });
+          }
+
+          Alert.alert('تم الربط بنجاح! 🎉', `تم ربط حساب الابن (${foundMember.name}) بفرقة (${foundMember.squadName}) بنجاح!`);
+        }
+
+        setShowLinkModal(false);
+        setLinkInputCode('');
+      } else {
+        Alert.alert('غير موجود ❌', `لم يتم العثور على عضو بالكود أو الهاتف: ${cleanInput}`);
+      }
+    } catch (e: any) {
+      Alert.alert('خطأ', `تعذر ربط الابن: ${e.message}`);
+    } finally {
+      setLinking(false);
+    }
   };
 
-  const attendanceRate = member ? getMemberAttendanceRate(member.id) : 0;
+  const activeChild = useMemo(() => {
+    if (childrenList.length > 0 && selectedChildIndex < childrenList.length) {
+      return childrenList[selectedChildIndex];
+    }
+    return null;
+  }, [childrenList, selectedChildIndex]);
+
+  const activeChildAttendanceRate = useMemo(() => {
+    return activeChild ? getMemberAttendanceRate(activeChild.id) : 0;
+  }, [activeChild, getMemberAttendanceRate]);
+
+  const activeChildSubscriptions = useMemo(() => {
+    return activeChild ? subscriptionsMap[activeChild.code] || [] : [];
+  }, [activeChild, subscriptionsMap]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
+      {/* Header Banner */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>لوحة متابعة أولياء الأمور 👨‍👩‍👧</Text>
-        <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - متابعة دقيقة ومباشرة</Text>
+        <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - متابعة الأبناء والأنشطة والماليات</Text>
+      </View>
+
+      {/* Children Selection Bar (Multi-Child Pills) */}
+      <View style={styles.childrenBarCard}>
+        <View style={styles.childrenBarHeader}>
+          <TouchableOpacity style={styles.addChildBtn} onPress={() => setShowLinkModal(true)}>
+            <Text style={styles.addChildBtnText}>➕ ربط ابن آخر</Text>
+          </TouchableOpacity>
+          <Text style={styles.childrenBarTitle}>أبنائك الكشافين المسجلين ({childrenList.length}):</Text>
+        </View>
+
+        {childrenList.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.childrenPillsScroll}>
+            {childrenList.map((child, idx) => {
+              const isSelected = selectedChildIndex === idx;
+              return (
+                <TouchableOpacity
+                  key={child.id || idx}
+                  style={[styles.childPill, isSelected && styles.childPillActive]}
+                  onPress={() => setSelectedChildIndex(idx)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.childPillIcon]}>
+                    {child.gender === 'FEMALE' ? '🌸' : '🦁'}
+                  </Text>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.childPillName, isSelected && styles.childPillNameActive]}>
+                      {child.name.split(' ')[0]} {child.name.split(' ')[1] || ''}
+                    </Text>
+                    <Text style={[styles.childPillSquad, isSelected && styles.childPillSquadActive]}>
+                      قطاع {child.squadName}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        ) : null}
       </View>
 
       {loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color="#8B0000" />
-          <Text style={styles.loadingText}>جاري جلب بيانات الكشاف من قاعدة البيانات...</Text>
+          <Text style={styles.loadingText}>جاري جلب بيانات الأبناء من السحابة الكشفية...</Text>
         </View>
-      ) : !member ? (
+      ) : !activeChild ? (
         <View style={styles.linkCard}>
           <Text style={styles.linkCardTitle}>ربط حساب الكشاف (الابن / الابنة) 🔗</Text>
           <Text style={styles.linkCardDesc}>
-            أدخل الكود الكشفي للابن (مثال: JNOOD-001) أو رقم هاتف ولي الأمر للبحث وعرض بطاقة الكشاف وتقارير الحضور والماليات:
+            لم يتم العثور على أبناء كشافين مربوطين بهذا الحساب بعد. أدخل الكود الكشفي للابن (مثال: JS-2026-448) أو رقم الهاتف للربط الفوري:
           </Text>
           <TextInput
             style={styles.linkInput}
             placeholder="أدخل كود الكشاف أو رقم الهاتف..."
             placeholderTextColor="#888"
-            value={searchSonCode}
-            onChangeText={setSearchSonCode}
+            value={linkInputCode}
+            onChangeText={setLinkInputCode}
             autoCapitalize="characters"
           />
           <TouchableOpacity 
             style={styles.linkBtn}
-            onPress={handleLinkSon}
+            onPress={handleLinkNewChild}
             disabled={linking}
           >
             {linking ? (
@@ -106,30 +238,30 @@ export const ParentHomeScreen = ({ navigation }: any) => {
         </View>
       ) : (
         <>
-          {/* Child Scout ID Preview */}
-          <Text style={styles.sectionTitle}>بطاقة الكشاف والفرقة الحالية</Text>
-          <ScoutCardPreview member={member} />
+          {/* Active Child Scout ID Preview Card */}
+          <Text style={styles.sectionTitle}>بطاقة الكشاف والفرقة الكشفية الحالية</Text>
+          <ScoutCardPreview member={activeChild} />
 
           {/* Attendance Gauge Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>مؤشر الانضباط والحضور</Text>
+            <Text style={styles.cardTitle}>مؤشر الانضباط والحضور للابن ({activeChild.name})</Text>
             <View style={styles.gaugeRow}>
               <View style={styles.rateCircle}>
-                <Text style={styles.rateText}>{attendanceRate}%</Text>
+                <Text style={styles.rateText}>{activeChildAttendanceRate}%</Text>
                 <Text style={styles.rateSub}>
-                  {attendanceRate >= 85 ? 'ممتاز' : attendanceRate >= 65 ? 'جيد جداً' : 'يحتاج متابعة'}
+                  {activeChildAttendanceRate >= 85 ? 'ممتاز' : activeChildAttendanceRate >= 65 ? 'جيد جداً' : 'يحتاج متابعة'}
                 </Text>
               </View>
               <View style={styles.gaugeDetails}>
                 <Text style={styles.gaugeDesc}>
-                  موزعة على الأيام الكشفية والمعسكرات واجتماعات درس الكتاب والتسبحة.
+                  نسبة التزام الحضور في الأيام الكشفية والمعسكرات وتدريبات المهرجان الكشفي.
                 </Text>
                 <View style={styles.tagRow}>
                   <View style={styles.tag}>
-                    <Text style={styles.tagText}>فرقة: {member.squadName}</Text>
+                    <Text style={styles.tagText}>فرقة: {activeChild.squadName}</Text>
                   </View>
                   <View style={styles.tag}>
-                    <Text style={styles.tagText}>الكود: {member.code}</Text>
+                    <Text style={styles.tagText}>الكود: {activeChild.code}</Text>
                   </View>
                 </View>
               </View>
@@ -139,8 +271,8 @@ export const ParentHomeScreen = ({ navigation }: any) => {
           {/* Financial Status Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>موقف الاشتراكات والماليات (2026)</Text>
-            {subscriptions.length > 0 ? (
-              subscriptions.map((sub, idx) => (
+            {activeChildSubscriptions.length > 0 ? (
+              activeChildSubscriptions.map((sub, idx) => (
                 <View key={idx} style={{ marginBottom: 10 }}>
                   <View style={styles.finRow}>
                     <Text style={styles.finLabel}>إيصال رقم: {sub.receiptNumber}</Text>
@@ -148,12 +280,14 @@ export const ParentHomeScreen = ({ navigation }: any) => {
                       <Text style={styles.paidText}>✓ مُسدد بالكامل</Text>
                     </View>
                   </View>
-                  <Text style={styles.finDetails}>المبلغ: {sub.totalPaid || sub.subtotal} ج.م | المسدد: {sub.memberName}</Text>
+                  <Text style={styles.finDetails}>
+                    المبلغ: {sub.totalPaid || sub.subtotal} ج.م | المسدد: {sub.memberName}
+                  </Text>
                 </View>
               ))
             ) : (
               <View style={styles.emptySubBox}>
-                <Text style={styles.emptySubText}>لا توجد إيصالات سداد مسجلة حتى الآن لهذا الحساب.</Text>
+                <Text style={styles.emptySubText}>لا توجد إيصالات سداد مسجلة حتى الآن لهذا الابن.</Text>
               </View>
             )}
           </View>
@@ -164,10 +298,52 @@ export const ParentHomeScreen = ({ navigation }: any) => {
             activeOpacity={0.8}
             onPress={() => navigation?.navigate('ChatRooms')}
           >
-            <Text style={styles.contactBtnText}>💬 التواصل المباشر وغرف المحادثة</Text>
+            <Text style={styles.contactBtnText}>💬 التواصل المباشر مع قادة فرقة {activeChild.squadName}</Text>
           </TouchableOpacity>
         </>
       )}
+
+      {/* Modal to Link Additional Child */}
+      <Modal visible={showLinkModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalIcon}>👨‍👩‍👧</Text>
+            <Text style={styles.modalTitle}>ربط ابن جديد بحساب ولي الأمر</Text>
+            <Text style={styles.modalSub}>
+              أدخل الكود الكشفي للابن (مثال: JS-2026-448) أو رقم الموبايل لإضافته لمتابعة الحضور والاشتراكات:
+            </Text>
+
+            <TextInput
+              style={styles.linkInput}
+              placeholder="مثال: JS-2026-448 أو رقم الهاتف..."
+              placeholderTextColor="#888"
+              value={linkInputCode}
+              onChangeText={setLinkInputCode}
+              autoCapitalize="characters"
+            />
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity 
+                style={[styles.modalBtn, styles.modalBtnCancel]} 
+                onPress={() => setShowLinkModal(false)}
+              >
+                <Text style={styles.modalBtnCancelText}>إلغاء</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalBtn, styles.modalBtnConfirm]} 
+                onPress={handleLinkNewChild}
+                disabled={linking}
+              >
+                {linking ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.modalBtnConfirmText}>ربط الحساب 🔍</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -186,7 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   headerTitle: {
     color: '#FFFFFF',
@@ -195,8 +371,79 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     color: '#D4A359',
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
+    textAlign: 'center',
+  },
+  childrenBarCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  childrenBarHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  childrenBarTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  addChildBtn: {
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#8B0000',
+  },
+  addChildBtnText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  childrenPillsScroll: {
+    flexDirection: 'row-reverse',
+  },
+  childPill: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginRight: 8,
+    gap: 6,
+  },
+  childPillActive: {
+    backgroundColor: '#8B0000',
+    borderColor: '#8B0000',
+  },
+  childPillIcon: {
+    fontSize: 18,
+  },
+  childPillName: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  childPillNameActive: {
+    color: '#FFFFFF',
+  },
+  childPillSquad: {
+    fontSize: 9,
+    color: '#6B7280',
+  },
+  childPillSquadActive: {
+    color: '#D4A359',
+    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 15,
@@ -307,7 +554,7 @@ const styles = StyleSheet.create({
   },
   contactBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   centerBox: {
@@ -340,11 +587,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   linkCardDesc: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#4B5563',
     textAlign: 'right',
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: 18,
+    marginBottom: 14,
   },
   linkInput: {
     backgroundColor: '#FAF7F2',
@@ -353,10 +600,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'right',
     color: '#1F2937',
     marginBottom: 12,
+    width: '100%',
   },
   linkBtn: {
     backgroundColor: '#8B0000',
@@ -377,5 +625,62 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 22,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalIcon: {
+    fontSize: 36,
+    marginBottom: 6,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8B0000',
+    marginBottom: 6,
+  },
+  modalSub: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    width: '100%',
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  modalBtnCancel: {
+    backgroundColor: '#F3F4F6',
+    marginRight: 8,
+  },
+  modalBtnCancelText: {
+    color: '#4B5563',
+    fontWeight: 'bold',
+  },
+  modalBtnConfirm: {
+    backgroundColor: '#8B0000',
+    marginLeft: 8,
+  },
+  modalBtnConfirmText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });
