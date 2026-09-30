@@ -19,12 +19,13 @@ interface SubscriptionsState {
     wajla: number;
     badges: number;
   };
-  discountCodes: { [code: string]: number }; // e.g. JNOOD-D10 -> 10
+  discountCodes: { [code: string]: number };
   records: SubscriptionRecord[];
   applyDiscountCode: (code: string, secretPin?: string) => { success: boolean; percentage: number; error?: string };
   calculateTotal: (items: SubscriptionItemsInput, discountPercentage: number) => { subtotal: number; discountAmount: number; totalPaid: number };
   addRecord: (record: Omit<SubscriptionRecord, 'id' | 'receiptNumber' | 'createdAt'>) => SubscriptionRecord;
   updatePrices: (newPrices: Partial<SubscriptionsState['prices']>) => void;
+  setRecords: (records: SubscriptionRecord[]) => void;
 }
 
 export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
@@ -34,23 +35,40 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     promisePartySub: 150,  // اشتراك حفلة الوعد
     scarfReplacement: 80,  // بدل فاقد منديل
     wajla: 50,             // وجلة
-    badges: 60,            // شارات القميص الكشفي
+    badges: 60,            // شارات وأوسمة القميص الكشفي
   },
   discountCodes: {
-    'JNOOD-D10': 10, 'JNOOD10': 10, 'D10': 10,
-    'JNOOD-D20': 20, 'JNOOD20': 20, 'D20': 20,
-    'JNOOD-D30': 30, 'JNOOD30': 30, 'D30': 30,
-    'JNOOD-D40': 40, 'JNOOD40': 40, 'D40': 40,
-    'JNOOD-D50': 50, 'JNOOD50': 50, 'D50': 50,
-    'JNOOD-D60': 60, 'JNOOD60': 60, 'D60': 60,
-    'JNOOD-D70': 70, 'JNOOD70': 70, 'D70': 70,
-    'JNOOD-D80': 80, 'JNOOD80': 80, 'D80': 80,
-    'JNOOD-D90': 90, 'JNOOD90': 90, 'D90': 90,
+    // 10%
+    'SCOUT10': 10, 'JNOOD10': 10, 'JNOOD-D10': 10, 'D10': 10, '10%': 10, '10': 10,
+    // 20%
+    'SCOUT20': 20, 'JNOOD20': 20, 'JNOOD-D20': 20, 'D20': 20, '20%': 20, '20': 20,
+    // 30%
+    'SCOUT30': 30, 'JNOOD30': 30, 'JNOOD-D30': 30, 'D30': 30, '30%': 30, '30': 30,
+    // 40%
+    'SCOUT40': 40, 'JNOOD40': 40, 'JNOOD-D40': 40, 'D40': 40, '40%': 40, '40': 40,
+    // 50%
+    'SCOUT50': 50, 'JNOOD50': 50, 'JNOOD-D50': 50, 'D50': 50, '50%': 50, '50': 50,
+    // 60%
+    'SCOUT60': 60, 'JNOOD60': 60, 'JNOOD-D60': 60, 'D60': 60, '60%': 60, '60': 60,
+    // 70%
+    'SCOUT70': 70, 'JNOOD70': 70, 'JNOOD-D70': 70, 'D70': 70, '70%': 70, '70': 70,
+    // 80%
+    'SCOUT80': 80, 'JNOOD80': 80, 'JNOOD-D80': 80, 'D80': 80, '80%': 80, '80': 80,
+    // 90%
+    'SCOUT90': 90, 'JNOOD90': 90, 'JNOOD-D90': 90, 'D90': 90, '90%': 90, '90': 90,
+    // 100% Full Waiver
+    'FULL100': 100, 'JNOOD100': 100, '100%': 100,
   },
   records: [],
   applyDiscountCode: (code, secretPin) => {
     const trimmed = code.trim().toUpperCase();
-    const percentage = get().discountCodes[trimmed];
+    let percentage = get().discountCodes[trimmed];
+
+    // If typed e.g. "50", parse numeric percentage
+    if (!percentage && !isNaN(Number(trimmed))) {
+      const num = Number(trimmed);
+      if (num >= 5 && num <= 100) percentage = num;
+    }
 
     if (!percentage) {
       return { success: false, percentage: 0, error: 'كود الخصم غير صالح أو غير موجود بالمنظومة' };
@@ -91,5 +109,8 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
   },
   updatePrices: (newPrices) => {
     set((state) => ({ prices: { ...state.prices, ...newPrices } }));
+  },
+  setRecords: (records) => {
+    set({ records });
   },
 }));

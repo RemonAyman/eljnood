@@ -182,6 +182,20 @@ export async function fetchMemberSubscriptions(memberCode: string): Promise<Subs
   }
 }
 
+export async function fetchAllSubscriptionsFromFirestore(): Promise<SubscriptionRecord[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.SUBSCRIPTIONS));
+    const list: SubscriptionRecord[] = [];
+    snapshot.forEach((d) => {
+      list.push(d.data() as SubscriptionRecord);
+    });
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch all subscriptions error:', error.message);
+    return [];
+  }
+}
+
 // ─── 4. Real-time Chat Messages Operations ───────────────────────────────────
 
 export function subscribeToChatMessages(
