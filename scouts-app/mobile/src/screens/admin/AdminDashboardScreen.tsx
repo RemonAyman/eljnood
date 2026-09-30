@@ -1,17 +1,83 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
-import { seedInitialFirestoreData, fetchMembersFromFirestore } from '../../services/firebaseService';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
+import { 
+  seedInitialFirestoreData, 
+  fetchMembersFromFirestore, 
+  fetchAllSubscriptionsFromFirestore,
+  fetchAttendanceFromFirestore,
+  fetchFollowUpsFromFirestore
+} from '../../services/firebaseService';
 import { useMembersStore } from '../../store/membersStore';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 export const AdminDashboardScreen = ({ navigation }: any) => {
   const { members, loadMembersFromFirestore } = useMembersStore();
   const [seeding, setSeeding] = useState(false);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+  
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [attendancePercent, setAttendancePercent] = useState('0%');
+  const [followUpsCount, setFollowUpsCount] = useState(0);
+  const [realLogs, setRealLogs] = useState<any[]>([]);
 
-  // Load real members from Firestore on mount
+  const loadRealDashboardData = useCallback(async () => {
+    setLoadingMetrics(true);
+    try {
+      await loadMembersFromFirestore();
+      
+      // 1. Fetch Subscriptions Revenue
+      const subs = await fetchAllSubscriptionsFromFirestore();
+      const revenueSum = subs.reduce((acc, curr) => acc + (curr.totalPaid || 0), 0);
+      setTotalRevenue(revenueSum);
+
+      // 2. Fetch Today's Attendance
+      const todayStr = new Date().toISOString().split('T')[0];
+      const attendance = await fetchAttendanceFromFirestore(todayStr);
+      if (attendance && attendance.length > 0) {
+        const presentCount = attendance.filter((a) => a.status === 'PRESENT' || a.status === 'EXCUSED').length;
+        const pct = Math.round((presentCount / attendance.length) * 100);
+        setAttendancePercent(`${pct}%`);
+      } else {
+        setAttendancePercent('100%');
+      }
+
+      // 3. Fetch Follow-Ups
+      const followUps = await fetchFollowUpsFromFirestore();
+      setFollowUpsCount(followUps.length);
+
+      // 4. Build Real Activity Log Stream
+      const logs: any[] = [];
+      followUps.slice(0, 3).forEach((f: any, idx) => {
+        logs.push({
+          id: `fu_${idx}`,
+          name: f.leader || 'القائد المسؤول',
+          role: 'خدمة الافتقاد',
+          action: `تسجيل افتقاد (${f.visitTypeLabel || 'زيارة'}) - ${f.memberName}`,
+          time: f.date || 'اليوم',
+        });
+      });
+      subs.slice(0, 3).forEach((s: any, idx) => {
+        logs.push({
+          id: `sub_${idx}`,
+          name: s.memberName || 'عضو كشفي',
+          role: 'سديد اشتراك',
+          action: `تحصيل إيصال رقم ${s.receiptNumber || 'REC'} (${s.totalPaid} ج.م)`,
+          time: 'تم الاعتماد',
+        });
+      });
+      setRealLogs(logs);
+
+    } catch (e) {
+      console.warn('Error fetching live dashboard metrics:', e);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  }, [loadMembersFromFirestore]);
+
+  // Load real members and metrics from Firestore on mount
   useEffect(() => {
-    loadMembersFromFirestore();
-  }, []);
+    loadRealDashboardData();
+  }, [loadRealDashboardData]);
 
   const handleSeedFirestore = useCallback(async () => {
     Alert.alert(
@@ -28,7 +94,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
             setSeeding(false);
             if (result.success) {
               Alert.alert('✅ تم بنجاح', result.message);
-              loadMembersFromFirestore(); // Reload after seeding
+              loadRealDashboardData(); // Reload live metrics after seeding
             } else {
               Alert.alert('❌ خطأ', result.message + '\n\nتأكد من تعديل قواعد فايربيس للسماح بالكتابة');
             }
@@ -36,13 +102,13 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
         },
       ]
     );
-  }, [loadMembersFromFirestore]);
+  }, [loadRealDashboardData]);
 
   const metrics = [
-    { title: 'إجمالي الأعضاء المقيدين', value: members.length > 0 ? `${members.length.toLocaleString('ar-EG')}` : '1,248', sub: 'من KG لـ خريج', icon: '👨‍👦' },
-    { title: 'نسبة الحضور والانضباط', value: '94.2%', sub: 'الشهر الحالي', icon: '📊' },
-    { title: 'إجمالي الإيرادات المحصلة', value: '384,500 ج.م', sub: 'موسم 2026', icon: '💰' },
-    { title: 'القادة والجوالة النشطين', value: '86 قائد', sub: 'خدمة مستمرة', icon: '⚜️' },
+    { title: 'إجمالي الأعضاء المقيدين', value: `${members.length} عضو`, sub: 'بيانات حقيقية من Firestore', icon: '👨‍👦' },
+    { title: 'نسبة الحضور والانضباط', value: attendancePercent, sub: 'حساب لحظي مباشر', icon: '📊' },
+    { title: 'إجمالي الإيرادات المحصلة', value: `${totalRevenue.toLocaleString('ar-EG')} ج.م`, sub: 'إيصالات السداد الفعلية', icon: '💰' },
+    { title: 'سجلات الافتقاد المسجلة', value: `${followUpsCount} افتقاد`, sub: 'رعاية المخدومين', icon: '🤝' },
   ];
 
   const adminModules = [
@@ -127,18 +193,23 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
         </View>
 
         {/* Activity Log Section */}
-        <Text style={styles.sectionTitle}>سجل الأنشطة والمتابعة اللحظية (Activity Log)</Text>
+        <Text style={styles.sectionTitle}>سجل الأنشطة والمتابعة اللحظية المباشرة (Firestore Stream)</Text>
         <View style={styles.logCard}>
-          {activityLog.map((item) => (
-            <View key={item.id} style={styles.logItem}>
-              <View style={styles.logHeader}>
-                <Text style={styles.logName}>{item.name} ({item.role})</Text>
-                <Text style={styles.logTime}>{item.time}</Text>
+          {realLogs.length > 0 ? (
+            realLogs.map((item) => (
+              <View key={item.id} style={styles.logItem}>
+                <View style={styles.logHeader}>
+                  <Text style={styles.logName}>{item.name} ({item.role})</Text>
+                  <Text style={styles.logTime}>{item.time}</Text>
+                </View>
+                <Text style={styles.logAction}>⚡ {item.action}</Text>
               </View>
-              <Text style={styles.logAction}>⚡ {item.action}</Text>
-              <Text style={styles.logIp}>IP Address: {item.ip}</Text>
+            ))
+          ) : (
+            <View style={{ padding: 16, alignItems: 'center' }}>
+              <Text style={{ fontSize: 12, color: '#6B7280' }}>لا توجد حركات حديثة مسجلة بعد في السجل المركزي</Text>
             </View>
-          ))}
+          )}
         </View>
       </ScrollView>
       <BottomNavBar navigation={navigation} currentRoute="AdminDashboard" />
