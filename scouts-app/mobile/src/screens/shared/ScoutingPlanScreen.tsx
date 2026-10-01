@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { fetchScoutingPlansFromFirestore } from '../../services/firebaseService';
 
 interface PlanEvent {
   id: string;
@@ -130,8 +131,27 @@ const SCOUTING_PLAN_DATA: PlanEvent[] = [
 
 export const ScoutingPlanScreen = () => {
   const [selectedQuarter, setSelectedQuarter] = useState<string>('Q3');
+  const [eventsList, setEventsList] = useState<PlanEvent[]>(SCOUTING_PLAN_DATA);
+  const [loading, setLoading] = useState(true);
 
-  const filteredEvents = SCOUTING_PLAN_DATA.filter((e) => e.quarter === selectedQuarter);
+  React.useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const firestorePlans = await fetchScoutingPlansFromFirestore();
+        if (firestorePlans && firestorePlans.length > 0) {
+          setEventsList([...firestorePlans, ...SCOUTING_PLAN_DATA]);
+        }
+      } catch (e) {
+        console.warn('Error loading scouting plans:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const filteredEvents = eventsList.filter((e) => e.quarter === selectedQuarter);
 
   const getStatusBadge = (status: PlanEvent['status']) => {
     switch (status) {

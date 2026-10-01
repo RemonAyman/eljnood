@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+import { saveMemoryToFirestore, fetchMemoriesFromFirestore } from '../../services/firebaseService';
 
 interface MemoryItem {
   id: string;
@@ -135,6 +136,7 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('CAMPS');
   const [memories, setMemories] = useState<MemoryItem[]>(INITIAL_MEMORIES);
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
 
   // Lightbox Modal
   const [activeMemory, setActiveMemory] = useState<MemoryItem | null>(null);
@@ -144,6 +146,23 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newLocation, setNewLocation] = useState('');
   const [newDesc, setNewDesc] = useState('');
+
+  React.useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const firestoreMemories = await fetchMemoriesFromFirestore();
+        if (firestoreMemories && firestoreMemories.length > 0) {
+          setMemories([...firestoreMemories, ...INITIAL_MEMORIES]);
+        }
+      } catch (e) {
+        console.warn('Error loading memories:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const filteredMemories = memories.filter((m) => m.category === selectedCategory);
 
@@ -163,7 +182,7 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
     );
   };
 
-  const handleAddMemory = () => {
+  const handleAddMemory = async () => {
     if (!newTitle.trim()) {
       Alert.alert('تنبيه', 'من فضلك أدخل عنوان الذكرى أو المعسكر');
       return;
@@ -187,7 +206,9 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
     setNewTitle('');
     setNewLocation('');
     setNewDesc('');
-    Alert.alert('تم بنجاح 🎉', 'تم حفظ ومشاركة الذكرى الكشفية بنجاح!');
+
+    await saveMemoryToFirestore(newItem);
+    Alert.alert('تم بنجاح 🎉', 'تم حفظ ومشاركة الذكرى الكشفية بـ Firestore بنجاح!');
   };
 
   return (

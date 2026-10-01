@@ -24,6 +24,9 @@ export const COLLECTIONS = {
   INVENTORY_REQUESTS: 'inventory_requests',
   FOLLOW_UPS: 'follow_ups',
   ABSENCE_EXCUSES: 'absence_excuses',
+  MEMORIES: 'memories',
+  CURRICULA: 'curricula',
+  SCOUTING_PLANS: 'scouting_plans',
 } as const;
 
 // ─── 1. Members Operations ───────────────────────────────────────────────────
@@ -366,6 +369,96 @@ export async function fetchInventoryRequestsFromFirestore(): Promise<any[]> {
     return list;
   } catch (error: any) {
     console.warn('⚠️ Firestore fetch inventory requests error:', error.message);
+    return [];
+  }
+}
+
+// ─── 9. Memories Operations ─────────────────────────────────────────────────
+
+export async function saveMemoryToFirestore(memory: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.MEMORIES, memory.id || `m_${Date.now()}`);
+    await setDoc(docRef, {
+      ...memory,
+      createdAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save memory error:', error.message);
+    return false;
+  }
+}
+
+export async function fetchMemoriesFromFirestore(): Promise<any[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.MEMORIES));
+    const list: any[] = [];
+    snapshot.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch memories error:', error.message);
+    return [];
+  }
+}
+
+// ─── 10. Curricula Operations ────────────────────────────────────────────────
+
+export async function saveCurriculumToFirestore(curriculum: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.CURRICULA, curriculum.id || `c_${Date.now()}`);
+    await setDoc(docRef, {
+      ...curriculum,
+      createdAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save curriculum error:', error.message);
+    return false;
+  }
+}
+
+export async function fetchCurriculaFromFirestore(): Promise<any[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.CURRICULA));
+    const list: any[] = [];
+    snapshot.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch curricula error:', error.message);
+    return [];
+  }
+}
+
+// ─── 11. Scouting Plans Operations ──────────────────────────────────────────
+
+export async function saveScoutingPlanToFirestore(plan: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, COLLECTIONS.SCOUTING_PLANS, plan.id || `p_${Date.now()}`);
+    await setDoc(docRef, {
+      ...plan,
+      createdAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore save scouting plan error:', error.message);
+    return false;
+  }
+}
+
+export async function fetchScoutingPlansFromFirestore(): Promise<any[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.SCOUTING_PLANS));
+    const list: any[] = [];
+    snapshot.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    return list;
+  } catch (error: any) {
+    console.warn('⚠️ Firestore fetch scouting plans error:', error.message);
     return [];
   }
 }

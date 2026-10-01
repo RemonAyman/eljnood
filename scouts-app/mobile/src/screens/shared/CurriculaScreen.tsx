@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+import { fetchCurriculaFromFirestore } from '../../services/firebaseService';
 
 interface CurriculumItem {
   id: string;
@@ -135,13 +136,32 @@ export const CurriculaScreen = ({ navigation }: any) => {
   const [selectedSquad, setSelectedSquad] = useState<string>('ASHBAL');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [curriculaList, setCurriculaList] = useState<CurriculumItem[]>(CURRICULUM_DATA);
+  const [loading, setLoading] = useState(true);
 
   // Quiz Modal State
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
 
-  const filteredCurricula = CURRICULUM_DATA.filter((item) => {
+  React.useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const firestoreCurricula = await fetchCurriculaFromFirestore();
+        if (firestoreCurricula && firestoreCurricula.length > 0) {
+          setCurriculaList([...firestoreCurricula, ...CURRICULUM_DATA]);
+        }
+      } catch (e) {
+        console.warn('Error loading curricula from Firestore:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const filteredCurricula = curriculaList.filter((item) => {
     const matchSquad = item.squadKey === selectedSquad;
     const matchType = selectedTypeFilter === 'ALL' || item.fileType === selectedTypeFilter;
     const matchSearch =
