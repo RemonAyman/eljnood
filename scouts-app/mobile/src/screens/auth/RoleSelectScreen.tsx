@@ -52,7 +52,7 @@ export const RoleSelectScreen = ({ navigation }: any) => {
       <View style={styles.header}>
         <View style={styles.logoCircle}>
           <Image
-            source={require('../../../assets/logo.jpeg')}
+            source={require('../../../assets/logo.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />

@@ -1,5 +1,16 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  Alert, 
+  Image, 
+  ActivityIndicator, 
+  TextInput, 
+  Modal 
+} from 'react-native';
 import { 
   seedInitialFirestoreData, 
   fetchMembersFromFirestore, 
@@ -9,72 +20,110 @@ import {
 } from '../../services/firebaseService';
 import { useMembersStore } from '../../store/membersStore';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+import { Member } from '../../types';
 
 export const AdminDashboardScreen = ({ navigation }: any) => {
   const { members, loadMembersFromFirestore } = useMembersStore();
   const [seeding, setSeeding] = useState(false);
   const [loadingMetrics, setLoadingMetrics] = useState(true);
-  
+
+  // Financial Metrics
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [revenueBreakdown, setRevenueBreakdown] = useState({
+    annual: 0,
+    festival: 0,
+    wajla: 0,
+    badges: 0,
+  });
+  const [expenses, setExpenses] = useState(12500); // Estimated operational expenses
+  const [receiptsCount, setReceiptsCount] = useState(0);
+
+  // Attendance Metrics
   const [attendancePercent, setAttendancePercent] = useState('0%');
+  const [todayPresentCount, setTodayPresentCount] = useState(0);
+
+  // Follow-Up Metrics
   const [followUpsCount, setFollowUpsCount] = useState(0);
+
+  // Activity Stream & Member Roster State
   const [realLogs, setRealLogs] = useState<any[]>([]);
+  const [showRosterModal, setShowRosterModal] = useState(false);
+  const [rosterSearch, setRosterSearch] = useState('');
+  const [selectedRosterSquad, setSelectedRosterSquad] = useState('ALL');
 
   const loadRealDashboardData = useCallback(async () => {
     setLoadingMetrics(true);
     try {
       await loadMembersFromFirestore();
-      
-      // 1. Fetch Subscriptions Revenue
+
+      // 1. Fetch Subscriptions & Financial Breakdown
       const subs = await fetchAllSubscriptionsFromFirestore();
-      const revenueSum = subs.reduce((acc, curr) => acc + (curr.totalPaid || 0), 0);
-      setTotalRevenue(revenueSum);
+      let total = 0;
+      let ann = 0;
+      let fest = 0;
+      let waj = 0;
+      let bdg = 0;
+
+      subs.forEach((s: any) => {
+        const paid = s.totalPaid || s.subtotal || 0;
+        total += paid;
+        if (s.annualSub) ann += 150;
+        if (s.festivalSub) fest += 100;
+        if (s.wajla) waj += 60;
+        if (s.badges) bdg += 40;
+      });
+
+      setTotalRevenue(total);
+      setReceiptsCount(subs.length);
+      setRevenueBreakdown({ annual: ann, festival: fest, wajla: waj, badges: bdg });
 
       // 2. Fetch Today's Attendance
       const todayStr = new Date().toISOString().split('T')[0];
       const attendance = await fetchAttendanceFromFirestore(todayStr);
       if (attendance && attendance.length > 0) {
         const presentCount = attendance.filter((a) => a.status === 'PRESENT' || a.status === 'EXCUSED').length;
+        setTodayPresentCount(presentCount);
         const pct = Math.round((presentCount / attendance.length) * 100);
         setAttendancePercent(`${pct}%`);
       } else {
         setAttendancePercent('100%');
+        setTodayPresentCount(members.length);
       }
 
       // 3. Fetch Follow-Ups
       const followUps = await fetchFollowUpsFromFirestore();
       setFollowUpsCount(followUps.length);
 
-      // 4. Build Real Activity Log Stream
+      // 4. Build Real Activity Log Stream ("مين دخل ومين خرج وسجلات النشاط")
       const logs: any[] = [];
-      followUps.slice(0, 3).forEach((f: any, idx) => {
+      followUps.slice(0, 4).forEach((f: any, idx) => {
         logs.push({
           id: `fu_${idx}`,
           name: f.leader || 'القائد المسؤول',
           role: 'خدمة الافتقاد',
-          action: `تسجيل افتقاد (${f.visitTypeLabel || 'زيارة'}) - ${f.memberName}`,
+          action: `تسجيل افتقاد (${f.visitTypeLabel || 'زيارة'}) للكشاف: ${f.memberName}`,
           time: f.date || 'اليوم',
+          icon: '🤝',
         });
       });
-      subs.slice(0, 3).forEach((s: any, idx) => {
+      subs.slice(0, 4).forEach((s: any, idx) => {
         logs.push({
           id: `sub_${idx}`,
           name: s.memberName || 'عضو كشفي',
-          role: 'سديد اشتراك',
-          action: `تحصيل إيصال رقم ${s.receiptNumber || 'REC'} (${s.totalPaid} ج.م)`,
-          time: 'تم الاعتماد',
+          role: 'سداد اشتراك',
+          action: `إصدار إيصال رقم ${s.receiptNumber || 'REC'} بالمبلغ (${s.totalPaid} ج.م)`,
+          time: 'تم التحصيل',
+          icon: '💰',
         });
       });
       setRealLogs(logs);
-
     } catch (e) {
       console.warn('Error fetching live dashboard metrics:', e);
     } finally {
       setLoadingMetrics(false);
     }
-  }, [loadMembersFromFirestore]);
+  }, [loadMembersFromFirestore, members.length]);
 
-  // Load real members and metrics from Firestore on mount
   useEffect(() => {
     loadRealDashboardData();
   }, [loadRealDashboardData]);
@@ -94,7 +143,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
             setSeeding(false);
             if (result.success) {
               Alert.alert('✅ تم بنجاح', result.message);
-              loadRealDashboardData(); // Reload live metrics after seeding
+              loadRealDashboardData();
             } else {
               Alert.alert('❌ خطأ', result.message + '\n\nتأكد من تعديل قواعد فايربيس للسماح بالكتابة');
             }
@@ -104,50 +153,64 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
     );
   }, [loadRealDashboardData]);
 
-  const metrics = [
-    { title: 'إجمالي الأعضاء المقيدين', value: `${members.length} عضو`, sub: 'بيانات حقيقية من Firestore', icon: '👨‍👦' },
-    { title: 'نسبة الحضور والانضباط', value: attendancePercent, sub: 'حساب لحظي مباشر', icon: '📊' },
-    { title: 'إجمالي الإيرادات المحصلة', value: `${totalRevenue.toLocaleString('ar-EG')} ج.م`, sub: 'إيصالات السداد الفعلية', icon: '💰' },
-    { title: 'سجلات الافتقاد المسجلة', value: `${followUpsCount} افتقاد`, sub: 'رعاية المخدومين', icon: '🤝' },
-  ];
-
   const adminModules = [
-    { title: 'التحضير والـ QR', icon: '📋', route: 'Attendance', color: '#8B0000' },
-    { title: 'الاشتراكات والماليات', icon: '💰', route: 'Subscriptions', color: '#1E3A8A' },
-    { title: 'سجل الافتقاد والمتابعة', icon: '🤝', route: 'FollowUp', color: '#047857' },
-    { title: 'استعارة العهدة والمهمات', icon: '⛺', route: 'InventoryRequest', color: '#B45309' },
-    { title: 'حجز قاعات الكنيسة', icon: '🏛️', route: 'RoomReservation', color: '#6D28D9' },
-    { title: 'المناهج والمسابقات', icon: '📚', route: 'Curricula', color: '#BE185D' },
-    { title: 'أرشيف الذكريات', icon: '📸', route: 'Memories', color: '#0F766E' },
-    { title: 'غرف التواصل والشات', icon: '💬', route: 'ChatRooms', color: '#1D4ED8' },
-    { title: 'الخطة السنوية والجدول', icon: '📅', route: 'ScoutingPlan', color: '#374151' },
-    { title: 'استمارة عضو جديد', icon: '➕', route: 'Register', color: '#991B1B' },
+    { title: 'سجل التحضير والـ QR', subtitle: 'متابعة حضور وانضباط كافة الفرق والقطاعات', icon: '📋', route: 'Attendance', color: '#8B0000' },
+    { title: 'الخزينة والاشتراكات', subtitle: 'إصدار الإيصالات ومراجعة الدفعات والخصومات', icon: '💰', route: 'Subscriptions', color: '#1E3A8A' },
+    { title: 'الافتقاد والرعاية الأسرية', subtitle: 'تقارير افتقاد المخدومين والزيارات المنزلية', icon: '🤝', route: 'FollowUp', color: '#047857' },
+    { title: 'دليل الأعضاء والمستخدمين', subtitle: 'سجل المقيدين ("مين دخل ومين خرج" والبيانات)', icon: '👥', action: () => setShowRosterModal(true), color: '#7C3AED' },
+    { title: 'استعارة العهدة والمهمات', subtitle: 'إدارة وتتبع استعارة الخيام والمعدات الكشفية', icon: '⛺', route: 'InventoryRequest', color: '#B45309' },
+    { title: 'حجز قاعات المبنى', subtitle: 'جدول مواعيد بروفات واجتماعات قاعات الكنيسة', icon: '🏛️', route: 'RoomReservation', color: '#6D28D9' },
+    { title: 'المناهج والمسابقات', subtitle: 'مناهج المهرجان والأنشطة الروحية والتثقيفية', icon: '📚', route: 'Curricula', color: '#BE185D' },
+    { title: 'أرشيف الذكريات والمعسكرات', subtitle: 'معرض الصور والميديا التوثيقية للفوج الكشفي', icon: '📸', route: 'Memories', color: '#0F766E' },
+    { title: 'غرف التواصل والشات', subtitle: 'دردشة وتواصل القادة وأولياء الأمور والكشافة', icon: '💬', route: 'ChatRooms', color: '#1D4ED8' },
+    { title: 'الخطة الكشفية السنوية', subtitle: 'جدول التواريخ والمعسكرات الصيفية والشتوية', icon: '📅', route: 'ScoutingPlan', color: '#374151' },
+    { title: 'استمارة عضو/خادم جديد', subtitle: 'تسجيل قيد عضو جديد أو قائد بالمنظومة', icon: '➕', route: 'Register', color: '#991B1B' },
+    { title: 'بوابة الزوار والأنشطة العامة', subtitle: 'استعراض صفحة الكشافة العامة للزوار', icon: '🌐', route: 'PublicHome', color: '#D4A359' },
   ];
 
-  const activityLog = [
-    { id: '1', name: 'الخادم مينا نبيل', role: 'رئيس قطاع', action: 'تسجيل غياب يوم كشفي (85 فرد)', time: 'منذ 10 دقائق', ip: '192.168.1.15' },
-    { id: '2', name: 'أمين الخزينة جورج سامي', role: 'مسؤول ماليات', action: 'تحصيل إيصال REC-2026-001 (549 ج.م)', time: 'منذ 25 دقيقة', ip: '192.168.1.42' },
-    { id: '3', name: 'الخادم بيتر يوسف', role: 'قائد سرية', action: 'تسجيل افتقاد طفل (زيارة منزلية)', time: 'منذ ساعة', ip: '192.168.1.88' },
-    { id: '4', name: 'مدير الخدمة أستاذ جورج', role: 'Admin', action: 'تعديل جدول الأسعار (اشتراك سنوي)', time: 'منذ ساعتين', ip: '192.168.1.100' },
-  ];
+  const filteredRoster = useMemo(() => {
+    return members.filter((m) => {
+      const matchSearch = m.name.toLowerCase().includes(rosterSearch.toLowerCase()) || m.code.toLowerCase().includes(rosterSearch.toLowerCase());
+      const matchSquad = selectedRosterSquad === 'ALL' || m.squadName === selectedRosterSquad;
+      return matchSearch && matchSquad;
+    });
+  }, [members, rosterSearch, selectedRosterSquad]);
+
+  const netBalance = totalRevenue - expenses;
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 80 }]}>
-        {/* Header */}
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 90 }]}>
+        {/* Header Banner */}
         <View style={styles.header}>
           <View style={styles.headerLogoCircle}>
             <Image
-              source={require('../../../assets/logo.jpeg')}
+              source={require('../../../assets/logo.png')}
               style={styles.headerLogoImage}
               resizeMode="contain"
             />
           </View>
-          <Text style={styles.headerTitle}>لوحة القيادة الإدارية وسجل النشاط المركزي 🛡️</Text>
-          <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - الإدارة العامة</Text>
+          <Text style={styles.headerTitle}>قائمة التحكم المركزية والإدارة العامة 🛡️</Text>
+          <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - الشامل لكل خدمات التطبيق</Text>
+
+          {/* Quick Stat Bar */}
+          <View style={styles.headerQuickStats}>
+            <View style={styles.statChip}>
+              <Text style={styles.statChipVal}>{members.length}</Text>
+              <Text style={styles.statChipLbl}>أعضاء مقيدين</Text>
+            </View>
+            <View style={styles.statChip}>
+              <Text style={styles.statChipVal}>{attendancePercent}</Text>
+              <Text style={styles.statChipLbl}>نسبة انضباط اليوم</Text>
+            </View>
+            <View style={styles.statChip}>
+              <Text style={styles.statChipVal}>{totalRevenue.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={styles.statChipLbl}>إيرادات الخزينة</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Firebase Initialize Button — Admin Only */}
+        {/* Database Initialization Action Banner */}
         <TouchableOpacity
           style={[styles.seedBtn, seeding && styles.seedBtnDisabled]}
           onPress={handleSeedFirestore}
@@ -160,49 +223,101 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
           <Text style={styles.seedBtnSub}>ينشئ جداول: أعضاء · مستخدمين · حضور · اشتراكات</Text>
         </TouchableOpacity>
 
-        {/* KPI Metrics Row */}
-        <Text style={styles.sectionTitle}>مؤشرات الأداء العامة</Text>
+        {/* ─── FINANCIAL DETAILED OVERVIEW ───────────────────────────────────────── */}
+        <View style={styles.financialCard}>
+          <View style={styles.finHeaderRow}>
+            <TouchableOpacity style={styles.finDetailsBtn} onPress={() => navigation?.navigate('Subscriptions')}>
+              <Text style={styles.finDetailsBtnText}>عرض الخزينة التفصيلية ←</Text>
+            </TouchableOpacity>
+            <Text style={styles.cardTitleText}>💰 تقرير الخزينة والماليات والمصروفات</Text>
+          </View>
 
-        <View style={styles.metricsGrid}>
-          {metrics.map((m, idx) => (
-            <View key={idx} style={styles.metricCard}>
-              <Text style={styles.metricIcon}>{m.icon}</Text>
-              <Text style={styles.metricValue}>{m.value}</Text>
-              <Text style={styles.metricTitle}>{m.title}</Text>
-              <Text style={styles.metricSub}>{m.sub}</Text>
+          <View style={styles.finMetricsGrid}>
+            <View style={[styles.finBox, { backgroundColor: '#DEF7EC', borderColor: '#03543F' }]}>
+              <Text style={[styles.finVal, { color: '#03543F' }]}>{totalRevenue.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={[styles.finLbl, { color: '#03543F' }]}>إجمالي المتحصلات ({receiptsCount} إيصال)</Text>
             </View>
-          ))}
+
+            <View style={[styles.finBox, { backgroundColor: '#FDE8E8', borderColor: '#991B1B' }]}>
+              <Text style={[styles.finVal, { color: '#991B1B' }]}>{expenses.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={[styles.finLbl, { color: '#991B1B' }]}>المصروفات والتجهيزات الكشفية</Text>
+            </View>
+
+            <View style={[styles.finBox, { backgroundColor: '#FEF3C7', borderColor: '#92400E', width: '100%', marginTop: 8 }]}>
+              <Text style={[styles.finVal, { color: '#92400E', fontSize: 20 }]}>{netBalance.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={[styles.finLbl, { color: '#92400E' }]}>صافي الرصيد المالي المتبقي في الخزينة الكشفية 🔑</Text>
+            </View>
+          </View>
+
+          {/* Item Breakdown Summary */}
+          <Text style={styles.finBreakdownHeading}>تفاصيل الإيرادات حسب بنود الخدمة:</Text>
+          <View style={styles.finBreakdownRow}>
+            <View style={styles.breakItem}>
+              <Text style={styles.breakItemVal}>{revenueBreakdown.annual.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={styles.breakItemLbl}>اشتراك سنوي 📜</Text>
+            </View>
+            <View style={styles.breakItem}>
+              <Text style={styles.breakItemVal}>{revenueBreakdown.festival.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={styles.breakItemLbl}>مهرجان الكرازة ⛺</Text>
+            </View>
+            <View style={styles.breakItem}>
+              <Text style={styles.breakItemVal}>{revenueBreakdown.wajla.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={styles.breakItemLbl}>وجلات خشبية 🧣</Text>
+            </View>
+            <View style={styles.breakItem}>
+              <Text style={styles.breakItemVal}>{revenueBreakdown.badges.toLocaleString('ar-EG')} ج.م</Text>
+              <Text style={styles.breakItemLbl}>شارات وترقيات 🏅</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Quick Access Modules Grid */}
-        <Text style={styles.sectionTitle}>أقسام ووحدات المنظومة الكشفية (10 أقسام)</Text>
-        <View style={styles.modulesGrid}>
+        {/* ─── MASTER MENU & MODULES GRID ────────────────────────────────────────── */}
+        <Text style={styles.sectionHeaderTitle}>قائمة التحكم الشاملة لجميع أقسام المنظومة (12 قسماً)</Text>
+        
+        <View style={styles.masterMenuGrid}>
           {adminModules.map((mod, idx) => (
             <TouchableOpacity
               key={idx}
-              style={[styles.moduleCard, { borderColor: mod.color }]}
-              activeOpacity={0.8}
-              onPress={() => navigation?.navigate(mod.route)}
+              style={styles.masterMenuCard}
+              activeOpacity={0.85}
+              onPress={() => {
+                if (mod.action) mod.action();
+                else if (mod.route) navigation?.navigate(mod.route);
+              }}
             >
-              <View style={[styles.moduleIconCircle, { backgroundColor: mod.color }]}>
-                <Text style={styles.moduleIcon}>{mod.icon}</Text>
+              <View style={styles.masterMenuTop}>
+                <View style={[styles.masterIconCircle, { backgroundColor: mod.color }]}>
+                  <Text style={styles.masterIcon}>{mod.icon}</Text>
+                </View>
+                <Text style={styles.masterCardTitle}>{mod.title}</Text>
               </View>
-              <Text style={styles.moduleTitle}>{mod.title}</Text>
+              <Text style={styles.masterCardSub}>{mod.subtitle}</Text>
+              <View style={styles.masterCardArrowRow}>
+                <Text style={[styles.masterCardArrow, { color: mod.color }]}>دخول القسم ➔</Text>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Activity Log Section */}
-        <Text style={styles.sectionTitle}>سجل الأنشطة والمتابعة اللحظية المباشرة (Firestore Stream)</Text>
+        {/* ─── LIVE ACTIVITY & LOG STREAM ("مين دخل ومين خرج") ────────────────────── */}
+        <View style={styles.sectionHeaderRow}>
+          <TouchableOpacity onPress={() => setShowRosterModal(true)}>
+            <Text style={styles.seeRosterLink}>دليل المستخدمين كامل ("مين دخل") ←</Text>
+          </TouchableOpacity>
+          <Text style={styles.sectionHeaderTitle}>سجل الأنشطة والحركات اللحظية المباشرة</Text>
+        </View>
+
         <View style={styles.logCard}>
-          {realLogs.length > 0 ? (
+          {loadingMetrics ? (
+            <ActivityIndicator color="#8B0000" style={{ padding: 20 }} />
+          ) : realLogs.length > 0 ? (
             realLogs.map((item) => (
               <View key={item.id} style={styles.logItem}>
                 <View style={styles.logHeader}>
-                  <Text style={styles.logName}>{item.name} ({item.role})</Text>
+                  <Text style={styles.logName}>{item.icon} {item.name} ({item.role})</Text>
                   <Text style={styles.logTime}>{item.time}</Text>
                 </View>
-                <Text style={styles.logAction}>⚡ {item.action}</Text>
+                <Text style={styles.logAction}>{item.action}</Text>
               </View>
             ))
           ) : (
@@ -212,6 +327,67 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
           )}
         </View>
       </ScrollView>
+
+      {/* ─── MEMBER ROSTER MODAL ("دليل الأعضاء والمستخدمين المسجلين") ────────────── */}
+      <Modal visible={showRosterModal} transparent animationType="slide" onRequestClose={() => setShowRosterModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.rosterModalBox}>
+            <View style={styles.rosterModalHeader}>
+              <TouchableOpacity style={styles.rosterCloseBtn} onPress={() => setShowRosterModal(false)}>
+                <Text style={styles.rosterCloseText}>إغلاق ✖</Text>
+              </TouchableOpacity>
+              <Text style={styles.rosterModalTitle}>دليل الأعضاء والمستخدمين ({members.length}) 👥</Text>
+            </View>
+            <Text style={styles.rosterModalSub}>سجل المقيدين والمستخدمين الجدد والخدام ("مين دخل ومين خرج")</Text>
+
+            <TextInput
+              style={styles.rosterSearchInput}
+              placeholder="🔍 ابحث بالاسم أو كود الكشاف أو رقم الهاتف..."
+              placeholderTextColor="#888"
+              value={rosterSearch}
+              onChangeText={setRosterSearch}
+            />
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.squadPillsScroll}>
+              {['ALL', 'براعم', 'أشبال', 'زهرات', 'كشاف', 'مرشدات', 'متقدم', 'رائدات', 'جوالة', 'قادة'].map((sq) => (
+                <TouchableOpacity
+                  key={sq}
+                  style={[styles.squadPill, selectedRosterSquad === sq && styles.squadPillActive]}
+                  onPress={() => setSelectedRosterSquad(sq)}
+                >
+                  <Text style={[styles.squadPillText, selectedRosterSquad === sq && styles.squadPillTextActive]}>
+                    {sq === 'ALL' ? 'الكل' : sq}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <ScrollView style={styles.rosterListScroll}>
+              {filteredRoster.length > 0 ? (
+                filteredRoster.map((m) => (
+                  <View key={m.id} style={styles.rosterMemberItem}>
+                    <View style={styles.rosterMemberInfo}>
+                      <Text style={styles.rosterMemberName}>{m.name}</Text>
+                      <View style={styles.rosterMemberSubRow}>
+                        <Text style={styles.rosterCodeBadge}>{m.code}</Text>
+                        <Text style={styles.rosterSquadBadge}>فرقة {m.squadName}</Text>
+                        <Text style={styles.rosterPhoneText}>📱 {m.phone || m.guardianPhone || 'لا يوجد هاتف'}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.rosterDateBadge}>
+                      <Text style={styles.rosterDateText}>تاريخ القيد:</Text>
+                      <Text style={styles.rosterDateVal}>{m.createdAt ? m.createdAt.split('T')[0] : 'مسجل'}</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyRosterText}>لا يوجد أعضاء مطابقون للبحث</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <BottomNavBar navigation={navigation} currentRoute="AdminDashboard" />
     </View>
   );
@@ -222,46 +398,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FAF7F2',
   },
-  seedBtn: {
-    backgroundColor: '#7F1D1D',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#991B1B',
-    alignItems: 'center',
-  },
-  seedBtnDisabled: {
-    opacity: 0.6,
-    backgroundColor: '#B45309',
-  },
-  seedBtnText: {
-    color: '#FEF2F2',
-    fontSize: 13,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  seedBtnSub: {
-    color: '#FCA5A5',
-    fontSize: 10,
-    marginTop: 3,
-    textAlign: 'center',
-  },
   content: {
     padding: 16,
     paddingBottom: 40,
   },
   header: {
     backgroundColor: '#8B0000',
-    borderRadius: 20,
-    padding: 18,
+    borderRadius: 24,
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
+    elevation: 4,
   },
   headerLogoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -272,13 +424,13 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   headerLogoImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -288,82 +440,218 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  sectionTitle: {
+  headerQuickStats: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  statChip: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statChipVal: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  statChipLbl: {
+    color: '#F3F4F6',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  seedBtn: {
+    backgroundColor: '#7F1D1D',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#991B1B',
+    alignItems: 'center',
+  },
+  seedBtnDisabled: {
+    opacity: 0.6,
+  },
+  seedBtnText: {
+    color: '#FEF2F2',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  seedBtnSub: {
+    color: '#FCA5A5',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  financialCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+    elevation: 2,
+  },
+  finHeaderRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardTitleText: {
     fontSize: 15,
     fontWeight: 'bold',
     color: '#8B0000',
-    marginTop: 14,
-    marginBottom: 10,
-    textAlign: 'right',
   },
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  metricCard: {
-    backgroundColor: '#FFFFFF',
-    width: '48%',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
+  finDetailsBtn: {
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#EADBC8',
-    alignItems: 'center',
-    elevation: 1,
+    borderColor: '#8B0000',
   },
-  metricIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  metricValue: {
-    fontSize: 17,
+  finDetailsBtnText: {
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#8B0000',
   },
-  metricTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#374151',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  metricSub: {
-    fontSize: 10,
-    color: '#9CA3AF',
-  },
-  modulesGrid: {
-    flexDirection: 'row',
+  finMetricsGrid: {
+    flexDirection: 'row-reverse',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  moduleCard: {
+  finBox: {
     width: '48%',
-    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 12,
-    marginBottom: 10,
-    alignItems: 'center',
     borderWidth: 1.5,
-    elevation: 2,
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  moduleIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
+  finVal: {
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  finLbl: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  finBreakdownHeading: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#374151',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  finBreakdownRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+  },
+  breakItem: {
+    flex: 1,
+    backgroundColor: '#FAF7F2',
+    padding: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginHorizontal: 2,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  breakItemVal: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  breakItemLbl: {
+    fontSize: 9,
+    color: '#6B7280',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  sectionHeaderTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#8B0000',
+    marginTop: 10,
+    marginBottom: 10,
+    textAlign: 'right',
+  },
+  masterMenuGrid: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  masterMenuCard: {
+    width: '48%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#EADBC8',
+    elevation: 2,
+    shadowColor: '#8B0000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  masterMenuTop: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 6,
   },
-  moduleIcon: {
-    fontSize: 22,
+  masterIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
-  moduleTitle: {
-    fontSize: 12,
+  masterIcon: {
+    fontSize: 18,
+  },
+  masterCardTitle: {
+    flex: 1,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#1F2937',
-    textAlign: 'center',
+    textAlign: 'right',
+  },
+  masterCardSub: {
+    fontSize: 10,
+    color: '#6B7280',
+    lineHeight: 14,
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  masterCardArrowRow: {
+    alignItems: 'flex-start',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 6,
+  },
+  masterCardArrow: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  seeRosterLink: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#D4A359',
   },
   logCard: {
     backgroundColor: '#FFFFFF',
@@ -375,10 +663,10 @@ const styles = StyleSheet.create({
   logItem: {
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   logHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -392,15 +680,159 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   logAction: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#8B0000',
     fontWeight: '600',
-    marginVertical: 4,
+    marginTop: 4,
     textAlign: 'right',
   },
-  logIp: {
-    fontSize: 10,
-    color: '#9CA3AF',
+
+  // Modal Roster Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  rosterModalBox: {
+    width: '100%',
+    maxHeight: '88%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 18,
+  },
+  rosterModalHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  rosterModalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  rosterCloseBtn: {
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  rosterCloseText: {
+    color: '#8B0000',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  rosterModalSub: {
+    fontSize: 11,
+    color: '#6B7280',
     textAlign: 'right',
+    marginTop: 2,
+    marginBottom: 12,
+  },
+  rosterSearchInput: {
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#D4A359',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#1F2937',
+    textAlign: 'right',
+    marginBottom: 10,
+  },
+  squadPillsScroll: {
+    flexDirection: 'row-reverse',
+    marginBottom: 12,
+  },
+  squadPill: {
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    marginLeft: 6,
+  },
+  squadPillActive: {
+    backgroundColor: '#8B0000',
+    borderColor: '#8B0000',
+  },
+  squadPillText: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  squadPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  rosterListScroll: {
+    maxHeight: 380,
+  },
+  rosterMemberItem: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  rosterMemberInfo: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  rosterMemberName: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  rosterMemberSubRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  rosterCodeBadge: {
+    backgroundColor: '#F3F4F6',
+    color: '#4B5563',
+    fontSize: 10,
+    fontWeight: 'bold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  rosterSquadBadge: {
+    backgroundColor: '#FEF3C7',
+    color: '#92400E',
+    fontSize: 10,
+    fontWeight: 'bold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  rosterPhoneText: {
+    fontSize: 10,
+    color: '#6B7280',
+  },
+  rosterDateBadge: {
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  rosterDateText: {
+    fontSize: 9,
+    color: '#9CA3AF',
+  },
+  rosterDateVal: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  emptyRosterText: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    fontSize: 12,
+    paddingVertical: 20,
   },
 });

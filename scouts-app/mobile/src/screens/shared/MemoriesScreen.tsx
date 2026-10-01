@@ -28,13 +28,13 @@ interface MemoryItem {
 }
 
 const MEMORY_CATEGORIES = [
-  { id: 'CAMPS', title: 'المعسكرات', icon: '🏕️', subtitle: 'معسكرات الخلاء والبراري' },
-  { id: 'PARTIES', title: 'حفلات الوعد', icon: '🎖️', subtitle: 'حفلات أداء الوعد والترقي' },
-  { id: 'TRIPS', title: 'الرحلات الكشفية', icon: '🚌', subtitle: 'رحلات الأديرة والمعالم' },
-  { id: 'COMPETITIONS', title: 'المسابقات والمهرجانات', icon: '🏆', subtitle: 'مهرجانات الكرازة' },
-  { id: 'TASBEHA', title: 'التسبحة والقداسات', icon: '🕯️', subtitle: 'سهرات كيهك والصلوات' },
-  { id: 'SPIRITUAL', title: 'الأيام الروحية', icon: '🕊️', subtitle: 'الخلوات والمؤتمرات' },
-  { id: 'GROUP_PHOTOS', title: 'صور المجموعة التذكارية', icon: '📸', subtitle: 'أرشيف جنود المسيح' },
+  { id: 'TESTS', title: 'الاختبارات الكشفية', icon: '📝', subtitle: 'اختبارات الترقي والشارات' },
+  { id: 'SCOUT_DAYS', title: 'الأيام الكشفية', icon: '⚜️', subtitle: 'أيام التجمع والمسيرات والأنشطة' },
+  { id: 'CAMPS', title: 'المعسكرات', icon: '🏕️', subtitle: 'معسكرات الخلاء والدورات التدريبية' },
+  { id: 'PROMISE_PARTIES', title: 'حفلات الوعد', icon: '🎖️', subtitle: 'حفلات أداء الوعد وتسليم المناديل' },
+  { id: 'FESTIVALS', title: 'المهرجانات', icon: '🏆', subtitle: 'مهرجانات الكرازة والمعارض الكشفية' },
+  { id: 'AGAPI', title: 'الأغابي', icon: '🍞', subtitle: 'أيام الأغابي والمحبة الكنسية' },
+  { id: 'OCCASION_PARTIES', title: 'حفلات المناسبات', icon: '🎉', subtitle: 'الأعياد وحفلات ختام الأنشطة' },
 ];
 
 const INITIAL_MEMORIES: MemoryItem[] = [

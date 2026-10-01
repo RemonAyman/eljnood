@@ -15,31 +15,31 @@ import { RoomReservation } from '../../types';
 import { saveRoomReservationToFirestore, fetchRoomReservationsFromFirestore } from '../../services/firebaseService';
 
 const CHURCH_ROOMS = [
-  { id: 'BIG_HALL', title: 'القاعة الكبرى', icon: '🏛️', subtitle: 'سعة ٤٠٠ فرد - مجهزة بالكامل' },
-  { id: 'THEATER', title: 'مسرح الكنيسة', icon: '🎭', subtitle: 'خشبة مسرح وصوتيات وإضاءة' },
-  { id: 'ST_GEORGE_CHAPEL', title: 'كنيسة الشهيد مارجرجس', icon: '⛪', subtitle: 'الصلوات والتسبيحة والقداسات' },
-  { id: 'SCOUT_HALL', title: 'قاعة الكشافة المركزية', icon: '⛺', subtitle: 'ورش العمل والتقاليد الكشفية' },
-  { id: 'CONFERENCE_ROOM', title: 'قاعة الاجتماعات الرسمية', icon: '💼', subtitle: 'شاشة عرض وطاولة مستديرة' },
-  { id: 'COMPUTER_LAB', title: 'معمل الكمبيوتر والوسائط', icon: '💻', subtitle: 'أجهزة حاسب آلي وإنترنت' },
-  { id: 'ROOF_TERRACE', title: 'الروف المكشوف (السطح)', icon: '☀️', subtitle: 'أنشطة الهواء الطلق والتخييم' },
-  { id: 'ACTIVITY_1', title: 'قاعة الأنشطة (١)', icon: '🎨', subtitle: 'الأشغال اليدوية والألعاب' },
-  { id: 'ACTIVITY_2', title: 'قاعة الأنشطة (٢)', icon: '🧩', subtitle: 'دروس ومدارس الأحد' },
-  { id: 'GARDEN_COURT', title: 'الملاعب والحديقة المفتوحة', icon: '⚽', subtitle: 'المسابقات الرياضية والطوابير' },
+  { id: 'UPPER_HALL', title: 'القاعة العليا', icon: '🏛️', subtitle: 'سعة كبرى مجهزة للمؤتمرات والاجتماعات' },
+  { id: 'LOWER_HALL', title: 'القاعة السفلية', icon: '🏛️', subtitle: 'قاعة الأنشطة واللقاءات الفئوية' },
+  { id: 'ROOF', title: 'السطوح (الروف)', icon: '☀️', subtitle: 'أنشطة الهواء الطلق والسمر الكشفي' },
+  { id: 'FR_VELTAOUS_ROOM', title: 'غرفة أبونا فلتاؤوس', icon: '⛪', subtitle: 'غرفة الاجتماعات الروحية والافتفاد' },
+  { id: 'POPE_SHENOUDA_ROOM', title: 'غرفة البابا شنودة', icon: '⛪', subtitle: 'قاعة المحاضرات والدروس الكنسية' },
+  { id: 'NURSERY_ROOM', title: 'غرفة الحضانة', icon: '🧸', subtitle: 'أنشطة الأطفال والبراعم' },
+  { id: 'MR_ROMELL_ROOM', title: 'غرفة أستاذ روميل', icon: '💼', subtitle: 'غرفة التنسيق الإداري والخدمة' },
+  { id: 'MR_GEORGE_ROZEIK_ROOM', title: 'غرفة أستاذ جورج رزيق', icon: '📖', subtitle: 'غرفة إعداد الخدام والمناهج' },
+  { id: 'SCOUT_LAB_ROOM', title: 'غرفة معمل الكشافة', icon: '⛺', subtitle: 'ورش الريادة والتقاليد الكشفية' },
+  { id: 'TECH_LANG_LAB_ROOM', title: 'غرفة معمل التكنولوجيا واللغات', icon: '💻', subtitle: 'أجهزة الكمبيوتر والوسائط واللغات' },
 ];
 
 const SERVICES_LIST = [
-  'مجموعة جنود المسيح الكشفية',
-  'خدمة مدارس الأحد (ابتدائي)',
-  'اجتماع إعدادي بنين',
-  'اجتماع إعدادي بنات',
-  'اجتماع ثانوي والجامعيين',
-  'فريق المسرح الكنسي',
-  'فريق كورال الكنيسة',
-  'خدمة الأسرة والافتقاد',
-  'اجتماع الشباب والخريجين',
-  'سهرة التسبحة والقداس',
-  'لجنة النظام والخدمات',
-  'الآباء الكهنة ومجلس الكنيسة',
+  'مدارس أحد',
+  'ألحان',
+  'فصول تقوية',
+  'تسبحة',
+  'درس كتاب',
+  'إعلام',
+  'مارش',
+  'كورال',
+  'مسرح',
+  'كورال حركات',
+  'تقديم',
+  'كورسات',
 ];
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 8); // 8:00 to 23:00

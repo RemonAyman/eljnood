@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { AuthGuard } from '../components/auth/AuthGuard';
 
 // Operational & Internal Screens
 import { LoginScreen } from '../screens/auth/LoginScreen';
@@ -21,7 +22,7 @@ import { RoomReservationScreen } from '../screens/shared/RoomReservationScreen';
 import { ScoutingPlanScreen } from '../screens/shared/ScoutingPlanScreen';
 import { UserProfileScreen } from '../screens/shared/UserProfileScreen';
 
-// Public Showcase Screens (from Stitch design)
+// Public Showcase Screens
 import { PublicHomeScreen } from '../screens/public/PublicHomeScreen';
 import { AboutUsScreen } from '../screens/public/AboutUsScreen';
 import { ActivitiesScreen } from '../screens/public/ActivitiesScreen';
@@ -29,6 +30,105 @@ import { PublicGalleryScreen } from '../screens/public/PublicGalleryScreen';
 import { ContactUsScreen } from '../screens/public/ContactUsScreen';
 
 const Stack = createStackNavigator();
+
+// ─── Guarded Screen Components ─────────────────────────────────────────────
+const ProtectedChildHome = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <ChildHomeScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedParentHome = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <ParentHomeScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedAdminDashboard = (props: any) => (
+  <AuthGuard
+    navigation={props.navigation}
+    requireAuth={true}
+    allowedRoles={['ADMIN', 'GROUP_MANAGER']}
+  >
+    <AdminDashboardScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedAttendance = (props: any) => (
+  <AuthGuard
+    navigation={props.navigation}
+    requireAuth={true}
+    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER']}
+  >
+    <AttendanceManageScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedFollowUp = (props: any) => (
+  <AuthGuard
+    navigation={props.navigation}
+    requireAuth={true}
+    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER']}
+  >
+    <FollowUpScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedSubscriptions = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <SubscriptionsScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedCurricula = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <CurriculaScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedChatRooms = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <ChatRoomsScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedMemories = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <MemoriesScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedInventoryRequest = (props: any) => (
+  <AuthGuard
+    navigation={props.navigation}
+    requireAuth={true}
+    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER']}
+  >
+    <InventoryRequestScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedRoomReservation = (props: any) => (
+  <AuthGuard
+    navigation={props.navigation}
+    requireAuth={true}
+    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER']}
+  >
+    <RoomReservationScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedScoutingPlan = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <ScoutingPlanScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedUserProfile = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <UserProfileScreen {...props} />
+  </AuthGuard>
+);
 
 export function RootNavigator() {
   return (
@@ -91,72 +191,72 @@ export function RootNavigator() {
           options={{ title: 'تواصل مع القيادة' }}
         />
 
-        {/* Role Home Dashboards */}
+        {/* Role Home Dashboards (Guarded) */}
         <Stack.Screen
           name="ChildHome"
-          component={ChildHomeScreen}
+          component={ProtectedChildHome}
           options={{ title: 'جنود المسيح الكشفية' }}
         />
         <Stack.Screen
           name="ParentHome"
-          component={ParentHomeScreen}
+          component={ProtectedParentHome}
           options={{ title: 'متابعة أولياء الأمور' }}
         />
         <Stack.Screen
           name="AdminDashboard"
-          component={AdminDashboardScreen}
+          component={ProtectedAdminDashboard}
           options={{ title: 'لوحة القيادة الإدارية' }}
         />
 
-        {/* Scout Operations & Shared Modules */}
+        {/* Scout Operations & Shared Modules (Guarded) */}
         <Stack.Screen
           name="FollowUp"
-          component={FollowUpScreen}
+          component={ProtectedFollowUp}
           options={{ title: 'سجل الافتقاد والمتابعة' }}
         />
         <Stack.Screen
           name="Subscriptions"
-          component={SubscriptionsScreen}
+          component={ProtectedSubscriptions}
           options={{ title: 'الاشتراكات والماليات' }}
         />
         <Stack.Screen
           name="Attendance"
-          component={AttendanceManageScreen}
+          component={ProtectedAttendance}
           options={{ title: 'سجل التحضير والغياب الذكي' }}
         />
         <Stack.Screen
           name="Curricula"
-          component={CurriculaScreen}
+          component={ProtectedCurricula}
           options={{ title: 'المناهج والمسابقات الروحية' }}
         />
         <Stack.Screen
           name="ChatRooms"
-          component={ChatRoomsScreen}
+          component={ProtectedChatRooms}
           options={{ title: 'غرف التواصل والدردشة' }}
         />
         <Stack.Screen
           name="Memories"
-          component={MemoriesScreen}
+          component={ProtectedMemories}
           options={{ title: 'أرشيف الذكريات والمعسكرات' }}
         />
         <Stack.Screen
           name="InventoryRequest"
-          component={InventoryRequestScreen}
+          component={ProtectedInventoryRequest}
           options={{ title: 'إدارة واستعارة العهدة' }}
         />
         <Stack.Screen
           name="RoomReservation"
-          component={RoomReservationScreen}
+          component={ProtectedRoomReservation}
           options={{ title: 'جدول حجز قاعات الكنيسة' }}
         />
         <Stack.Screen
           name="ScoutingPlan"
-          component={ScoutingPlanScreen}
+          component={ProtectedScoutingPlan}
           options={{ title: 'الخطة السنوية الكشفية' }}
         />
         <Stack.Screen
           name="UserProfile"
-          component={UserProfileScreen}
+          component={ProtectedUserProfile}
           options={{ title: 'الملف الشخصي والحساب' }}
         />
       </Stack.Navigator>

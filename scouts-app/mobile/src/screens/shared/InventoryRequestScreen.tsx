@@ -15,16 +15,16 @@ import { InventoryRequest } from '../../types';
 import { saveInventoryRequestToFirestore, fetchInventoryRequestsFromFirestore } from '../../services/firebaseService';
 
 const INVENTORY_CATEGORIES = [
-  { id: 'TENTS', title: 'الخيام والمظلات', icon: '⛺', subtitle: 'خيام هرمية ومظلات معسكرات' },
-  { id: 'COOKING', title: 'أدوات الطهي والكانتين', icon: '🍳', subtitle: 'قدور، غاز، وأواني رحلات' },
-  { id: 'DRUMS', title: 'الطبول والموسيقى', icon: '🥁', subtitle: 'طبول مسيرات كشفية وبوق' },
-  { id: 'AUDIO', title: 'الصوتيات والساوند', icon: '🔊', subtitle: 'سماعات ومايكات لاسلكية' },
-  { id: 'FIRST_AID', title: 'الإسعافات الأولية', icon: '🩹', subtitle: 'حقائب ميدانية ونقالات' },
-  { id: 'SPORTS', title: 'الألعاب والرياضة', icon: '⚽', subtitle: 'كرات، أطواق، وأعلام' },
-  { id: 'ROPES_TOOLS', title: 'الحبال والأخشاب', icon: '🪢', subtitle: 'حبال السيزال والبلطات' },
-  { id: 'STATIONERY', title: 'الأدوات والمطبوعات', icon: '🎨', subtitle: 'ألوان، لوحات، وبطاقات' },
-  { id: 'UNIFORMS', title: 'الزي والشارات', icon: '🧣', subtitle: 'مناديل، أوشحة، وباجات' },
-  { id: 'PROJECTORS', title: 'البروجكتور والعرض', icon: '📽️', subtitle: 'داتا شو وشاشات عرض' },
+  { id: 'THEATER', title: 'عهدة مسرح', icon: '🎭', subtitle: 'مهمات وأدوات المسرح الكنسي' },
+  { id: 'SCOUT_LEADERSHIP', title: 'عهدة ريادي', icon: '⛺', subtitle: 'أخشاب، حبال، وسواري كشفية' },
+  { id: 'GAMES', title: 'عهدة ألعاب', icon: '⚽', subtitle: 'أدوات وألعاب المهرجانات والطوابير' },
+  { id: 'KITCHEN_TOOLS', title: 'عهدة أدوات مطبخ', icon: '🍳', subtitle: 'قدور، أواني، وأطباق الرحلات والمعسكرات' },
+  { id: 'KITCHEN_APPLIANCES', title: 'عهدة أجهزة مطبخ', icon: '🔥', subtitle: 'مواقد غاز وثلاجات ميدانية' },
+  { id: 'AUDIO_VISUAL', title: 'عهدة أجهزة صوتية ومرئية', icon: '🔊', subtitle: 'سماعات، مايكات، وداتا شو' },
+  { id: 'COMPUTERS_WIRELESS', title: 'عهدة أجهزة كمبيوتر ولاسلكي', icon: '📻', subtitle: 'أجهزة لاسلكي وحواسب آلي' },
+  { id: 'STATIONERY', title: 'عهدة أدوات مكتبية', icon: '📝', subtitle: 'أوراق، ألوان، وبطاقات التقييم' },
+  { id: 'ELECTRICAL_TOOLS', title: 'عهدة عدة كهربائية', icon: '🔌', subtitle: 'كابلات، كشافات، وموزعات طاقة' },
+  { id: 'GENERAL_TOOLS', title: 'عهدة عدة', icon: '🧰', subtitle: 'مطارق، بلطات، وصناديق صيانة' },
 ];
 
 const CHURCH_SERVICES = [

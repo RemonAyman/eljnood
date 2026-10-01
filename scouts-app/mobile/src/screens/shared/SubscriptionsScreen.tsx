@@ -17,7 +17,14 @@ export const SubscriptionsScreen = () => {
   const currentUser = useAuthStore((s) => s.user);
   const { prices, records, applyDiscountCode, calculateTotal, addRecord, updatePrices, setRecords } = useSubscriptionsStore();
 
-  const [activeTab, setActiveTab] = useState<'NEW_PAYMENT' | 'ARCHIVE'>('NEW_PAYMENT');
+  const isCashierOrLeader = useMemo(() => {
+    const role = currentUser?.role;
+    return role === 'ADMIN' || role === 'SECTION_LEADER' || role === 'LEADER' || role === 'GROUP_MANAGER';
+  }, [currentUser]);
+
+  const [activeTab, setActiveTab] = useState<'NEW_PAYMENT' | 'ARCHIVE'>(
+    currentUser?.role === 'ADMIN' || currentUser?.role === 'SECTION_LEADER' || currentUser?.role === 'LEADER' ? 'NEW_PAYMENT' : 'ARCHIVE'
+  );
 
   // Member selection mode: EXISTING (قديم) vs NEW (جديد)
   const [memberMode, setMemberMode] = useState<'EXISTING' | 'NEW'>('EXISTING');

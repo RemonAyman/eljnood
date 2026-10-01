@@ -15,11 +15,11 @@ import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 interface CurriculumItem {
   id: string;
   squadKey: string;
-  category: 'SCOUTING' | 'SPIRITUAL' | 'RITUAL' | 'KNOTS' | 'FIRST_AID' | 'HYMNS';
+  category: 'SPIRITUAL' | 'SCOUTING' | 'PSYCHO_EDU' | 'FRUIT' | 'SEMINARS';
   categoryTitle: string;
   title: string;
   description: string;
-  fileType: 'PDF' | 'VIDEO' | 'PPT' | 'AUDIO';
+  fileType: 'PDF' | 'VIDEO' | 'AUDIO' | 'IMAGE';
   downloadSize: string;
   points: number;
 }
@@ -37,9 +37,9 @@ const CURRICULUM_DATA: CurriculumItem[] = [
     id: 'c1',
     squadKey: 'BARAEM',
     category: 'SPIRITUAL',
-    categoryTitle: 'روحي وعقيدة',
-    title: 'قصص الآباء والأنبياء للأطفال',
-    description: 'كتاب مصور يحتوي على سيرة القديس مارجرجس وأبطال الإيمان.',
+    categoryTitle: 'روحي (الكتاب المقدس والقديسين)',
+    title: 'قصص الأنبياء والآباء للبراعم',
+    description: 'إصحاح يومي وتأملات مصورة ومبسطة للأطفال.',
     fileType: 'PDF',
     downloadSize: '4.2 MB',
     points: 15,
@@ -47,10 +47,10 @@ const CURRICULUM_DATA: CurriculumItem[] = [
   {
     id: 'c2',
     squadKey: 'BARAEM',
-    category: 'HYMNS',
-    categoryTitle: 'ألحان وترانيم',
-    title: 'لحن إبؤورو وترنيمة أنا عصفور صغير',
-    description: 'تسجيل صوتي مع كلمات اللحن بالطريقة المبسطة للبراعم.',
+    category: 'FRUIT',
+    categoryTitle: 'ثمر (تطبيق روحي)',
+    title: 'ترنيمة وثمر الروح القدس (المحبة والفرح)',
+    description: 'تسجيل صوتي تعليمي للبراعم مع كلمات الترانيم.',
     fileType: 'AUDIO',
     downloadSize: '8.5 MB',
     points: 10,
@@ -58,10 +58,10 @@ const CURRICULUM_DATA: CurriculumItem[] = [
   {
     id: 'c3',
     squadKey: 'ASHBAL',
-    category: 'KNOTS',
-    categoryTitle: 'عقد وربطات كشفية',
-    title: 'دليل العقد الأساسية (عقدة الأفقية والوتدية)',
-    description: 'فيديو توضيحي عملي لطريقة ربط العقد الكشفية الأساسية.',
+    category: 'SCOUTING',
+    categoryTitle: 'كشفي (عقد وريادة)',
+    title: 'دليل العقد والربطات الكشفية للمبتدئين',
+    description: 'فيديو شرح عملي للعقدة المربعة والوتدية والتقصيرية.',
     fileType: 'VIDEO',
     downloadSize: '24 MB',
     points: 25,
@@ -69,21 +69,21 @@ const CURRICULUM_DATA: CurriculumItem[] = [
   {
     id: 'c4',
     squadKey: 'ASHBAL',
-    category: 'SCOUTING',
-    categoryTitle: 'تقاليد كشفية',
-    title: 'تاريخ الحركة الكشفية وشعار جنود المسيح',
-    description: 'عرض تقديمي رائع لشرح الوعد والقانون وتقاليد العلم.',
-    fileType: 'PPT',
-    downloadSize: '6.1 MB',
+    category: 'PSYCHO_EDU',
+    categoryTitle: 'نفسي تربوي',
+    title: 'بناء الشخصية وتطوير المهارات للأشبال',
+    description: 'مخططات ورسومات توضيحية للعمل الجماعي والانضباط.',
+    fileType: 'IMAGE',
+    downloadSize: '3.1 MB',
     points: 20,
   },
   {
     id: 'c5',
     squadKey: 'KASHOOF',
-    category: 'FIRST_AID',
-    categoryTitle: 'إسعافات أولية',
-    title: 'دليل المسعف الكشفي الميداني',
-    description: 'كتيب شامل للتعامل مع الكسور، الحروق، وضربات الشمس أثناء المعسكرات.',
+    category: 'SEMINARS',
+    categoryTitle: 'ندوات وتوعية',
+    title: 'ندوة التوعية بالمخاطر والتفكير النقدي',
+    description: 'ملف PDF شامل لندوة التوعية والقيادة الكشفية.',
     fileType: 'PDF',
     downloadSize: '5.8 MB',
     points: 30,
@@ -91,10 +91,10 @@ const CURRICULUM_DATA: CurriculumItem[] = [
   {
     id: 'c6',
     squadKey: 'KASHOOF',
-    category: 'RITUAL',
-    categoryTitle: 'طقس وألحان',
-    title: 'شرح طقس القداس الإلهي وأسرار الكنيسة',
-    description: 'فيديو وثائقي كنسي يشرح حركات ودلالات الطقس القبطي الأرثوذكسي.',
+    category: 'SPIRITUAL',
+    categoryTitle: 'روحي (درس الكتاب والتأملات)',
+    title: 'تأملات وفيديوهات الإصحاح اليومي',
+    description: 'فيديو وصوتيات شرح وتأملات سفر أفسس والإصحاحات اليومية.',
     fileType: 'VIDEO',
     downloadSize: '45 MB',
     points: 35,
@@ -103,21 +103,21 @@ const CURRICULUM_DATA: CurriculumItem[] = [
     id: 'c7',
     squadKey: 'MOTAQADEM',
     category: 'SCOUTING',
-    categoryTitle: 'الملاحة والتخييم',
-    title: 'استخدام البوصلة، الخرائط والنجوم في الصحراء',
-    description: 'منهج متقدم في تحديد الاتجاهات والارتفاعات والمسح الطبوغرافي.',
-    fileType: 'PDF',
-    downloadSize: '9.3 MB',
+    categoryTitle: 'كشفي (ملاحة وتخيم)',
+    title: 'استخدام البوصلة والخرائط الطبوغرافية',
+    description: 'مخطط صور وإنفوجرافيك لتقدير المسافات والاتجاهات.',
+    fileType: 'IMAGE',
+    downloadSize: '4.3 MB',
     points: 40,
   },
   {
     id: 'c8',
     squadKey: 'JOWALAH',
-    category: 'SPIRITUAL',
-    categoryTitle: 'القيادة الكشفية والروحية',
-    title: 'علم الإدارة والتوجيه الكنسي للقادة',
-    description: 'حقيبة تدريبية كاملة لإعداد وتأهيل قادة الفرق والطلائع.',
-    fileType: 'PPT',
+    category: 'SEMINARS',
+    categoryTitle: 'ندوات قيادية',
+    title: 'حقيبة الندوات القيادية والإدارة الكنسية',
+    description: 'دليل كامل للمحاضرات والندوات الخاصة بالقادة والإداريين.',
+    fileType: 'PDF',
     downloadSize: '12 MB',
     points: 50,
   },
@@ -157,10 +157,10 @@ export const CurriculaScreen = ({ navigation }: any) => {
         return { icon: '📕', color: '#DC2626', label: 'كتاب PDF' };
       case 'VIDEO':
         return { icon: '🎥', color: '#2563EB', label: 'فيديو شرح' };
-      case 'PPT':
-        return { icon: '📊', color: '#D97706', label: 'عرض بوربوينت' };
       case 'AUDIO':
         return { icon: '🎵', color: '#059669', label: 'تسجيل صوتي' };
+      case 'IMAGE':
+        return { icon: '🖼️', color: '#D97706', label: 'صور ومخططات' };
       default:
         return { icon: '📄', color: '#6B7280', label: 'ملف' };
     }
@@ -198,14 +198,14 @@ export const CurriculaScreen = ({ navigation }: any) => {
         {/* Daily Bible Verse & Meditation Banner */}
         <View style={styles.verseCard}>
           <View style={styles.verseHeader}>
-            <Text style={styles.verseTag}>🕊️ آية وتأمل اليوم</Text>
-            <Text style={styles.verseRef}>أفسس ٦ : ١٠</Text>
+            <Text style={styles.verseTag}>🕊️ الكتاب المقدس: إصحاح وقراءة اليوم</Text>
+            <Text style={styles.verseRef}>أفسس ٦ (العدد ١ - ٢٤)</Text>
           </View>
           <Text style={styles.verseText}>
             «أَخِيرًا يَا إِخْوَتِي تَشَدَّدُوا فِي الرَّبِّ وَفِي شِدَّةِ قُوَّتِهِ، الْبَسُوا سِلاَحَ اللهِ الْكَامِلَ»
           </Text>
           <Text style={styles.verseMeditation}>
-            💡 تأمل كشفي: الكشاف الحقيقي يرتدي سلاح الإيمان والمحبة والأمانة في كل خدمة ونشاط يومي.
+            💡 التأمل المرفق: فيديو شرح وتأملات بصوت القمص والخدام + مسابقة تفاعلية أسبوعية على الإصحاح!
           </Text>
         </View>
 
@@ -223,7 +223,7 @@ export const CurriculaScreen = ({ navigation }: any) => {
         <View style={styles.filterSection}>
           <TextInput
             style={styles.searchInput}
-            placeholder="🔍 ابحث في المناهج والألحان..."
+            placeholder="🔍 ابحث في المناهج (روحي، كشفي، نفسي تربوي، ثمر، ندوات)..."
             placeholderTextColor="#888"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -234,8 +234,8 @@ export const CurriculaScreen = ({ navigation }: any) => {
               { id: 'ALL', label: 'الكل' },
               { id: 'PDF', label: '📕 كتب PDF' },
               { id: 'VIDEO', label: '🎥 فيديوهات' },
-              { id: 'PPT', label: '📊 عروض توضيحية' },
               { id: 'AUDIO', label: '🎵 تسجيلات صوتية' },
+              { id: 'IMAGE', label: '🖼️ صور ومخططات' },
             ].map((tp) => (
               <TouchableOpacity
                 key={tp.id}

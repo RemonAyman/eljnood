@@ -91,7 +91,7 @@ export const ChildHomeScreen = ({ navigation }: any) => {
         </TouchableOpacity>
         <View style={styles.topHeaderTitleRow}>
           <Image
-            source={require('../../../assets/logo.jpeg')}
+            source={require('../../../assets/logo.png')}
             style={styles.topLogoImage}
             resizeMode="contain"
           />
@@ -182,22 +182,31 @@ export const ChildHomeScreen = ({ navigation }: any) => {
         </View>
       )}
 
-      {/* Quick Navigation Buttons */}
+      {/* Quick Navigation Buttons - All System Modules Visible */}
+      <Text style={styles.sectionTitle}>قائمة خدمات وسيستم الكشافة (الكل) ⚜️</Text>
       <View style={styles.quickGrid}>
         <TouchableOpacity 
           style={styles.gridCard}
           onPress={() => navigation?.navigate('Attendance')}
         >
-          <Text style={styles.gridIcon}>🏁</Text>
+          <Text style={styles.gridIcon}>📋</Text>
           <Text style={styles.gridTitle}>الغياب والـ QR</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={styles.gridCard}
-          onPress={() => navigation?.navigate('ChatRooms')}
+          onPress={() => navigation?.navigate('RoomReservation')}
         >
-          <Text style={styles.gridIcon}>💬</Text>
-          <Text style={styles.gridTitle}>الشات رومز</Text>
+          <Text style={styles.gridIcon}>🏛️</Text>
+          <Text style={styles.gridTitle}>حجز قاعات الكنيسة</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.gridCard}
+          onPress={() => navigation?.navigate('InventoryRequest')}
+        >
+          <Text style={styles.gridIcon}>⛺</Text>
+          <Text style={styles.gridTitle}>استعارة العهدة والمهمات</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -210,10 +219,18 @@ export const ChildHomeScreen = ({ navigation }: any) => {
 
         <TouchableOpacity 
           style={styles.gridCard}
+          onPress={() => navigation?.navigate('ChatRooms')}
+        >
+          <Text style={styles.gridIcon}>💬</Text>
+          <Text style={styles.gridTitle}>غرف الشات</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.gridCard}
           onPress={() => navigation?.navigate('Memories')}
         >
           <Text style={styles.gridIcon}>📷</Text>
-          <Text style={styles.gridTitle}>خزانة الذكريات</Text>
+          <Text style={styles.gridTitle}>أرشيف الذكريات</Text>
         </TouchableOpacity>
       </View>
 

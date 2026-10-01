@@ -305,7 +305,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         <View style={styles.header}>
           <View style={styles.headerLogoCircle}>
             <Image
-              source={require('../../../assets/logo.jpeg')}
+              source={require('../../../assets/logo.png')}
               style={styles.headerLogoImage}
               resizeMode="contain"
             />

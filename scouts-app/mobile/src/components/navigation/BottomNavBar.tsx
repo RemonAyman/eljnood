@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 
 interface BottomNavBarProps {
@@ -9,16 +9,17 @@ interface BottomNavBarProps {
 
 export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) => {
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const getNavItems = () => {
-    const role = user?.role || 'SCOUT';
+    const role = user?.role || 'CHILD';
 
     if (role === 'ADMIN') {
       return [
         { key: 'AdminDashboard', label: 'الرئيسية', icon: '📊', route: 'AdminDashboard' },
+        { key: 'Attendance', label: 'الغياب', icon: '📋', route: 'Attendance' },
+        { key: 'Subscriptions', label: 'الخزينة', icon: '💰', route: 'Subscriptions' },
         { key: 'FollowUp', label: 'الافتقاد', icon: '🤝', route: 'FollowUp' },
-        { key: 'Curricula', label: 'المناهج', icon: '📚', route: 'Curricula' },
-        { key: 'Memories', label: 'الذكريات', icon: '📸', route: 'Memories' },
         { key: 'ChatRooms', label: 'الشات', icon: '💬', route: 'ChatRooms' },
         { key: 'UserProfile', label: 'حسابي', icon: '👤', route: 'UserProfile' },
       ];
@@ -26,9 +27,9 @@ export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) =>
 
     if (role === 'LEADER' || role === 'JOWALAH' || role === 'SECTION_LEADER' || role === 'GROUP_MANAGER') {
       return [
-        { key: 'Home', label: 'الرئيسية', icon: '🏠', route: 'AdminDashboard' },
         { key: 'Attendance', label: 'الغياب', icon: '📋', route: 'Attendance' },
         { key: 'FollowUp', label: 'الافتقاد', icon: '🤝', route: 'FollowUp' },
+        { key: 'Curricula', label: 'المناهج', icon: '📚', route: 'Curricula' },
         { key: 'Memories', label: 'الذكريات', icon: '📸', route: 'Memories' },
         { key: 'ChatRooms', label: 'الشات', icon: '💬', route: 'ChatRooms' },
         { key: 'UserProfile', label: 'حسابي', icon: '👤', route: 'UserProfile' },
@@ -38,7 +39,7 @@ export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) =>
     if (role === 'PARENT') {
       return [
         { key: 'ParentHome', label: 'الرئيسية', icon: '🏠', route: 'ParentHome' },
-        { key: 'Attendance', label: 'غياب الأبناء', icon: '📋', route: 'Attendance' },
+        { key: 'Subscriptions', label: 'الإيصالات', icon: '💰', route: 'Subscriptions' },
         { key: 'Memories', label: 'الذكريات', icon: '📸', route: 'Memories' },
         { key: 'ChatRooms', label: 'الشات', icon: '💬', route: 'ChatRooms' },
         { key: 'UserProfile', label: 'حسابي', icon: '👤', route: 'UserProfile' },
@@ -48,7 +49,7 @@ export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) =>
     // Default: CHILD / SCOUT
     return [
       { key: 'ChildHome', label: 'الرئيسية', icon: '🏠', route: 'ChildHome' },
-      { key: 'Attendance', label: 'غيابي', icon: '📋', route: 'Attendance' },
+      { key: 'Curricula', label: 'المناهج', icon: '📚', route: 'Curricula' },
       { key: 'Memories', label: 'الذكريات', icon: '📸', route: 'Memories' },
       { key: 'ChatRooms', label: 'الشات', icon: '💬', route: 'ChatRooms' },
       { key: 'UserProfile', label: 'حسابي', icon: '👤', route: 'UserProfile' },
@@ -56,6 +57,20 @@ export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) =>
   };
 
   const navItems = getNavItems();
+
+  const handleNavPress = (item: any) => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'تسجيل الدخول مطلوب 🔑',
+        'يرجى تسجيل الدخول أولاً للوصول إلى هذا القسم.',
+        [{ text: 'تسجيل الدخول', onPress: () => navigation?.navigate('Login') }]
+      );
+      return;
+    }
+    if (currentRoute !== item.route) {
+      navigation?.navigate(item.route);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -67,14 +82,12 @@ export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) =>
               key={item.key}
               style={[styles.navItem, isActive && styles.navItemActive]}
               activeOpacity={0.8}
-              onPress={() => {
-                if (currentRoute !== item.route) {
-                  navigation?.navigate(item.route);
-                }
-              }}
+              onPress={() => handleNavPress(item)}
             >
               <Text style={[styles.navIcon, isActive && styles.navIconActive]}>{item.icon}</Text>
-              <Text style={[styles.navLabel, isActive && styles.navLabelActive]} numberOfLines={1}>{item.label}</Text>
+              <Text style={[styles.navLabel, isActive && styles.navLabelActive]} numberOfLines={1}>
+                {item.label}
+              </Text>
             </TouchableOpacity>
           );
         })}

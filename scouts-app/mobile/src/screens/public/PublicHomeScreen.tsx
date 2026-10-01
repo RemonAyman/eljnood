@@ -63,7 +63,7 @@ export const PublicHomeScreen = ({ navigation }: any) => {
           <Text style={styles.churchBadge}>مجموعة جنود المسيح الكشفية</Text>
           <View style={styles.scoutLogoCircle}>
             <Image
-              source={require('../../../assets/logo.jpeg')}
+              source={require('../../../assets/logo.png')}
               style={styles.scoutLogoImage}
               resizeMode="contain"
             />

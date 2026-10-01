@@ -49,7 +49,7 @@ export const AboutUsScreen = ({ navigation }: any) => {
       <View style={styles.headerCard}>
         <View style={styles.emblemBadge}>
           <Image
-            source={require('../../../assets/logo.jpeg')}
+            source={require('../../../assets/logo.png')}
             style={styles.emblemImage}
             resizeMode="contain"
           />

@@ -356,7 +356,7 @@ export const LoginScreen = ({ navigation }: any) => {
       <View style={styles.header}>
         <View style={styles.logoCircle}>
           <Image
-            source={require('../../../assets/logo.jpeg')}
+            source={require('../../../assets/logo.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -467,7 +467,28 @@ export const LoginScreen = ({ navigation }: any) => {
         {/* Quick Barcode Attendance Banner */}
         <TouchableOpacity
           style={styles.quickAttendanceBtn}
-          onPress={() => navigation?.navigate('Attendance')}
+          onPress={() => {
+            const state = useAuthStore.getState();
+            if (!state.isAuthenticated || !state.user) {
+              Alert.alert(
+                'تسجيل الدخول مطلوب 🔑',
+                'يجب تسجيل الدخول أولاً بحسابك الكشفي للوصول إلى كارت وسجل التحضير والغياب.'
+              );
+              return;
+            }
+            if (
+              state.user.role === 'ADMIN' ||
+              state.user.role === 'LEADER' ||
+              state.user.role === 'SECTION_LEADER' ||
+              state.user.role === 'JOWALAH'
+            ) {
+              navigation?.navigate('Attendance');
+            } else if (state.user.role === 'PARENT') {
+              navigation?.navigate('ParentHome');
+            } else {
+              navigation?.navigate('ChildHome');
+            }
+          }}
           activeOpacity={0.85}
         >
           <Text style={styles.quickAttendanceIcon}>📷</Text>

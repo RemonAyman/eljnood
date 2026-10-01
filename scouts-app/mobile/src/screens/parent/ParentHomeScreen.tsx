@@ -167,7 +167,7 @@ export const ParentHomeScreen = ({ navigation }: any) => {
       <View style={styles.header}>
         <View style={styles.headerLogoCircle}>
           <Image
-            source={require('../../../assets/logo.jpeg')}
+            source={require('../../../assets/logo.png')}
             style={styles.headerLogoImage}
             resizeMode="contain"
           />
@@ -299,6 +299,37 @@ export const ParentHomeScreen = ({ navigation }: any) => {
                 <Text style={styles.emptySubText}>لا توجد إيصالات سداد مسجلة حتى الآن لهذا الابن.</Text>
               </View>
             )}
+          </View>
+
+          {/* All System Modules Grid */}
+          <Text style={styles.sectionTitle}>خدمات وسيستم الكشافة الكنسي (الكل) ⚜️</Text>
+          <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', marginVertical: 8 }}>
+            {[
+              { title: 'الغياب والـ QR', icon: '📋', route: 'Attendance' },
+              { title: 'حجز القاعات', icon: '🏛️', route: 'RoomReservation' },
+              { title: 'استعارة العهدة', icon: '⛺', route: 'InventoryRequest' },
+              { title: 'المناهج والمسابقات', icon: '📚', route: 'Curricula' },
+              { title: 'أرشيف الذكريات', icon: '📸', route: 'Memories' },
+              { title: 'لوحة القيادة', icon: '🛡️', route: 'AdminDashboard' },
+            ].map((m, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={{
+                  width: '48%',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 14,
+                  padding: 12,
+                  marginBottom: 10,
+                  borderWidth: 1,
+                  borderColor: '#E5E7EB',
+                  alignItems: 'center',
+                }}
+                onPress={() => navigation?.navigate(m.route)}
+              >
+                <Text style={{ fontSize: 24, marginBottom: 4 }}>{m.icon}</Text>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#8B0000' }}>{m.title}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* Quick Chat with Leaders */}
