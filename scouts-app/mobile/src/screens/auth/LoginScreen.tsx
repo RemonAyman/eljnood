@@ -452,17 +452,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
 
 
-        {/* Manager Secret PIN Section */}
-        <View style={styles.divider} />
 
-        <TouchableOpacity
-          style={styles.pinTriggerBtn}
-          onPress={() => setShowPinModal(true)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.pinTriggerTitle}>🔑 رمز PIN الخاص بالقادة وأمناء الصندوق</Text>
-          <Text style={styles.pinTriggerSub}>تفعيل صلاحيات الخزينة ومسؤولي العهدة والخصومات (1234 أو 0000)</Text>
-        </TouchableOpacity>
 
         {/* Quick Barcode Attendance Banner */}
         <TouchableOpacity
@@ -525,7 +515,7 @@ export const LoginScreen = ({ navigation }: any) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>رمز PIN السري لمدير الخزينة 🔑</Text>
-            <Text style={styles.modalSub}>أدخل الرمز السري المكون من 4 أرقام لتفعيل الخصومات (1234)</Text>
+            <Text style={styles.modalSub}>أدخل الرمز السري المكون من 4 أرقام لتفعيل الخصومات والإدارة</Text>
 
             <TextInput
               style={[styles.pinInput, pinError ? styles.pinInputError : null]}
