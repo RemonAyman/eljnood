@@ -210,7 +210,11 @@ export const LoginScreen = ({ navigation }: any) => {
       guardianPhone: '01000000000',
     });
     setPinUnlocked(true);
-    navigation?.navigate(acc.screen);
+    if (navigation?.reset) {
+      navigation.reset({ index: 0, routes: [{ name: acc.screen }] });
+    } else {
+      navigation?.navigate(acc.screen);
+    }
   }, [setUser, setPinUnlocked, navigation]);
 
   const handleFailedLogin = useCallback((msg: string) => {
@@ -308,14 +312,19 @@ export const LoginScreen = ({ navigation }: any) => {
       setUser(realProfile);
       setLoading(false);
 
-      if (userRole === 'ADMIN') {
-        navigation?.navigate('AdminDashboard');
-      } else if (userRole === 'PARENT') {
-        navigation?.navigate('ParentHome');
-      } else if (userRole === 'LEADER' || userRole === 'SECTION_LEADER' || userRole === 'JOWALAH') {
-        navigation?.navigate('Attendance');
+      const targetScreen =
+        userRole === 'ADMIN'
+          ? 'AdminDashboard'
+          : userRole === 'PARENT'
+          ? 'ParentHome'
+          : userRole === 'LEADER' || userRole === 'SECTION_LEADER' || userRole === 'JOWALAH'
+          ? 'Attendance'
+          : 'ChildHome';
+
+      if (navigation?.reset) {
+        navigation.reset({ index: 0, routes: [{ name: targetScreen }] });
       } else {
-        navigation?.navigate('ChildHome');
+        navigation?.navigate(targetScreen);
       }
       return;
     }

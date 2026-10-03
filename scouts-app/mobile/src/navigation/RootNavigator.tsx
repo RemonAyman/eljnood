@@ -25,6 +25,8 @@ import { RoomReservationScreen } from '../screens/shared/RoomReservationScreen';
 import { ScoutingPlanScreen } from '../screens/shared/ScoutingPlanScreen';
 import { UserProfileScreen } from '../screens/shared/UserProfileScreen';
 
+import { useAuthStore } from '../store/authStore';
+
 // Public Showcase Screens
 import { PublicHomeScreen } from '../screens/public/PublicHomeScreen';
 import { AboutUsScreen } from '../screens/public/AboutUsScreen';
@@ -136,6 +138,25 @@ const ProtectedUserProfile = (props: any) => (
 
 export function RootNavigator() {
   const lastProcessedIdRef = useRef<string | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const initialRouteName = React.useMemo(() => {
+    if (!isAuthenticated || !user) return 'Login';
+    switch (user.role) {
+      case 'ADMIN':
+      case 'GROUP_MANAGER':
+        return 'AdminDashboard';
+      case 'PARENT':
+        return 'ParentHome';
+      case 'LEADER':
+      case 'SECTION_LEADER':
+      case 'JOWALAH':
+        return 'Attendance';
+      default:
+        return 'ChildHome';
+    }
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     // Check & trigger automated 1-day before and same-day party reminders
@@ -168,7 +189,7 @@ export function RootNavigator() {
     <NavigationContainer ref={navigationRef}>
       <NotificationBanner navigationRef={navigationRef} />
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={initialRouteName}
         screenOptions={{
           headerStyle: { backgroundColor: '#8B0000' },
           headerTintColor: '#FFFFFF',
@@ -180,7 +201,7 @@ export function RootNavigator() {
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          options={{ headerShown: false }}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="RoleSelect"
@@ -225,21 +246,21 @@ export function RootNavigator() {
           options={{ title: 'تواصل مع القيادة' }}
         />
 
-        {/* Role Home Dashboards (Guarded) */}
+        {/* Role Home Dashboards (Guarded - No Back to Login) */}
         <Stack.Screen
           name="ChildHome"
           component={ProtectedChildHome}
-          options={{ title: 'جنود المسيح الكشفية' }}
+          options={{ title: 'جنود المسيح الكشفية', headerLeft: () => null, gestureEnabled: false }}
         />
         <Stack.Screen
           name="ParentHome"
           component={ProtectedParentHome}
-          options={{ title: 'متابعة أولياء الأمور' }}
+          options={{ title: 'متابعة أولياء الأمور', headerLeft: () => null, gestureEnabled: false }}
         />
         <Stack.Screen
           name="AdminDashboard"
           component={ProtectedAdminDashboard}
-          options={{ title: 'لوحة القيادة الإدارية' }}
+          options={{ title: 'لوحة القيادة الإدارية', headerLeft: () => null, gestureEnabled: false }}
         />
 
         {/* Scout Operations & Shared Modules (Guarded) */}
