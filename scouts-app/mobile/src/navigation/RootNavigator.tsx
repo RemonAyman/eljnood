@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AuthGuard } from '../components/auth/AuthGuard';
 import { NotificationBanner } from '../components/ui/NotificationBanner';
 import { useNotificationStore } from '../store/notificationStore';
-import { subscribeToNotifications } from '../services/firebaseService';
+import { subscribeToNotifications, checkAndTriggerEventReminders } from '../services/firebaseService';
 
 // Operational & Internal Screens
 import { LoginScreen } from '../screens/auth/LoginScreen';
@@ -138,6 +138,9 @@ export function RootNavigator() {
   const lastProcessedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Check & trigger automated 1-day before and same-day party reminders
+    checkAndTriggerEventReminders().catch((e) => console.warn('Reminders check note:', e));
+
     // Subscribe to Firestore Real-time Notifications
     const unsubscribe = subscribeToNotifications((notifs) => {
       if (notifs && notifs.length > 0) {

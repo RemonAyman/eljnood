@@ -74,6 +74,11 @@ service cloud.firestore {
       allow read, create, update, delete: if isAuthenticated();
     }
 
+    // 13. Parties & Events Collection (الحفلات والمناسبات والفعاليات)
+    match /parties_events/{eventId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
     // Wildcard Fallback Rule for App Operations
     match /{document=**} {
       allow read, write: if isAuthenticated();

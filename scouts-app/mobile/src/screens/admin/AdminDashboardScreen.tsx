@@ -16,7 +16,8 @@ import {
   fetchMembersFromFirestore, 
   fetchAllSubscriptionsFromFirestore,
   fetchAttendanceFromFirestore,
-  fetchFollowUpsFromFirestore
+  fetchFollowUpsFromFirestore,
+  savePartyEventToFirestore
 } from '../../services/firebaseService';
 import { useMembersStore } from '../../store/membersStore';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
@@ -50,6 +51,48 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
   const [showRosterModal, setShowRosterModal] = useState(false);
   const [rosterSearch, setRosterSearch] = useState('');
   const [selectedRosterSquad, setSelectedRosterSquad] = useState('ALL');
+
+  // Party & Event Creation Modal State
+  const [showPartyModal, setShowPartyModal] = useState(false);
+  const [partyTitle, setPartyTitle] = useState('');
+  const [partyDate, setPartyDate] = useState(new Date().toISOString().split('T')[0]);
+  const [partyTime, setPartyTime] = useState('06:00 مساءً');
+  const [partyLocation, setPartyLocation] = useState('مسرح الكنيسة الكبير');
+  const [partyAudience, setPartyAudience] = useState('جميع الكشافة وأولياء الأمور');
+  const [partyDesc, setPartyDesc] = useState('');
+  const [savingParty, setSavingParty] = useState(false);
+
+  const handleAddPartyEvent = async () => {
+    if (!partyTitle.trim()) {
+      Alert.alert('تنبيه', 'يرجى إدخال اسم الحفلة أو المناسبة');
+      return;
+    }
+
+    setSavingParty(true);
+    try {
+      const res = await savePartyEventToFirestore({
+        title: partyTitle.trim(),
+        eventDate: partyDate.trim(),
+        eventTime: partyTime.trim(),
+        location: partyLocation.trim(),
+        targetAudience: partyAudience.trim(),
+        description: partyDesc.trim() || 'حفلة ومناسبة كشفية للمجموعة.',
+      });
+
+      setSavingParty(false);
+      if (res.success) {
+        setShowPartyModal(false);
+        setPartyTitle('');
+        setPartyDesc('');
+        Alert.alert('تم بنجاح 🎉', res.message);
+      } else {
+        Alert.alert('خطأ', res.message);
+      }
+    } catch (e: any) {
+      setSavingParty(false);
+      Alert.alert('خطأ', e.message);
+    }
+  };
 
   const loadRealDashboardData = useCallback(async () => {
     setLoadingMetrics(true);
@@ -154,6 +197,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
   }, [loadRealDashboardData]);
 
   const adminModules = [
+    { title: 'مواعيد الحفلات والتنبيهات 🎭', subtitle: 'إضافة الحفلات والمناسبات وإرسال إشعارات فورية وتذكيرات تلقائية', icon: '🥳', action: () => setShowPartyModal(true), color: '#DC2626' },
     { title: 'سجل التحضير والـ QR', subtitle: 'متابعة حضور وانضباط كافة الفرق والقطاعات', icon: '📋', route: 'Attendance', color: '#8B0000' },
     { title: 'الخزينة والاشتراكات', subtitle: 'إصدار الإيصالات ومراجعة الدفعات والخصومات', icon: '💰', route: 'Subscriptions', color: '#1E3A8A' },
     { title: 'الافتقاد والرعاية الأسرية', subtitle: 'تقارير افتقاد المخدومين والزيارات المنزلية', icon: '🤝', route: 'FollowUp', color: '#047857' },
@@ -384,6 +428,88 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
                 <Text style={styles.emptyRosterText}>لا يوجد أعضاء مطابقون للبحث</Text>
               )}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ─── PARTY & EVENT CREATION MODAL ────────────────────────────────────────── */}
+      <Modal visible={showPartyModal} transparent animationType="slide" onRequestClose={() => setShowPartyModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.rosterModalBox}>
+            <View style={styles.rosterModalHeader}>
+              <TouchableOpacity style={styles.rosterCloseBtn} onPress={() => setShowPartyModal(false)}>
+                <Text style={styles.rosterCloseText}>إغلاق ✖</Text>
+              </TouchableOpacity>
+              <Text style={styles.rosterModalTitle}>🎭 إضافة حفلة ومناسبة كشفية جديدة</Text>
+            </View>
+            <Text style={styles.rosterModalSub}>إرسال إشعارات وتنبيهات فورية لجميع المستخدمين وتذكيرات قبلها بيوم وفي نفس اليوم</Text>
+
+            <ScrollView style={{ maxHeight: 380 }}>
+              <Text style={styles.finBreakdownHeading}>اسم الحفلة / المناسبة *</Text>
+              <TextInput
+                style={styles.rosterSearchInput}
+                placeholder="مثال: حفل أداء الوعد وتسليم المناديل أو حفل ختام الأنشطة"
+                placeholderTextColor="#888"
+                value={partyTitle}
+                onChangeText={setPartyTitle}
+              />
+
+              <Text style={styles.finBreakdownHeading}>تاريخ الحفلة (YYYY-MM-DD) *</Text>
+              <TextInput
+                style={styles.rosterSearchInput}
+                placeholder="YYYY-MM-DD (مثال: 2026-10-15)"
+                placeholderTextColor="#888"
+                value={partyDate}
+                onChangeText={setPartyDate}
+              />
+
+              <Text style={styles.finBreakdownHeading}>وقت وتوقيت الحفلة *</Text>
+              <TextInput
+                style={styles.rosterSearchInput}
+                placeholder="مثال: 06:00 مساءً"
+                placeholderTextColor="#888"
+                value={partyTime}
+                onChangeText={setPartyTime}
+              />
+
+              <Text style={styles.finBreakdownHeading}>المكان *</Text>
+              <TextInput
+                style={styles.rosterSearchInput}
+                placeholder="مثال: مسرح الكنيسة الكبير / ساحة الكشافة"
+                placeholderTextColor="#888"
+                value={partyLocation}
+                onChangeText={setPartyLocation}
+              />
+
+              <Text style={styles.finBreakdownHeading}>الفئة المستهدفة *</Text>
+              <TextInput
+                style={styles.rosterSearchInput}
+                placeholder="مثال: جميع الكشافة وأولياء الأمور"
+                placeholderTextColor="#888"
+                value={partyAudience}
+                onChangeText={setPartyAudience}
+              />
+
+              <Text style={styles.finBreakdownHeading}>وصف وتفاصيل الحفلة</Text>
+              <TextInput
+                style={[styles.rosterSearchInput, { height: 75, textAlignVertical: 'top' }]}
+                placeholder="اكتب برنامج وتفاصيل الحفلة الكشفية..."
+                placeholderTextColor="#888"
+                value={partyDesc}
+                onChangeText={setPartyDesc}
+                multiline
+              />
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.seedBtn, { backgroundColor: '#8B0000', borderColor: '#8B0000', marginTop: 12 }, savingParty && { opacity: 0.6 }]}
+              onPress={handleAddPartyEvent}
+              disabled={savingParty}
+            >
+              <Text style={styles.seedBtnText}>
+                {savingParty ? '⏳ جاري الحفظ وإرسال الإشعارات...' : '🚀 نشر الحفلة وإرسال الإشعار الفوري'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

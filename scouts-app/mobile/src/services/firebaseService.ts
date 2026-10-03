@@ -28,6 +28,7 @@ export const COLLECTIONS = {
   CURRICULA: 'curricula',
   SCOUTING_PLANS: 'scouting_plans',
   NOTIFICATIONS: 'notifications',
+  PARTIES_EVENTS: 'parties_events',
 } as const;
 
 // ─── 1. Members Operations ───────────────────────────────────────────────────
@@ -813,4 +814,108 @@ export function subscribeToNotifications(
     return () => {};
   }
 }
+
+// ─── 13. Parties & Events Operations with Automated Notification Reminders ───
+
+export interface PartyEvent {
+  id: string;
+  title: string;
+  eventDate: string; // YYYY-MM-DD
+  eventTime: string; // e.g. "06:00 مساءً"
+  location: string;
+  targetAudience: string;
+  description: string;
+  createdByName?: string;
+  createdAt: string;
+}
+
+export async function savePartyEventToFirestore(party: Omit<PartyEvent, 'id' | 'createdAt'>): Promise<{
+  success: boolean;
+  docId?: string;
+  message: string;
+}> {
+  try {
+    const docId = `party_${Date.now()}`;
+    const partyRef = doc(db, COLLECTIONS.PARTIES_EVENTS, docId);
+    const fullParty: PartyEvent = {
+      ...party,
+      id: docId,
+      createdAt: new Date().toISOString(),
+    };
+    await setDoc(partyRef, fullParty, { merge: true });
+
+    // 1. Immediate Notification on creation (اول ما تنزل)
+    await sendNotificationToFirestore({
+      title: `🎭 حفلة جديدة: ${party.title}`,
+      body: `الموعد: ${party.eventDate} الساعة ${party.eventTime} في ${party.location} (${party.targetAudience})`,
+      type: 'SYSTEM',
+    });
+
+    return {
+      success: true,
+      docId,
+      message: 'تم إضافة الحفلة بنجاح وإرسال إشعار فوري لجميع المستخدمين! 🎉',
+    };
+  } catch (error: any) {
+    console.warn('⚠️ Save party event error:', error.message);
+    return {
+      success: false,
+      message: `خطأ في إضافة الحفلة: ${error.message}`,
+    };
+  }
+}
+
+export async function fetchPartyEventsFromFirestore(): Promise<PartyEvent[]> {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.PARTIES_EVENTS));
+    const list: PartyEvent[] = [];
+    snapshot.forEach((d) => {
+      list.push(d.data() as PartyEvent);
+    });
+    return list.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  } catch (error: any) {
+    console.warn('⚠️ Fetch party events error:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Checks upcoming parties and triggers:
+ * 1. Reminder 1 day before (قبلها بيوم)
+ * 2. Reminder on the same day (في نفس اليوم)
+ */
+export async function checkAndTriggerEventReminders(): Promise<void> {
+  try {
+    const events = await fetchPartyEventsFromFirestore();
+    if (!events || events.length === 0) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    for (const evt of events) {
+      // Same-Day Reminder (في نفس اليوم)
+      if (evt.eventDate === todayStr) {
+        await sendNotificationToFirestore({
+          title: `🔔 اليوم موعد ${evt.title}! 🎉`,
+          body: `الموعد اليوم الساعة ${evt.eventTime} في ${evt.location}! مستعدين يا أبطال؟`,
+          type: 'SYSTEM',
+        });
+      }
+
+      // 1-Day Before Reminder (قبلها بيوم)
+      if (evt.eventDate === tomorrowStr) {
+        await sendNotificationToFirestore({
+          title: `⏰ تذكير: غداً موعد ${evt.title} 🥳`,
+          body: `غداً الساعة ${evt.eventTime} في ${evt.location}! لا تنسوا الحضور والمشاركة.`,
+          type: 'SYSTEM',
+        });
+      }
+    }
+  } catch (e: any) {
+    console.warn('⚠️ Check event reminders note:', e.message);
+  }
+}
+
 
