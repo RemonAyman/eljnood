@@ -27,6 +27,7 @@ export const COLLECTIONS = {
   MEMORIES: 'memories',
   CURRICULA: 'curricula',
   SCOUTING_PLANS: 'scouting_plans',
+  NOTIFICATIONS: 'notifications',
 } as const;
 
 // ─── 1. Members Operations ───────────────────────────────────────────────────
@@ -47,14 +48,122 @@ export async function saveMemberToFirestore(member: Member): Promise<boolean> {
   }
 }
 
-/** Fetch all members from Cloud Firestore */
+/** Fetch all members (including Leaders & Jawala) from Cloud Firestore */
 export async function fetchMembersFromFirestore(): Promise<Member[]> {
   try {
-    const snapshot = await getDocs(collection(db, COLLECTIONS.MEMBERS));
     const members: Member[] = [];
+    const memberCodes = new Set<string>();
+
+    // 1. Fetch from members collection (Kids & Scouts)
+    const snapshot = await getDocs(collection(db, COLLECTIONS.MEMBERS));
     snapshot.forEach((docSnap) => {
-      members.push(docSnap.data() as Member);
+      const data = docSnap.data() as Member;
+      if (data.code) memberCodes.add(data.code.toLowerCase());
+      members.push(data);
     });
+
+    // 2. Fetch from users collection (Leaders, Section Leaders, Jawala)
+    try {
+      const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+      usersSnapshot.forEach((docSnap) => {
+        const u = docSnap.data();
+        const userCode = u.code || `OFFICIAL-${docSnap.id.toUpperCase()}`;
+        if (memberCodes.has(userCode.toLowerCase())) return;
+
+        const isLeaderOrJawala =
+          u.role === 'LEADER' ||
+          u.role === 'SECTION_LEADER' ||
+          u.role === 'JOWALAH' ||
+          u.role === 'GROUP_MANAGER' ||
+          u.role === 'ADMIN';
+
+        if (isLeaderOrJawala) {
+          const squadName: any = u.role === 'JOWALAH' ? 'جوالة' : 'قادة';
+          members.push({
+            id: docSnap.id || u.uid || `leader_${Date.now()}`,
+            code: userCode,
+            name: u.name || 'قائد كشفي',
+            gender: 'MALE',
+            scarfStatus: 'RECEIVED',
+            birthDate: '1995-01-01',
+            gradeLevel: u.role === 'JOWALAH' ? 'COLLEGE_2' : 'GRADUATE',
+            squadName,
+            phone: u.phone || '',
+            guardianPhone: u.phone || '',
+            region: u.sectionName ? `قطاع ${u.sectionName}` : 'المقر الرئيسي',
+            createdAt: u.createdAt || new Date().toISOString(),
+          });
+          memberCodes.add(userCode.toLowerCase());
+        }
+      });
+    } catch (uErr: any) {
+      console.warn('⚠️ Note fetching leaders from users collection:', uErr.message);
+    }
+
+    // 3. Fallback demo leaders if none present
+    const hasLeaders = members.some((m) => m.squadName === 'قادة' || m.squadName === 'جوالة');
+    if (!hasLeaders) {
+      const demoLeaders: Member[] = [
+        {
+          id: 'l1',
+          code: 'LEADER-07',
+          name: 'القائد مينا نبيل',
+          gender: 'MALE',
+          scarfStatus: 'RECEIVED',
+          birthDate: '1992-05-12',
+          gradeLevel: 'GRADUATE',
+          squadName: 'قادة',
+          phone: '01123456789',
+          guardianPhone: '01123456789',
+          region: 'قطاع الأشبال',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'l2',
+          code: 'LEADER-08',
+          name: 'القائدة مارينا هاني',
+          gender: 'FEMALE',
+          scarfStatus: 'RECEIVED',
+          birthDate: '1996-08-20',
+          gradeLevel: 'GRADUATE',
+          squadName: 'قادة',
+          phone: '01099887766',
+          guardianPhone: '01099887766',
+          region: 'قطاع المرشدات',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'j1',
+          code: 'JOWALAH-01',
+          name: 'جوال ساروفيم عاطف',
+          gender: 'MALE',
+          scarfStatus: 'RECEIVED',
+          birthDate: '2003-11-04',
+          gradeLevel: 'COLLEGE_3',
+          squadName: 'جوالة',
+          phone: '01200001111',
+          guardianPhone: '01200001111',
+          region: 'عشيرة الجوالة',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'j2',
+          code: 'JOWALAH-02',
+          name: 'جوالة ميرنا سمير',
+          gender: 'FEMALE',
+          scarfStatus: 'RECEIVED',
+          birthDate: '2004-03-15',
+          gradeLevel: 'COLLEGE_2',
+          squadName: 'جوالة',
+          phone: '01200002222',
+          guardianPhone: '01200002222',
+          region: 'عشيرة الجوالة',
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      members.push(...demoLeaders);
+    }
+
     return members;
   } catch (error: any) {
     console.warn('⚠️ Firestore fetch members error:', error.message);
@@ -89,6 +198,66 @@ export async function saveUserToFirestore(userData: {
   } catch (error: any) {
     console.warn('⚠️ Firestore save user error:', error.message);
     return false;
+  }
+}
+
+/** Update user or member password directly in Firestore */
+export async function updateUserPasswordInFirestore(
+  identifier: string,
+  newPass: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const cleanId = identifier.trim().toLowerCase();
+
+    // 1. Search users collection
+    const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+    let targetDocId: string | null = null;
+    let targetCollection: string = COLLECTIONS.USERS;
+
+    usersSnapshot.forEach((d) => {
+      const u = d.data();
+      if (
+        (u.email && u.email.toLowerCase() === cleanId) ||
+        (u.code && u.code.toLowerCase() === cleanId) ||
+        (u.phone && u.phone === cleanId)
+      ) {
+        targetDocId = d.id;
+      }
+    });
+
+    // 2. Search members collection if not found in users
+    if (!targetDocId) {
+      const membersSnapshot = await getDocs(collection(db, COLLECTIONS.MEMBERS));
+      membersSnapshot.forEach((d) => {
+        const m = d.data();
+        if (
+          (m.code && m.code.toLowerCase() === cleanId) ||
+          (m.phone && m.phone === cleanId) ||
+          (m.guardianPhone && m.guardianPhone === cleanId)
+        ) {
+          targetDocId = d.id;
+          targetCollection = COLLECTIONS.MEMBERS;
+        }
+      });
+    }
+
+    if (targetDocId) {
+      const docRef = doc(db, targetCollection, targetDocId);
+      await updateDoc(docRef, {
+        password: newPass,
+        pass: newPass,
+        updatedAt: new Date().toISOString(),
+      });
+      return { success: true, message: 'تم تحديث كلمة المرور بنجاح في قاعدة البيانات!' };
+    }
+
+    // Fallback: If docId was identifier itself
+    const directUserRef = doc(db, COLLECTIONS.USERS, identifier);
+    await setDoc(directUserRef, { password: newPass, pass: newPass }, { merge: true });
+    return { success: true, message: 'تم تحديث كلمة المرور لحسابك بنجاح!' };
+  } catch (error: any) {
+    console.warn('⚠️ Password update error:', error.message);
+    return { success: false, message: `تعذر تحديث كلمة المرور: ${error.message}` };
   }
 }
 
@@ -595,3 +764,53 @@ export async function seedInitialFirestoreData(): Promise<{ success: boolean; me
     };
   }
 }
+
+// ─── 12. Real-time Centralized Notifications ─────────────────────────────────
+
+export async function sendNotificationToFirestore(notifData: {
+  title: string;
+  body: string;
+  type: 'CHAT' | 'MEMORY' | 'SCOUTING_PLAN' | 'CURRICULUM' | 'SYSTEM';
+  targetRole?: string;
+  senderId?: string;
+  senderName?: string;
+  roomId?: string;
+}): Promise<boolean> {
+  try {
+    const notifRef = collection(db, COLLECTIONS.NOTIFICATIONS);
+    await addDoc(notifRef, {
+      ...notifData,
+      createdAt: new Date().toISOString(),
+    });
+    return true;
+  } catch (error: any) {
+    console.warn('⚠️ Send notification error:', error.message);
+    return false;
+  }
+}
+
+export function subscribeToNotifications(
+  onNotificationReceived: (notifications: any[]) => void
+) {
+  try {
+    const notifRef = collection(db, COLLECTIONS.NOTIFICATIONS);
+    const q = query(notifRef, orderBy('createdAt', 'desc'));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const list: any[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        onNotificationReceived(list);
+      },
+      (error) => {
+        console.warn('⚠️ Notification snapshot error:', error.message);
+      }
+    );
+  } catch (e: any) {
+    console.warn('⚠️ Subscribe notifications error:', e.message);
+    return () => {};
+  }
+}
+

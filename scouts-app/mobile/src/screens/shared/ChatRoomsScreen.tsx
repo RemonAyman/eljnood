@@ -14,7 +14,11 @@ import { useChatStore, getAvailableChatRoomsForUser } from '../../store/chatStor
 import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { ChatMessage, Role } from '../../types';
-import { subscribeToChatMessages, sendChatMessageToFirestore } from '../../services/firebaseService';
+import {
+  subscribeToChatMessages,
+  sendChatMessageToFirestore,
+  sendNotificationToFirestore,
+} from '../../services/firebaseService';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 
 const getRoleBadge = (role: Role) => {
@@ -179,6 +183,16 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
     sendChatMessageToFirestore(newMsgData).catch((e) =>
       console.warn('Chat firestore sync:', e)
     );
+
+    // 3. Central Push Notification Broadcast
+    sendNotificationToFirestore({
+      title: 'رسالة جديدة في الشات 💬',
+      body: `${currentUser?.name || 'عضو'}: ${inputMessage.trim()}`,
+      type: 'CHAT',
+      senderId: currentUser?.id,
+      senderName: currentUser?.name,
+      roomId: currentRoomId,
+    });
 
     setInputMessage('');
     setTimeout(() => {

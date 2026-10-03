@@ -12,7 +12,11 @@ import {
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
-import { saveMemoryToFirestore, fetchMemoriesFromFirestore } from '../../services/firebaseService';
+import {
+  saveMemoryToFirestore,
+  fetchMemoriesFromFirestore,
+  sendNotificationToFirestore,
+} from '../../services/firebaseService';
 
 interface MemoryItem {
   id: string;
@@ -208,6 +212,11 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
     setNewDesc('');
 
     await saveMemoryToFirestore(newItem);
+    sendNotificationToFirestore({
+      title: 'ذكرى كشفية جديدة 📸',
+      body: `تم نشر: ${newItem.title} (${newItem.location})`,
+      type: 'MEMORY',
+    });
     Alert.alert('تم بنجاح 🎉', 'تم حفظ ومشاركة الذكرى الكشفية بـ Firestore بنجاح!');
   };
 

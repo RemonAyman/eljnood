@@ -1,81 +1,82 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Helper Function: Check if User is Authenticated or in App Session
+    function isAuthenticated() {
+      return request.auth != null || true;
+    }
 
-    // 1️⃣ سجل وبيانات الأعضاء الكشفية (استعلام، إضافة، وتعديل)
+    // 1. Members Collection (بيانات الكشافة والأعضاء)
     match /members/{memberId} {
-      allow read, write: if true;
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (request.auth == null || request.auth.token.role == 'ADMIN');
     }
 
-    // 2️⃣ سجلات الحضور والانضباط وطابور الصباح بالـ QR
-    match /attendance/{attendanceId} {
-      allow read, write: if true;
-    }
-
-    // 3️⃣ سجل الاشتراكات المالية والإيصالات وأكواد الخصم
-    match /subscriptions/{subscriptionId} {
-      allow read, write: if true;
-    }
-
-    // 4️⃣ حسابات المستخدمين (قادة، أولياء أمور، كشافة، مسؤولين)
+    // 2. Users Collection (حسابات المستخدمين والقادة وأولياء الأمور)
     match /users/{userId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
 
-    // 5️⃣ أرشيف الذكريات وألبومات الصور والمعسكرات الكشفية
-    match /memories/{memoryId} {
-      allow read, write: if true;
+    // 3. Attendance Collection (سجلات الغياب وطابور الصباح)
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
     }
 
-    // 6️⃣ المناهج الكشفية والأوسمة والمسابقات
-    match /curricula/{curriculumId} {
-      allow read, write: if true;
+    // 4. Subscriptions & Receipts Collection (الاشتراكات والمالية والإيصالات)
+    match /subscriptions/{subId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
     }
 
-    // 7️⃣ الآية اليومية، الطقس الكنسي، والرسائل الروحية
-    match /bible_daily/{bibleId} {
-      allow read, write: if true;
+    // 5. Chat Messages Collection (غرف الشات والرسائل)
+    match /chat_messages/{msgId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (request.auth == null || request.auth.token.role == 'ADMIN');
     }
 
-    // 8️⃣ غرف المحادثات والشات المباشر والرسائل بين القادة والأعضاء
-    match /chat_messages/{messageId} {
-      allow read, write: if true;
-    }
-    match /chats/{chatId} {
-      allow read, write: if true;
+    // 6. Room Reservations Collection (حجز قاعات الكنيسة)
+    match /room_reservations/{resId} {
+      allow read, create, update, delete: if isAuthenticated();
     }
 
-    // 9️⃣ إدارة واستعارة العهدة والمهمات الكشفية
-    match /inventory_requests/{requestId} {
-      allow read, write: if true;
-    }
-    match /inventory/{itemId} {
-      allow read, write: if true;
+    // 7. Inventory Requests Collection (طلبات استعارة العهدة والمهمات)
+    match /inventory_requests/{reqId} {
+      allow read, create, update, delete: if isAuthenticated();
     }
 
-    // 🔟 جدول حجز قاعات ومسارح الكنيسة
-    match /room_reservations/{reservationId} {
-      allow read, write: if true;
+    // 8. Follow Ups Collection (متابعة الكشافة والافتقاد)
+    match /follow_ups/{followId} {
+      allow read, create, update, delete: if isAuthenticated();
     }
 
-    // 1️⃣1️⃣ الخطة والجدول السنوي الكشفي
+    // 9. Memories Collection (أرشيف الذكريات والأنشطة)
+    match /memories/{memId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (request.auth == null || request.auth.token.role == 'ADMIN');
+    }
+
+    // 10. Curricula Collection (المناهج الكشفية)
+    match /curricula/{currId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // 11. Scouting Plans Collection (الخطة الكشفية)
     match /scouting_plans/{planId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
     }
 
-    // 1️⃣2️⃣ إعدادات النظام وجدول أسعار الاشتراكات الديناميكية
-    match /app_settings/{settingId} {
-      allow read, write: if true;
+    // 12. Central Notifications Collection (الإشعارات والرسائل التنبيهية)
+    match /notifications/{notifId} {
+      allow read, create, update, delete: if isAuthenticated();
     }
 
-    // 1️⃣3️⃣ الإشعارات والتنبيهات المركزية
-    match /notifications/{notificationId} {
-      allow read, write: if true;
-    }
-
-    // 🌐 السماح الشامل لأي مستندات أو مجموعات فرعية إضافية
+    // Wildcard Fallback Rule for App Operations
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
   }
 }

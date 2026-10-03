@@ -340,13 +340,39 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
           </View>
         </View>
 
-        {/* Quick Actions (QR Scanner & Fingerprint Excel Import) */}
+        {/* Quick Actions (QR Scanner, Fingerprint Excel, Leader/Jawala Toggle) */}
         <View style={styles.actionButtonsRow}>
           <TouchableOpacity style={styles.scannerBtn} onPress={() => setShowScannerModal(true)}>
-            <Text style={styles.scannerBtnText}>📷 مسح كود QR الكشفي</Text>
+            <Text style={styles.scannerBtnText}>📷 مسح كود QR</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.excelBtn} onPress={() => setShowExcelModal(true)}>
-            <Text style={styles.excelBtnText}>📊 رفع شيت البصمة Excel</Text>
+            <Text style={styles.excelBtnText}>📊 شيت البصمة Excel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.leaderToggleBtn,
+              (selectedEvent === ('SCOUTING_DAY_LEADERS' as any) || selectedEvent === 'LEADERS_MEETING') && styles.leaderToggleBtnActive,
+            ]}
+            onPress={() => {
+              if (selectedEvent === ('SCOUTING_DAY_LEADERS' as any) || selectedEvent === 'LEADERS_MEETING') {
+                setSelectedEvent('SCOUTING_DAY');
+                setSelectedSquadFilter('ALL');
+              } else {
+                setSelectedEvent('SCOUTING_DAY_LEADERS' as any);
+                setSelectedSquadFilter('ALL');
+              }
+            }}
+          >
+            <Text
+              style={[
+                styles.leaderToggleBtnText,
+                (selectedEvent === ('SCOUTING_DAY_LEADERS' as any) || selectedEvent === 'LEADERS_MEETING') && styles.leaderToggleBtnTextActive,
+              ]}
+            >
+              {selectedEvent === ('SCOUTING_DAY_LEADERS' as any) || selectedEvent === 'LEADERS_MEETING'
+                ? '👥 غياب الأطفال'
+                : '⚜️ غياب القادة والجوالة'}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -572,10 +598,22 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 12,
     alignItems: 'center',
-    marginRight: 6,
+    marginHorizontal: 4,
     elevation: 3,
   },
-  excelBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
+  excelBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 11 },
+  leaderToggleBtn: {
+    flex: 1,
+    backgroundColor: '#7C3AED',
+    paddingVertical: 13,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginRight: 4,
+    elevation: 3,
+  },
+  leaderToggleBtnActive: { backgroundColor: '#D97706' },
+  leaderToggleBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 11 },
+  leaderToggleBtnTextActive: { color: '#FFF' },
   searchSection: { marginBottom: 16 },
   searchInput: {
     backgroundColor: '#FFF',

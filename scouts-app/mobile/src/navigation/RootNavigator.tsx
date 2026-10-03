@@ -1,7 +1,10 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useRef } from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthGuard } from '../components/auth/AuthGuard';
+import { NotificationBanner } from '../components/ui/NotificationBanner';
+import { useNotificationStore } from '../store/notificationStore';
+import { subscribeToNotifications } from '../services/firebaseService';
 
 // Operational & Internal Screens
 import { LoginScreen } from '../screens/auth/LoginScreen';
@@ -29,6 +32,7 @@ import { ActivitiesScreen } from '../screens/public/ActivitiesScreen';
 import { PublicGalleryScreen } from '../screens/public/PublicGalleryScreen';
 import { ContactUsScreen } from '../screens/public/ContactUsScreen';
 
+export const navigationRef = createNavigationContainerRef<any>();
 const Stack = createStackNavigator();
 
 // ─── Guarded Screen Components ─────────────────────────────────────────────
@@ -131,8 +135,35 @@ const ProtectedUserProfile = (props: any) => (
 );
 
 export function RootNavigator() {
+  const lastProcessedIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Subscribe to Firestore Real-time Notifications
+    const unsubscribe = subscribeToNotifications((notifs) => {
+      if (notifs && notifs.length > 0) {
+        const latest = notifs[0];
+        if (latest.id && latest.id !== lastProcessedIdRef.current) {
+          lastProcessedIdRef.current = latest.id;
+          useNotificationStore.getState().showBanner({
+            id: latest.id,
+            title: latest.title || 'تنبيه جديد 🔔',
+            body: latest.body || 'يوجد إشعار جديد في منظومة الكشافة',
+            type: latest.type || 'SYSTEM',
+            roomId: latest.roomId,
+            senderName: latest.senderName,
+          });
+        }
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
+      <NotificationBanner navigationRef={navigationRef} />
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{
@@ -263,3 +294,4 @@ export function RootNavigator() {
     </NavigationContainer>
   );
 }
+

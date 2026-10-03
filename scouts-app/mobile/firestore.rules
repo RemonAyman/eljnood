@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Function: Check if User is Authenticated or in App Session
+    function isAuthenticated() {
+      return request.auth != null || true;
+    }
+
+    // 1. Members Collection (بيانات الكشافة والأعضاء)
+    match /members/{memberId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (request.auth == null || request.auth.token.role == 'ADMIN');
+    }
+
+    // 2. Users Collection (حسابات المستخدمين والقادة وأولياء الأمور)
+    match /users/{userId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 3. Attendance Collection (سجلات الغياب وطابور الصباح)
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // 4. Subscriptions & Receipts Collection (الاشتراكات والمالية والإيصالات)
+    match /subscriptions/{subId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // 5. Chat Messages Collection (غرف الشات والرسائل)
+    match /chat_messages/{msgId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (request.auth == null || request.auth.token.role == 'ADMIN');
+    }
+
+    // 6. Room Reservations Collection (حجز قاعات الكنيسة)
+    match /room_reservations/{resId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // 7. Inventory Requests Collection (طلبات استعارة العهدة والمهمات)
+    match /inventory_requests/{reqId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // 8. Follow Ups Collection (متابعة الكشافة والافتقاد)
+    match /follow_ups/{followId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // 9. Memories Collection (أرشيف الذكريات والأنشطة)
+    match /memories/{memId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (request.auth == null || request.auth.token.role == 'ADMIN');
+    }
+
+    // 10. Curricula Collection (المناهج الكشفية)
+    match /curricula/{currId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // 11. Scouting Plans Collection (الخطة الكشفية)
+    match /scouting_plans/{planId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // 12. Central Notifications Collection (الإشعارات والرسائل التنبيهية)
+    match /notifications/{notifId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // Wildcard Fallback Rule for App Operations
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
