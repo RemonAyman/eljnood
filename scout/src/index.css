@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #610000;
+  --primary-container: #8b0000;
+  --on-primary: #ffffff;
+  --secondary: #7e5713;
+  --secondary-fixed: #ffddb1;
+  --on-secondary-fixed: #291800;
+  --background: #fcf9f4;
+  --surface: #fcf9f4;
+  --surface-container-low: #f6f3ee;
+  --surface-container: #f0ede9;
+  --surface-container-high: #ebe8e3;
+  --surface-container-lowest: #ffffff;
+  --on-surface: #1c1c19;
+  --on-surface-variant: #5a403c;
+  --outline: #8e706b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer base {
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background-color: var(--background);
+    color: var(--on-surface);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cairo', sans-serif;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f6f3ee;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8e706b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8b0000;
+}
+
+/* Helper utility classes matching scout design screens */
+.bg-primary-container {
+  background-color: #8b0000 !important;
+}
+
+.text-primary {
+  color: #610000 !important;
+}
+
+.text-on-primary {
+  color: #ffffff !important;
+}
+
+.bg-secondary-fixed {
+  background-color: #ffddb1 !important;
+}
+
+.text-on-secondary-fixed {
+  color: #291800 !important;
+}
+
+.bg-surface-container-lowest {
+  background-color: #ffffff !important;
+}
+
+.bg-surface-container-low {
+  background-color: #f6f3ee !important;
+}
+
+.bg-surface-container-high {
+  background-color: #ebe8e3 !important;
+}
+
+.text-on-surface-variant {
+  color: #5a403c !important;
+}
+
+.text-secondary {
+  color: #7e5713 !important;
+}
+
+.text-outline {
+  color: #8e706b !important;
+}
