@@ -17,6 +17,8 @@ import { calculateSquad } from '../../utils/squadCalculator';
 import { useMembersStore } from '../../store/membersStore';
 import { useAuthStore } from '../../store/authStore';
 import { validateRegisterForm } from '../../utils/validation';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../config/firebase.config';
 import { saveMemberToFirestore, saveUserToFirestore } from '../../services/firebaseService';
 
 const FieldError = ({ message }: { message?: string }) =>
@@ -152,7 +154,16 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     }
 
     setSubmitting(true);
-    const uid = `u_${Date.now()}`;
+    let uid = `u_${Date.now()}`;
+
+    if (email.trim() && password.trim()) {
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
+        uid = userCred.user.uid;
+      } catch (authErr: any) {
+        console.warn('Firebase Auth user creation note:', authErr.message);
+      }
+    }
 
     if (activeRole === 'CHILD') {
       const newMemberData = {

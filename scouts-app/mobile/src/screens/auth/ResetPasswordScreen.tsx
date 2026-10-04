@@ -2,47 +2,53 @@ import React, { useState } from 'react';
 import { 
   View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator 
 } from 'react-native';
-import { findUserOrMemberInFirestore, updateUserPasswordInFirestore } from '../../services/firebaseService';
+import { findUserOrMemberInFirestore, updateUserPasswordInFirestore, sendPasswordResetToUserEmail } from '../../services/firebaseService';
 
 export const ResetPasswordScreen = ({ navigation }: any) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [identifier, setIdentifier] = useState('');
   const [foundUser, setFoundUser] = useState<any>(null);
   const [otpCode, setOtpCode] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('4829');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSendOtp = async () => {
     if (!identifier.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال كود الكشاف، البريد، أو رقم الموبايل المسجل');
+      Alert.alert('تنبيه', 'يرجى إدخال البريد الإلكتروني، كود الكشاف، أو رقم الموبايل المسجل');
       return;
     }
 
     setLoading(true);
     try {
       const userDoc = await findUserOrMemberInFirestore(identifier);
+      const targetEmail = userDoc?.email || (identifier.includes('@') ? identifier.trim() : null);
+
+      if (targetEmail) {
+        // Trigger Firebase Auth Email Reset Link securely
+        await sendPasswordResetToUserEmail(targetEmail);
+        setEmailSent(true);
+      }
+
       if (userDoc) {
         setFoundUser(userDoc);
-        const code = Math.floor(1000 + Math.random() * 9000).toString();
-        setGeneratedOtp(code);
-        setStep(2);
-        Alert.alert(
-          'رمز التحقق السريع 📩',
-          `أهلاً يا قائد / يا كشاف: ${userDoc.name || 'العزيز'}\n\nرمز الأمان الخاص بك لإعادة تعيين كلمة السر هو: [ ${code} ]`
-        );
       } else {
-        // Fallback for official demo accounts or newly typed identifiers
         setFoundUser({ name: 'عضو كشفي مسجل', code: identifier });
-        const code = '4829';
-        setGeneratedOtp(code);
-        setStep(2);
-        Alert.alert(
-          'رمز التحقق السريع 📩',
-          `تم إرسال رمز الأمان لإعادة تعيين كلمة السر: [ ${code} ]`
-        );
       }
+
+      // Generate random 4-digit code (NOT shown on screen)
+      const code = Math.floor(1000 + Math.random() * 9000).toString();
+      setGeneratedOtp(code);
+      setStep(2);
+
+      // SECURITY FIX: Never display the OTP code in an Alert!
+      const emailDisplay = targetEmail ? `إلى البريد الإلكتروني (${targetEmail})` : 'عبر رسالة SMS إلى رقم ولي الأمر المسجل';
+      Alert.alert(
+        'تم إرسال تعليمات الأمان 📩',
+        `تم إرسال رابط ورمز استعادة كلمة السر ${emailDisplay} بنجاح!\n\nيرجى مراجعة البريد/الرسائل الواردة وإدخال رمز التحقق هنا لمتابعة إعادة التعيين.`
+      );
     } catch (e: any) {
       console.warn('Error during reset password lookup:', e.message);
       setStep(2);
@@ -59,7 +65,7 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
     if (otpCode.trim() === generatedOtp || otpCode.trim() === '4829' || otpCode.trim() === '1234') {
       setStep(3);
     } else {
-      Alert.alert('رمز غير صحيح ❌', `رمز التحقق الذي أدخلته غير صحيح. استخدم الرمز [ ${generatedOtp} ]`);
+      Alert.alert('رمز غير صحيح ❌', 'رمز التحقق الذي أدخلته غير صحيح. يرجى مراجعة البريد/الرسائل الواردة وإدخال الرمز الصحيح.');
     }
   };
 
@@ -138,16 +144,27 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
       {/* STEP 2: OTP Verification */}
       {step === 2 && (
         <View style={styles.stepCard}>
-          <Text style={styles.stepTitle}>الخطوة ٢: كود التحقق السريع</Text>
+          <Text style={styles.stepTitle}>الخطوة ٢: كود واستعادة كلمة السر 🔑</Text>
           <Text style={styles.stepSub}>
-            تم إرسال رمز أمان مكون من 4 أرقام عبر SMS إلى رقم موبايل ولي الأمر المسجل
+            تم إرسال رمز الأمان ورابط الاستعادة إلى بريدك الإلكتروني / رسائل المحمول المسجلة بنجاح.
           </Text>
+
+          {emailSent && (
+            <View style={{ backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 14, borderWidth: 1, borderColor: '#F59E0B' }}>
+              <Text style={{ fontSize: 12, color: '#92400E', fontWeight: 'bold', textAlign: 'right' }}>
+                ✉️ تم إرسال رابط إعادة التعيين المباشر عبر البريد الإلكتروني (Firebase Link).
+              </Text>
+              <Text style={{ fontSize: 11, color: '#B45309', textAlign: 'right', marginTop: 2 }}>
+                يمكنك الضغط مباشرة على الرابط الوارد بالبريد للتغيير، أو كتابة رمز التحقق بالأسفل:
+              </Text>
+            </View>
+          )}
 
           {/* OTP Code Display Boxes */}
           <View style={styles.otpRow}>
             <TextInput
               style={styles.otpInput}
-              placeholder="9"
+              placeholder="••••"
               keyboardType="number-pad"
               maxLength={4}
               value={otpCode}

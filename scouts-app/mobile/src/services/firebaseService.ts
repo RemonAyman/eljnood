@@ -10,7 +10,8 @@ import {
   query,
   orderBy,
 } from 'firebase/firestore';
-import { db } from '../config/firebase.config';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { db, auth } from '../config/firebase.config';
 import { Member, AttendanceRecord, SubscriptionRecord } from '../types';
 import { sanitizeText, validateAndSanitizeBase64Image } from '../utils/securityUtils';
 
@@ -271,6 +272,24 @@ export async function updateUserPasswordInFirestore(
   } catch (error: any) {
     console.warn('⚠️ Password update error:', error.message);
     return { success: false, message: `تعذر تحديث كلمة المرور: ${error.message}` };
+  }
+}
+
+/** Send Password Reset Link to user's email via Firebase Auth */
+export async function sendPasswordResetToUserEmail(email: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    await sendPasswordResetEmail(auth, cleanEmail);
+    return {
+      success: true,
+      message: `تم إرسال رابط إعادة تعيين كلمة المرور المعمية والآمنة إلى البريد (${cleanEmail}) بنجاح!`,
+    };
+  } catch (error: any) {
+    console.warn('⚠️ sendPasswordResetEmail error:', error.message);
+    return {
+      success: false,
+      message: error.message || 'تعذر إرسال بريد استعادة كلمة المرور.',
+    };
   }
 }
 
