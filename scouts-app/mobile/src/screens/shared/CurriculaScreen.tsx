@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 import { fetchCurriculaFromFirestore } from '../../services/firebaseService';
@@ -133,7 +134,31 @@ const LEADERBOARD = [
 ];
 
 export const CurriculaScreen = ({ navigation }: any) => {
-  const [selectedSquad, setSelectedSquad] = useState<string>('ASHBAL');
+  const user = useAuthStore((s) => s.user);
+
+  // Helper to get restricted squad key for non-admin/leader users
+  const getRestrictedSquadKey = (u: any): string | null => {
+    if (!u) return null;
+    const isLeaderOrAdmin =
+      u.role === 'ADMIN' ||
+      u.role === 'LEADER' ||
+      u.role === 'SECTION_LEADER' ||
+      u.role === 'GROUP_MANAGER';
+    if (isLeaderOrAdmin) return null; // Full access
+
+    const section = (u.sectionName || u.squadName || '').toLowerCase();
+    if (section.includes('براعم') || section.includes('baraem')) return 'BARAEM';
+    if (section.includes('شبال') || section.includes('زهرات') || section.includes('ashbal')) return 'ASHBAL';
+    if (section.includes('متقدم') || section.includes('رائدات') || section.includes('motaqadem')) return 'MOTAQADEM';
+    if (section.includes('جوال') || section.includes('خدمة') || section.includes('jowalah') || u.role === 'JOWALAH') return 'JOWALAH';
+    return 'KASHOOF'; // Default scout stage
+  };
+
+  const restrictedSquadKey = getRestrictedSquadKey(user);
+
+  const [selectedSquad, setSelectedSquad] = useState<string>(
+    restrictedSquadKey || 'KASHOOF'
+  );
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [curriculaList, setCurriculaList] = useState<CurriculumItem[]>(CURRICULUM_DATA);
@@ -143,6 +168,12 @@ export const CurriculaScreen = ({ navigation }: any) => {
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+
+  React.useEffect(() => {
+    if (restrictedSquadKey) {
+      setSelectedSquad(restrictedSquadKey);
+    }
+  }, [restrictedSquadKey]);
 
   React.useEffect(() => {
     async function loadData() {
@@ -160,6 +191,18 @@ export const CurriculaScreen = ({ navigation }: any) => {
     }
     loadData();
   }, []);
+
+  const handleSelectSquad = (squadId: string) => {
+    if (restrictedSquadKey && squadId !== restrictedSquadKey) {
+      const userSquadName = SQUAD_TABS.find((s) => s.id === restrictedSquadKey)?.title || 'مرحلتك';
+      Alert.alert(
+        'منع الوصول 🔒',
+        `عفواً يا كشاف! أنت مسجل في (${userSquadName}). لا يحق لك الاطلاع إلا على المنهج الخاص بمرحلتك الكشفية فقط.`
+      );
+      return;
+    }
+    setSelectedSquad(squadId);
+  };
 
   const filteredCurricula = curriculaList.filter((item) => {
     const matchSquad = item.squadKey === selectedSquad;
@@ -232,10 +275,25 @@ export const CurriculaScreen = ({ navigation }: any) => {
         {/* Squad Selection via Horizontal Card Selector */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>1️⃣ اختر المرحلة الكشفية</Text>
+
+          {restrictedSquadKey ? (
+            <View style={styles.accessNoticeCard}>
+              <Text style={styles.accessNoticeText}>
+                🔒 تم تخصيص وصولك حصرياً لمنهج ({SQUAD_TABS.find((s) => s.id === restrictedSquadKey)?.title}) بصفتك عضواً كشفياً.
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.accessNoticeCard, { backgroundColor: '#F0FDF4', borderColor: '#86EFAC' }]}>
+              <Text style={[styles.accessNoticeText, { color: '#166534' }]}>
+                👑 صلاحية كاملة (قائد / إدارة): متاح لك تصفح مناهج كافة المراحل الكشفية.
+              </Text>
+            </View>
+          )}
+
           <IconCardSelector
             options={SQUAD_TABS}
             selectedId={selectedSquad}
-            onSelect={(id) => setSelectedSquad(id)}
+            onSelect={(id) => handleSelectSquad(id)}
           />
         </View>
 
@@ -625,4 +683,18 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   modalCancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 14 },
+  accessNoticeCard: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+  },
+  accessNoticeText: {
+    color: '#991B1B',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
 });

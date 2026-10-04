@@ -187,6 +187,7 @@ export async function saveUserToFirestore(userData: {
   sonName?: string;
   sonCode?: string;
   password?: string;
+  avatarBase64?: string;
 }): Promise<boolean> {
   try {
     const docRef = doc(db, COLLECTIONS.USERS, userData.uid);

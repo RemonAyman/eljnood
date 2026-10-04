@@ -15,6 +15,7 @@ export interface UserProfile {
   sonName?: string;
   sectionName?: string;
   sectionLeaderName?: string;
+  avatarBase64?: string;
 }
 
 interface AuthState {
