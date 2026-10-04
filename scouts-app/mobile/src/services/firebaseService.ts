@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase.config';
 import { Member, AttendanceRecord, SubscriptionRecord } from '../types';
+import { sanitizeText, validateAndSanitizeBase64Image } from '../utils/securityUtils';
 
 // ─── Collections Names ────────────────────────────────────────────────────────
 export const COLLECTIONS = {
@@ -190,9 +191,19 @@ export async function saveUserToFirestore(userData: {
   avatarBase64?: string;
 }): Promise<boolean> {
   try {
+    const sanitizedUser = {
+      ...userData,
+      name: sanitizeText(userData.name),
+      email: sanitizeText(userData.email),
+      phone: sanitizeText(userData.phone),
+      guardianPhone: sanitizeText(userData.guardianPhone),
+      sectionName: sanitizeText(userData.sectionName),
+      avatarBase64: userData.avatarBase64 ? validateAndSanitizeBase64Image(userData.avatarBase64) : undefined,
+    };
+
     const docRef = doc(db, COLLECTIONS.USERS, userData.uid);
     await setDoc(docRef, {
-      ...userData,
+      ...sanitizedUser,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }, { merge: true });
@@ -414,6 +425,8 @@ export async function sendChatMessageToFirestore(msg: {
     const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES);
     await addDoc(messagesRef, {
       ...msg,
+      senderName: sanitizeText(msg.senderName),
+      content: sanitizeText(msg.content),
       createdAt: new Date().toISOString(),
     });
     return true;
