@@ -11,8 +11,10 @@ import {
   ActivityIndicator,
   Image,
   Platform,
+  Switch,
 } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
 import { isValidPassword } from '../../utils/validation';
 import { saveUserToFirestore, saveMemberToFirestore } from '../../services/firebaseService';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
@@ -25,6 +27,8 @@ export const UserProfileScreen = ({ navigation }: any) => {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const logout = useAuthStore((s) => s.logout);
+  const isDarkMode = useThemeStore((s) => s.isDarkMode);
+  const toggleDarkMode = useThemeStore((s) => s.toggleDarkMode);
 
   // Edit Profile Modal & State
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
@@ -335,6 +339,23 @@ export const UserProfileScreen = ({ navigation }: any) => {
             <View style={styles.actionTextWrap}>
               <Text style={styles.actionTitle}>تغيير الصورة الشخصية (Base64) 📸</Text>
               <Text style={styles.actionSub}>رفع صورة شخصية وتخزينها في قاعدة بيانات الفايربيز</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionRow}
+            onPress={toggleDarkMode}
+            activeOpacity={0.8}
+          >
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: '#CBD5E1', true: '#D4A359' }}
+              thumbColor={isDarkMode ? '#8B0000' : '#F8FAFC'}
+            />
+            <View style={styles.actionTextWrap}>
+              <Text style={styles.actionTitle}>الوضع الليلي (Dark Mode) 🌙</Text>
+              <Text style={styles.actionSub}>تفعيل الثيم الداكن المريح للعين أثناء الأنشطة والمعسكرات الليلية</Text>
             </View>
           </TouchableOpacity>
 

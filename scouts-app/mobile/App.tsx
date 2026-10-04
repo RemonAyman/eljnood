@@ -1,8 +1,9 @@
 import React from 'react';
-import { LogBox } from 'react-native';
+import { LogBox, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { useThemeStore } from './src/store/themeStore';
 
 // Silence non-critical library deprecations and notifications in dev
 LogBox.ignoreLogs([
@@ -13,12 +14,15 @@ LogBox.ignoreLogs([
   'AsyncStorage',
 ]);
 
-
 export default function App() {
+  const isDarkMode = useThemeStore((s) => s.isDarkMode);
+
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      <RootNavigator />
+      <StatusBar style={isDarkMode ? 'light' : 'light'} />
+      <View style={{ flex: 1, backgroundColor: isDarkMode ? '#111827' : '#FAF7F2' }}>
+        <RootNavigator />
+      </View>
     </SafeAreaProvider>
   );
 }

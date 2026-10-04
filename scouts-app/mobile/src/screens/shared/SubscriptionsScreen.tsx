@@ -11,6 +11,7 @@ import {
   fetchAllSubscriptionsFromFirestore 
 } from '../../services/firebaseService';
 import { Member, SquadName, SubscriptionRecord } from '../../types';
+import { exportSubscriptionsReport } from '../../utils/reportExportUtils';
 
 const FIXED_DISCOUNT_OPTIONS = [
   0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 
@@ -289,7 +290,13 @@ export const SubscriptionsScreen = () => {
                 style={styles.priceEditBtn} 
                 onPress={() => { setTempPrices({ ...prices }); setShowPriceModal(true); }}
               >
-                <Text style={styles.priceEditBtnText}>⚙️ تعديل وتخصيص الأسعار</Text>
+                <Text style={styles.priceEditBtnText}>⚙️ إدارة الأسعار</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.priceEditBtn, { backgroundColor: '#D1FAE5', marginTop: 4 }]} 
+                onPress={() => exportSubscriptionsReport(records)}
+              >
+                <Text style={[styles.priceEditBtnText, { color: '#065F46' }]}>📊 تصدير CSV/PDF</Text>
               </TouchableOpacity>
             </View>
           )}

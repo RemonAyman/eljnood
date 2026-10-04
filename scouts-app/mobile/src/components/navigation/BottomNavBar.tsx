@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
 
 interface BottomNavBarProps {
   navigation: any;
@@ -10,6 +11,7 @@ interface BottomNavBarProps {
 export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) => {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isDarkMode = useThemeStore((s) => s.isDarkMode);
 
   const getNavItems = () => {
     const role = user?.role || 'CHILD';
@@ -74,7 +76,7 @@ export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) =>
 
   return (
     <View style={styles.container}>
-      <View style={styles.bar}>
+      <View style={[styles.bar, isDarkMode && { backgroundColor: '#111827', borderColor: '#374151', borderWidth: 1 }]}>
         {navItems.map((item) => {
           const isActive = currentRoute === item.key || currentRoute === item.route;
           return (

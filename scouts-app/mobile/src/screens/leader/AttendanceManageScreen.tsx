@@ -18,6 +18,7 @@ import { EventType, Member } from '../../types';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { saveAttendanceToFirestore, fetchAttendanceFromFirestore } from '../../services/firebaseService';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+import { exportAttendanceReport } from '../../utils/reportExportUtils';
 
 const EVENT_OPTIONS: { id: EventType; title: string; icon: string; subtitle: string }[] = [
   { id: 'SCOUTING_DAY', title: 'اليوم الكشفي (الأعضاء)', icon: '⛺', subtitle: 'حضور وماليات الأطفال' },
@@ -340,13 +341,19 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
           </View>
         </View>
 
-        {/* Quick Actions (QR Scanner, Fingerprint Excel, Leader/Jawala Toggle) */}
+        {/* Quick Actions (QR Scanner, Fingerprint Excel, Leader/Jawala Toggle, Export) */}
         <View style={styles.actionButtonsRow}>
           <TouchableOpacity style={styles.scannerBtn} onPress={() => setShowScannerModal(true)}>
             <Text style={styles.scannerBtnText}>📷 مسح كود QR</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.excelBtn} onPress={() => setShowExcelModal(true)}>
-            <Text style={styles.excelBtnText}>📊 شيت البصمة Excel</Text>
+            <Text style={styles.excelBtnText}>📊 شيت البصمة</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.excelBtn, { backgroundColor: '#059669', marginHorizontal: 2 }]}
+            onPress={() => exportAttendanceReport(records, selectedDate)}
+          >
+            <Text style={styles.excelBtnText}>📥 تصدير الكشف</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -371,7 +378,7 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
             >
               {selectedEvent === ('SCOUTING_DAY_LEADERS' as any) || selectedEvent === 'LEADERS_MEETING'
                 ? '👥 غياب الأطفال'
-                : '⚜️ غياب القادة والجوالة'}
+                : '⚜️ غياب القادة'}
             </Text>
           </TouchableOpacity>
         </View>

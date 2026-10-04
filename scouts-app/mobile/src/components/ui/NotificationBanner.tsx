@@ -10,6 +10,7 @@ import {
   Vibration,
 } from 'react-native';
 import { useNotificationStore } from '../../store/notificationStore';
+import { playScoutAlertSound } from '../../services/scoutAudioService';
 
 interface NotificationBannerProps {
   navigationRef?: any;
@@ -21,6 +22,9 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({ navigati
 
   useEffect(() => {
     if (activeNotification) {
+      // Play Scout Bugle Alert Sound Chime
+      playScoutAlertSound();
+
       // Vibrate on receiving notification
       if (Platform.OS !== 'web') {
         Vibration.vibrate([0, 100, 50, 100]);
