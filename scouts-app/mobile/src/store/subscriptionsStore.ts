@@ -8,6 +8,14 @@ export interface SubscriptionItemsInput {
   scarfReplacement?: boolean | number;
   wajla?: boolean | number;
   badges?: boolean | number;
+  [customKey: string]: boolean | number | undefined;
+}
+
+export interface CustomSubscriptionPriceItem {
+  id: string;
+  title: string;
+  price: number;
+  desc: string;
 }
 
 interface SubscriptionsState {
@@ -18,13 +26,26 @@ interface SubscriptionsState {
     scarfReplacement: number;
     wajla: number;
     badges: number;
+    [key: string]: number;
   };
+  customItems: CustomSubscriptionPriceItem[];
   discountCodes: { [code: string]: number };
   records: SubscriptionRecord[];
   applyDiscountCode: (code: string, secretPin?: string) => { success: boolean; percentage: number; error?: string };
-  calculateTotal: (items: SubscriptionItemsInput, discountPercentage: number) => { subtotal: number; discountAmount: number; totalPaid: number };
+  calculateTotal: (
+    items: SubscriptionItemsInput, 
+    discountPercentage: number, 
+    fixedDiscountEgp?: number
+  ) => { 
+    subtotal: number; 
+    percentDiscountAmount: number; 
+    fixedDiscountEgp: number; 
+    discountAmount: number; 
+    totalPaid: number 
+  };
   addRecord: (record: Omit<SubscriptionRecord, 'id' | 'receiptNumber' | 'createdAt'>) => SubscriptionRecord;
   updatePrices: (newPrices: Partial<SubscriptionsState['prices']>) => void;
+  addCustomItem: (item: { title: string; price: number; desc?: string }) => void;
   setRecords: (records: SubscriptionRecord[]) => void;
 }
 
@@ -37,34 +58,27 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     wajla: 50,             // وجلة
     badges: 60,            // شارات وأوسمة القميص الكشفي
   },
+  customItems: [],
   discountCodes: {
-    // 10%
     'SCOUT10': 10, 'JNOOD10': 10, 'JNOOD-D10': 10, 'D10': 10, '10%': 10, '10': 10,
-    // 20%
     'SCOUT20': 20, 'JNOOD20': 20, 'JNOOD-D20': 20, 'D20': 20, '20%': 20, '20': 20,
-    // 30%
     'SCOUT30': 30, 'JNOOD30': 30, 'JNOOD-D30': 30, 'D30': 30, '30%': 30, '30': 30,
-    // 40%
     'SCOUT40': 40, 'JNOOD40': 40, 'JNOOD-D40': 40, 'D40': 40, '40%': 40, '40': 40,
-    // 50%
     'SCOUT50': 50, 'JNOOD50': 50, 'JNOOD-D50': 50, 'D50': 50, '50%': 50, '50': 50,
-    // 60%
     'SCOUT60': 60, 'JNOOD60': 60, 'JNOOD-D60': 60, 'D60': 60, '60%': 60, '60': 60,
-    // 70%
     'SCOUT70': 70, 'JNOOD70': 70, 'JNOOD-D70': 70, 'D70': 70, '70%': 70, '70': 70,
-    // 80%
     'SCOUT80': 80, 'JNOOD80': 80, 'JNOOD-D80': 80, 'D80': 80, '80%': 80, '80': 80,
-    // 90%
     'SCOUT90': 90, 'JNOOD90': 90, 'JNOOD-D90': 90, 'D90': 90, '90%': 90, '90': 90,
-    // 100% Full Waiver
     'FULL100': 100, 'JNOOD100': 100, '100%': 100,
   },
   records: [],
   applyDiscountCode: (code, secretPin) => {
     const trimmed = code.trim().toUpperCase();
-    let percentage = get().discountCodes[trimmed];
+    if (!trimmed) {
+      return { success: false, percentage: 0, error: 'يرجى كتابة كود الخصم' };
+    }
 
-    // If typed e.g. "50", parse numeric percentage
+    let percentage = get().discountCodes[trimmed];
     if (!percentage && !isNaN(Number(trimmed))) {
       const num = Number(trimmed);
       if (num >= 5 && num <= 100) percentage = num;
@@ -75,27 +89,45 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     }
 
     if (secretPin !== '1234' && secretPin !== '0000') {
-      return { success: false, percentage: 0, error: 'رمز الحماية PIN غير صحيح (يتطلب تفويض مسؤول)' };
+      return { success: false, percentage: 0, error: 'رمز الحماية PIN غير صحيح (يتطلب تفويض مسؤول الخزينة)' };
     }
 
     return { success: true, percentage };
   },
-  calculateTotal: (items, discountPercentage) => {
+
+  calculateTotal: (items, discountPercentage, fixedDiscountEgp = 0) => {
     const { prices } = get();
     let subtotal = 0;
 
-    if (items.annualSub) subtotal += prices.annualSub;
-    if (items.festivalSub) subtotal += prices.festivalSub;
-    if (items.promisePartySub) subtotal += prices.promisePartySub;
-    if (items.scarfReplacement) subtotal += prices.scarfReplacement;
-    if (items.wajla) subtotal += prices.wajla;
-    if (items.badges) subtotal += prices.badges;
+    // Default Items
+    if (items.annualSub) subtotal += prices.annualSub || 0;
+    if (items.festivalSub) subtotal += prices.festivalSub || 0;
+    if (items.promisePartySub) subtotal += prices.promisePartySub || 0;
+    if (items.scarfReplacement) subtotal += prices.scarfReplacement || 0;
+    if (items.wajla) subtotal += prices.wajla || 0;
+    if (items.badges) subtotal += prices.badges || 0;
 
-    const discountAmount = Math.round((subtotal * discountPercentage) / 100);
-    const totalPaid = Math.max(0, subtotal - discountAmount);
+    // Custom Items
+    get().customItems.forEach((c) => {
+      if (items[c.id]) {
+        subtotal += (prices[c.id] !== undefined ? prices[c.id] : c.price);
+      }
+    });
 
-    return { subtotal, discountAmount, totalPaid };
+    const percentDiscountAmount = Math.round((subtotal * (discountPercentage || 0)) / 100);
+    const validFixedDiscount = Math.max(0, fixedDiscountEgp || 0);
+    const totalDiscountAmount = Math.min(subtotal, percentDiscountAmount + validFixedDiscount);
+    const totalPaid = Math.max(0, subtotal - totalDiscountAmount);
+
+    return { 
+      subtotal, 
+      percentDiscountAmount, 
+      fixedDiscountEgp: validFixedDiscount, 
+      discountAmount: totalDiscountAmount, 
+      totalPaid 
+    };
   },
+
   addRecord: (newRecordData) => {
     const receiptNum = `REC-2026-${String(get().records.length + 1).padStart(3, '0')}`;
     const record: SubscriptionRecord = {
@@ -107,9 +139,25 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     set((state) => ({ records: [record, ...state.records] }));
     return record;
   },
+
   updatePrices: (newPrices) => {
     set((state) => ({ prices: { ...state.prices, ...newPrices } }));
   },
+
+  addCustomItem: (item) => {
+    const newId = `custom_${Date.now()}`;
+    const customItem: CustomSubscriptionPriceItem = {
+      id: newId,
+      title: item.title,
+      price: item.price,
+      desc: item.desc || 'بند اشتراك مخصص جديد',
+    };
+    set((state) => ({
+      customItems: [...state.customItems, customItem],
+      prices: { ...state.prices, [newId]: item.price },
+    }));
+  },
+
   setRecords: (records) => {
     set({ records });
   },

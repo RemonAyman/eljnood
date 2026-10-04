@@ -36,7 +36,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
     wajla: 0,
     badges: 0,
   });
-  const [expenses, setExpenses] = useState(12500); // Estimated operational expenses
+  const [expenses, setExpenses] = useState(0); // Real operational expenses
   const [receiptsCount, setReceiptsCount] = useState(0);
 
   // Attendance Metrics

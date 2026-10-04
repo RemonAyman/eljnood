@@ -12,10 +12,25 @@ import {
 } from '../../services/firebaseService';
 import { Member, SquadName, SubscriptionRecord } from '../../types';
 
+const FIXED_DISCOUNT_OPTIONS = [
+  0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 
+  110, 120, 130, 140, 150, 160, 170, 180, 190, 200
+];
+
 export const SubscriptionsScreen = () => {
   const { members, loadMembersFromFirestore, addMember } = useMembersStore();
   const currentUser = useAuthStore((s) => s.user);
-  const { prices, records, applyDiscountCode, calculateTotal, addRecord, updatePrices, setRecords } = useSubscriptionsStore();
+  const { 
+    prices, 
+    customItems, 
+    records, 
+    applyDiscountCode, 
+    calculateTotal, 
+    addRecord, 
+    updatePrices, 
+    addCustomItem, 
+    setRecords 
+  } = useSubscriptionsStore();
 
   const isCashierOrLeader = useMemo(() => {
     const role = currentUser?.role;
@@ -42,19 +57,21 @@ export const SubscriptionsScreen = () => {
 
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   
-  // Selected items checkboxes state
-  const [items, setItems] = useState({
+  // Selected items checkboxes state (Default items + Custom Items)
+  const [items, setItems] = useState<Record<string, boolean>>({
     annualSub: true,
-    festivalSub: true,
+    festivalSub: false,
     promisePartySub: false,
     scarfReplacement: false,
-    wajla: true,
-    badges: true,
+    wajla: false,
+    badges: false,
   });
 
-  const [discountCodeInput, setDiscountCodeInput] = useState('SCOUT10');
-  const [discountPercent, setDiscountPercent] = useState(10);
-  const [discountApplied, setDiscountApplied] = useState(true);
+  // Discount States (No fake defaults)
+  const [discountCodeInput, setDiscountCodeInput] = useState('');
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [selectedFixedDiscountEgp, setSelectedFixedDiscountEgp] = useState<number>(0);
 
   // Secret PIN modal
   const [showPinModal, setShowPinModal] = useState(false);
@@ -64,9 +81,12 @@ export const SubscriptionsScreen = () => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<SubscriptionRecord | null>(null);
 
-  // Price Editor Modal (Admin / Cashier)
+  // Price & Custom Item Editor Modal (Admin / Cashier)
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [tempPrices, setTempPrices] = useState({ ...prices });
+  const [newCustomTitle, setNewCustomTitle] = useState('');
+  const [newCustomPrice, setNewCustomPrice] = useState('');
+  const [newCustomDesc, setNewCustomDesc] = useState('');
 
   // Archive search
   const [archiveSearch, setArchiveSearch] = useState('');
@@ -74,7 +94,6 @@ export const SubscriptionsScreen = () => {
 
   useEffect(() => {
     loadMembersFromFirestore();
-    // Fetch existing receipts from Cloud Firestore
     setLoadingArchive(true);
     fetchAllSubscriptionsFromFirestore().then((cloudRecords) => {
       if (cloudRecords && cloudRecords.length > 0) {
@@ -90,15 +109,20 @@ export const SubscriptionsScreen = () => {
     }
   }, [members]);
 
-  const toggleItem = (key: keyof typeof items) => {
+  const toggleItem = (key: string) => {
     setItems((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const { subtotal, discountAmount, totalPaid } = calculateTotal(items, discountApplied ? discountPercent : 0);
+  // Live Total Calculation combining Percentage Discount Code AND Fixed EGP Discount
+  const { subtotal, percentDiscountAmount, fixedDiscountEgp, discountAmount, totalPaid } = calculateTotal(
+    items, 
+    discountApplied ? discountPercent : 0, 
+    selectedFixedDiscountEgp
+  );
 
   const handleApplyDiscount = () => {
     if (!discountCodeInput.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال كود الخصم كنسية (مثال: SCOUT10 أو 20%)');
+      Alert.alert('تنبيه', 'يرجى إدخال كود الخصم كنسبة مئوية (مثال: SCOUT10 أو 20%)');
       return;
     }
     setShowPinModal(true);
@@ -111,7 +135,7 @@ export const SubscriptionsScreen = () => {
       setDiscountApplied(true);
       setShowPinModal(false);
       setPinInput('');
-      Alert.alert('تم بنجاح ✅', `تم تفعيل خصم ${res.percentage}% بنجاح ببركة الخزينة! 🔑`);
+      Alert.alert('تم بنجاح ✅', `تم تفعيل خصم ${res.percentage}% المئوي بنجاح ببركة الخزينة! 🔑`);
     } else {
       Alert.alert('خطأ في الاعتماد ❌', res.error || 'فشل تطبيق الخصم');
     }
@@ -121,6 +145,29 @@ export const SubscriptionsScreen = () => {
     updatePrices(tempPrices);
     setShowPriceModal(false);
     Alert.alert('تم بنجاح ✅', 'تم تحديث لائحة أسعار الاشتراكات الرسمية بنجاح!');
+  };
+
+  const handleAddNewCustomItem = () => {
+    if (!newCustomTitle.trim() || !newCustomPrice.trim()) {
+      Alert.alert('تنبيه', 'يرجى كتابة عنوان وتكلفة بند الاشتراك الجديد');
+      return;
+    }
+    const parsedPrice = parseInt(newCustomPrice, 10);
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      Alert.alert('تنبيه', 'يرجى إدخال مبلغ صحيح بالجنيه');
+      return;
+    }
+
+    addCustomItem({
+      title: newCustomTitle.trim(),
+      price: parsedPrice,
+      desc: newCustomDesc.trim() || 'بند اشتراك مخصص جديد',
+    });
+
+    setNewCustomTitle('');
+    setNewCustomPrice('');
+    setNewCustomDesc('');
+    Alert.alert('تم الإضافة 🎉', `تم إضافة بند الاشتراك الجديد "${newCustomTitle}" بسعر ${parsedPrice} ج.م بنجاح!`);
   };
 
   const handleConfirmPayment = async () => {
@@ -174,14 +221,15 @@ export const SubscriptionsScreen = () => {
       memberCode,
       memberName,
       year: selectedYear,
-      annualSub: items.annualSub,
-      festivalSub: items.festivalSub,
-      promisePartySub: items.promisePartySub,
-      scarfReplacement: items.scarfReplacement,
-      wajla: items.wajla,
-      badges: items.badges,
+      annualSub: !!items.annualSub,
+      festivalSub: !!items.festivalSub,
+      promisePartySub: !!items.promisePartySub,
+      scarfReplacement: !!items.scarfReplacement,
+      wajla: !!items.wajla,
+      badges: !!items.badges,
       subtotal,
       discountPercentage: discountApplied ? discountPercent : 0,
+      fixedDiscountEgp: selectedFixedDiscountEgp,
       totalPaid,
     });
 
@@ -224,25 +272,27 @@ export const SubscriptionsScreen = () => {
           <Text style={styles.badgePillText}>🔒 خزينة ومصروفات معتمدة - مسؤولو الاشتراكات المعمل</Text>
         </View>
         <Text style={styles.headerTitle}>الماليات وحساب الاشتراكات 💰</Text>
-        <Text style={styles.headerSub}>تحصيل الدفعات، خصومات 10%-90%، وإصدار الإيصالات الرسمية</Text>
+        <Text style={styles.headerSub}>تحصيل الدفعات، خصومات النسبة + المبلغ المالي، وإصدار الإيصالات الرسمية</Text>
         
         <View style={styles.headerStatsRow}>
           <View style={styles.headerStatBox}>
             <Text style={styles.statVal}>{records.length > 0 ? `${records.reduce((a, b) => a + (b.totalPaid || 0), 0)} ج.م` : '0 ج.م'}</Text>
-            <Text style={styles.statLbl}>إجمالي المحصل</Text>
+            <Text style={styles.statLbl}>إجمالي المحصل الفعلي</Text>
           </View>
           <View style={styles.headerStatBox}>
             <Text style={styles.statVal}>{records.length} إيصال</Text>
             <Text style={styles.statLbl}>إيصالات مسجلة</Text>
           </View>
-          <View style={styles.headerStatBox}>
-            <TouchableOpacity 
-              style={styles.priceEditBtn} 
-              onPress={() => { setTempPrices({ ...prices }); setShowPriceModal(true); }}
-            >
-              <Text style={styles.priceEditBtnText}>⚙️ تعديل الأسعار</Text>
-            </TouchableOpacity>
-          </View>
+          {isCashierOrLeader && (
+            <View style={styles.headerStatBox}>
+              <TouchableOpacity 
+                style={styles.priceEditBtn} 
+                onPress={() => { setTempPrices({ ...prices }); setShowPriceModal(true); }}
+              >
+                <Text style={styles.priceEditBtnText}>⚙️ تعديل وتخصيص الأسعار</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
 
@@ -427,26 +477,28 @@ export const SubscriptionsScreen = () => {
           <View style={styles.card}>
             <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <Text style={[styles.cardTitle, { marginBottom: 0 }]}>٢. حاسبة البنود والاشتراكات المقررة</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setTempPrices({ ...prices });
-                  setShowPriceModal(true);
-                }}
-                style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: '#8B0000' }}
-              >
-                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#8B0000' }}>⚙️ تعديل الأسعار</Text>
-              </TouchableOpacity>
+              {isCashierOrLeader && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setTempPrices({ ...prices });
+                    setShowPriceModal(true);
+                  }}
+                  style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: '#8B0000' }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#8B0000' }}>⚙️ إدارة الأسعار والبنود</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {[
-              { key: 'annualSub' as const, title: 'اشتراك سنوي كشفي', desc: 'يشمل التأمين الكشفي وشهادة العضوية السنوية', price: prices.annualSub },
-              { key: 'festivalSub' as const, title: 'اشتراك مهرجان الكرازة الكشفي', desc: 'مقرر الأنشطة والتدريبات الكشفية الصيفية', price: prices.festivalSub },
-              { key: 'promisePartySub' as const, title: 'اشتراك حفلة الوعد الكبرى', desc: 'حضور الحفل والمشروبات وإصدار العهد الكشفي', price: prices.promisePartySub },
-              { key: 'wajla' as const, title: 'وجلة خشبية محفورة', desc: 'عقدة المنديل الكشفي الرسمية محفورة باسم الخدمة', price: prices.wajla },
-              { key: 'scarfReplacement' as const, title: 'بدل فاقد المنديل الكشفي الحريري', desc: 'استعاضة المنديل المفقود بالشارة الرسمية', price: prices.scarfReplacement },
-              { key: 'badges' as const, title: 'شارات وترقيات القميص الكشفي', desc: 'شارات الهواية والأوسمة المعتمدة للفوج الكشفي', price: prices.badges },
+              { key: 'annualSub', title: 'اشتراك سنوي كشفي', desc: 'يشمل التأمين الكشفي وشهادة العضوية السنوية', price: prices.annualSub },
+              { key: 'festivalSub', title: 'اشتراك مهرجان الكرازة الكشفي', desc: 'مقرر الأنشطة والتدريبات الكشفية الصيفية', price: prices.festivalSub },
+              { key: 'promisePartySub', title: 'اشتراك حفلة الوعد الكبرى', desc: 'حضور الحفل والمشروبات وإصدار العهد الكشفي', price: prices.promisePartySub },
+              { key: 'wajla', title: 'وجلة خشبية محفورة', desc: 'عقدة المنديل الكشفي الرسمية محفورة باسم الخدمة', price: prices.wajla },
+              { key: 'scarfReplacement', title: 'بدل فاقد المنديل الكشفي الحريري', desc: 'استعاضة المنديل المفقود بالشارة الرسمية', price: prices.scarfReplacement },
+              { key: 'badges', title: 'شارات وترقيات القميص الكشفي', desc: 'شارات الهواية والأوسمة المعتمدة للفوج الكشفي', price: prices.badges },
             ].map((item) => {
-              const checked = items[item.key];
+              const checked = !!items[item.key];
               return (
                 <TouchableOpacity
                   key={item.key}
@@ -467,30 +519,85 @@ export const SubscriptionsScreen = () => {
                 </TouchableOpacity>
               );
             })}
+
+            {/* Custom Created Subscription Items */}
+            {customItems.length > 0 && (
+              <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }}>
+                <Text style={styles.subLabel}>البنود والخدمات المخصصة المضافة:</Text>
+                {customItems.map((c) => {
+                  const checked = !!items[c.id];
+                  const currentPrice = prices[c.id] !== undefined ? prices[c.id] : c.price;
+                  return (
+                    <TouchableOpacity
+                      key={c.id}
+                      style={[styles.itemRow, checked && styles.itemRowChecked, { borderColor: '#D4A359' }]}
+                      onPress={() => toggleItem(c.id)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={[styles.checkbox, checked && styles.checkboxChecked, { borderColor: '#D4A359' }]}>
+                        {checked && <Text style={styles.checkIcon}>✓</Text>}
+                      </View>
+                      <View style={styles.itemInfo}>
+                        <Text style={[styles.itemTitle, { color: '#8B0000' }]}>⭐ {c.title}</Text>
+                        <Text style={styles.itemDesc}>{c.desc}</Text>
+                      </View>
+                      <View style={[styles.itemPriceBadge, { backgroundColor: '#FEF3C7' }]}>
+                        <Text style={[styles.itemPriceText, { color: '#92400E' }]}>{currentPrice} ج.م</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
-          {/* Discount Codes & Secret PIN Section */}
+          {/* Combined Discounts Section (Code Discount + Fixed EGP Discount) */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>٣. نظام الخصومات والمنح الكشفية (10% إلى 90%)</Text>
-            <Text style={styles.subLabel}>أدخل كود الخصم أو النسبة (مثال: SCOUT10 حتى SCOUT90 أو 50%):</Text>
+            <Text style={styles.cardTitle}>٣. منظومة الخصومات والتخفيضات الكشفية 🏷️</Text>
             
+            {/* A) Fixed Amount Discount Selector (10 EGP up to 200 EGP) */}
+            <Text style={styles.subLabel}>أ) اختر خصم مالي مباشر بالجنيه (من 10 ج إلى 200 ج):</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 6 }}>
+              {FIXED_DISCOUNT_OPTIONS.map((amt) => {
+                const isSelected = selectedFixedDiscountEgp === amt;
+                return (
+                  <TouchableOpacity
+                    key={amt}
+                    style={[styles.fixedDiscountChip, isSelected && styles.fixedDiscountChipActive]}
+                    onPress={() => setSelectedFixedDiscountEgp(amt)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.fixedDiscountChipText, isSelected && styles.fixedDiscountChipTextActive]}>
+                      {amt === 0 ? 'بدون خصم مالي' : `-${amt} ج.م`}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* B) Code Percentage Discount */}
+            <Text style={[styles.subLabel, { marginTop: 12 }]}>ب) أدخل كود خصم كنسبة مئوية (مثال: SCOUT10 - SCOUT90 أو 50%):</Text>
             <View style={styles.discountInputRow}>
               <TextInput
                 style={styles.discountInput}
-                placeholder="كود الخصم (SCOUT10 - SCOUT90)"
+                placeholder="كود الخصم (SCOUT10 - SCOUT90)..."
                 value={discountCodeInput}
                 onChangeText={setDiscountCodeInput}
                 autoCapitalize="characters"
               />
               <TouchableOpacity style={styles.applyBtn} onPress={handleApplyDiscount}>
-                <Text style={styles.applyBtnText}>تطبيق الخصم</Text>
+                <Text style={styles.applyBtnText}>تطبيق الكود</Text>
               </TouchableOpacity>
             </View>
 
-            {discountApplied && (
+            {/* Summary Tag of Applied Discounts */}
+            {(discountApplied || selectedFixedDiscountEgp > 0) && (
               <View style={styles.discountSuccessTag}>
                 <Text style={styles.discountSuccessText}>
-                  ✓ تم تطبيق خصم {discountPercent}% باعتمد الخزينة ومسؤول المعمل
+                  ✓ الخصم المفعل: {discountApplied ? `كود مئوي (${discountPercent}%)` : ''} 
+                  {discountApplied && selectedFixedDiscountEgp > 0 ? ' + ' : ''}
+                  {selectedFixedDiscountEgp > 0 ? `خصم مالي (-${selectedFixedDiscountEgp} ج.م)` : ''}
+                  {` | إجمالي التخفيض: ${discountAmount} ج.م`}
                 </Text>
               </View>
             )}
@@ -503,12 +610,28 @@ export const SubscriptionsScreen = () => {
               <Text style={styles.summaryVal}>{subtotal} ج.م</Text>
               <Text style={styles.summaryLbl}>المجموع الإجمالي (قبل الخصم):</Text>
             </View>
-            {discountApplied && discountAmount > 0 && (
+
+            {percentDiscountAmount > 0 && (
               <View style={styles.summaryRow}>
-                <Text style={[styles.summaryVal, { color: '#059669' }]}>-{discountAmount} ج.م ({discountPercent}%)</Text>
-                <Text style={styles.summaryLbl}>قيمة الخصم المعتمد:</Text>
+                <Text style={[styles.summaryVal, { color: '#059669' }]}>-{percentDiscountAmount} ج.م ({discountPercent}%)</Text>
+                <Text style={styles.summaryLbl}>خصم كود النسبة المئوية:</Text>
               </View>
             )}
+
+            {fixedDiscountEgp > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryVal, { color: '#059669' }]}>-{fixedDiscountEgp} ج.م</Text>
+                <Text style={styles.summaryLbl}>خصم المبلغ المالي المباشر:</Text>
+              </View>
+            )}
+
+            {discountAmount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryVal, { color: '#059669', fontSize: 16 }]}>-{discountAmount} ج.م</Text>
+                <Text style={styles.summaryLbl}>إجمالي الخصم المعتمد:</Text>
+              </View>
+            )}
+
             <View style={styles.divider} />
             <View style={styles.summaryRow}>
               <Text style={styles.totalNetVal}>{totalPaid} ج.م</Text>
@@ -554,7 +677,7 @@ export const SubscriptionsScreen = () => {
                 <View style={styles.archiveRowFooter}>
                   <Text style={styles.archiveTotal}>{rec.totalPaid} ج.م</Text>
                   <Text style={styles.archiveDate}>
-                    سنة {rec.year} • {rec.discountPercentage > 0 ? `خصم ${rec.discountPercentage}%` : 'كامل'}
+                    سنة {rec.year} • {rec.discountPercentage > 0 ? `خصم %${rec.discountPercentage}` : 'كامل'} {rec.fixedDiscountEgp ? `+ ${rec.fixedDiscountEgp}ج` : ''}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -562,20 +685,20 @@ export const SubscriptionsScreen = () => {
           ) : (
             <View style={{ alignItems: 'center', paddingVertical: 30 }}>
               <Text style={{ fontSize: 32, marginBottom: 8 }}>🧾</Text>
-              <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#6B7280' }}>لا توجد إيصالات مسجلة سابقة</Text>
+              <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#6B7280' }}>لا توجد إيصالات مسجلة سابقة في الأرشيف</Text>
             </View>
           )}
         </View>
       )}
 
-      {/* Secret PIN Modal for Discount */}
+      {/* Secret PIN Modal for Code Discount */}
       <Modal visible={showPinModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalIcon}>🔑</Text>
             <Text style={styles.modalHeading}>إدخال رمز تفويض الخصم</Text>
             <Text style={styles.modalSubtitle}>
-              كود الخصم يتطلب إدخال الرمز السري الخاص بأمين الصندوق أو مسؤول المعمل (1234 أو 0000)
+              كود الخصم يتطلب إدخال الرمز السري الخاص بأمين الصندوق أو مسؤول الخزينة (1234 أو 0000)
             </Text>
 
             <TextInput
@@ -606,17 +729,18 @@ export const SubscriptionsScreen = () => {
         </View>
       </Modal>
 
-      {/* Price Editor Modal (Admin / Cashier) */}
-      <Modal visible={showPriceModal} transparent animationType="fade">
+      {/* Price & Custom Item Editor Modal (Admin / Cashier / Leader) */}
+      <Modal visible={showPriceModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { width: '92%', maxHeight: '85%' }]}>
+          <View style={[styles.modalBox, { width: '94%', maxHeight: '88%' }]}>
             <Text style={styles.modalIcon}>⚙️</Text>
-            <Text style={styles.modalHeading}>تعديل لائحة أسعار الاشتراكات</Text>
+            <Text style={styles.modalHeading}>تعديل وإضافة بنود الاشتراكات</Text>
             <Text style={styles.modalSubtitle}>
-              تعديل أسعار بنود الاشتراكات المقررة لكافة الفرق والأفواج الكشفية
+              تخصيص وتعديل أسعار بنود الخدمة أو إضافة بنود مخصصة جديدة
             </Text>
 
             <ScrollView style={{ width: '100%', marginVertical: 10 }}>
+              <Text style={[styles.subLabel, { color: '#8B0000', fontWeight: 'bold' }]}>١) تعديل أسعار البنود الرئيسية:</Text>
               {[
                 { key: 'annualSub' as const, title: 'اشتراك سنوي كشفي' },
                 { key: 'festivalSub' as const, title: 'اشتراك مهرجان الكرازة' },
@@ -631,13 +755,42 @@ export const SubscriptionsScreen = () => {
                     <TextInput
                       style={{ backgroundColor: '#FAF7F2', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, width: 80, textAlign: 'center', fontWeight: 'bold', color: '#8B0000', fontSize: 14 }}
                       keyboardType="numeric"
-                      value={String(tempPrices[pItem.key])}
+                      value={String(tempPrices[pItem.key] !== undefined ? tempPrices[pItem.key] : prices[pItem.key])}
                       onChangeText={(val) => setTempPrices(prev => ({ ...prev, [pItem.key]: parseInt(val, 10) || 0 }))}
                     />
                     <Text style={{ fontSize: 12, color: '#6B7280', marginRight: 6 }}>ج.م</Text>
                   </View>
                 </View>
               ))}
+
+              <Text style={[styles.subLabel, { color: '#8B0000', fontWeight: 'bold', marginTop: 16 }]}>٢) إضافة بند اشتراك / خدمة مخصصة جديدة ✨:</Text>
+              <View style={{ backgroundColor: '#FFFBEB', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#FDE68A', marginVertical: 6 }}>
+                <TextInput
+                  style={styles.manualInput}
+                  placeholder="عنوان بند الاشتراك الجديد (مثال: اشتراك معسكر الشتاء)..."
+                  value={newCustomTitle}
+                  onChangeText={setNewCustomTitle}
+                />
+                <TextInput
+                  style={styles.manualInput}
+                  placeholder="السعر بالجنيه (مثال: 250)..."
+                  keyboardType="numeric"
+                  value={newCustomPrice}
+                  onChangeText={setNewCustomPrice}
+                />
+                <TextInput
+                  style={styles.manualInput}
+                  placeholder="وصف وتفاصيل البند..."
+                  value={newCustomDesc}
+                  onChangeText={setNewCustomDesc}
+                />
+                <TouchableOpacity
+                  style={[styles.applyBtn, { backgroundColor: '#8B0000', marginTop: 6, alignSelf: 'stretch' }]}
+                  onPress={handleAddNewCustomItem}
+                >
+                  <Text style={styles.applyBtnText}>+ إضافة بند جديد للخدمة</Text>
+                </TouchableOpacity>
+              </View>
             </ScrollView>
 
             <View style={styles.modalBtnRow}>
@@ -711,6 +864,12 @@ export const SubscriptionsScreen = () => {
                     <Text style={styles.receiptLineLbl}>نسبة الخصم المعتمدة:</Text>
                   </View>
                 )}
+                {lastReceipt.fixedDiscountEgp ? (
+                  <View style={styles.receiptLine}>
+                    <Text style={[styles.receiptLineVal, { color: '#059669' }]}>-{lastReceipt.fixedDiscountEgp} ج.م</Text>
+                    <Text style={styles.receiptLineLbl}>خصم مالي مباشر:</Text>
+                  </View>
+                ) : null}
                 <View style={styles.receiptLine}>
                   <Text style={[styles.receiptLineVal, styles.receiptTotalText]}>{lastReceipt.totalPaid} ج.م</Text>
                   <Text style={[styles.receiptLineLbl, styles.receiptTotalText]}>الصافي المدفوع:</Text>
@@ -802,23 +961,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statVal: {
-    color: '#D4A359',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   statLbl: {
-    color: '#F3F4F6',
+    color: '#D4A359',
     fontSize: 10,
     marginTop: 2,
   },
+  priceEditBtn: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  priceEditBtnText: {
+    color: '#92400E',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   topNavigationTabs: {
     flexDirection: 'row-reverse',
-    backgroundColor: '#FFFFFF',
+    marginBottom: 14,
+    backgroundColor: '#E5E7EB',
     borderRadius: 16,
     padding: 4,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   topTabBtn: {
     flex: 1,
@@ -852,80 +1020,104 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'right',
   },
-  priceEditBtn: {
-    backgroundColor: 'rgba(212, 163, 89, 0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D4A359',
-  },
-  priceEditBtnText: {
-    color: '#D4A359',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
   modeTabsRow: {
     flexDirection: 'row-reverse',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 4,
     marginBottom: 12,
+    gap: 8,
   },
   modeTab: {
     flex: 1,
     paddingVertical: 8,
-    alignItems: 'center',
     borderRadius: 10,
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
   },
   modeTabActive: {
-    backgroundColor: '#8B0000',
+    backgroundColor: '#FEF3C7',
+    borderColor: '#D4A359',
   },
   modeTabText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: '#4B5563',
+    color: '#6B7280',
   },
   modeTabTextActive: {
-    color: '#FFFFFF',
+    color: '#92400E',
+  },
+  memberSelectRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#FAF7F2',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginBottom: 12,
+  },
+  memberAvatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#8B0000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  memberAvatarText: {
+    fontSize: 20,
+  },
+  memberDetailsCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  selectedMemberName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  selectedMemberSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
   },
   emptyMemberPickBtn: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#8B0000',
-    borderRadius: 12,
-    paddingVertical: 12,
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+    borderStyle: 'dashed',
+    borderRadius: 14,
+    padding: 14,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   emptyMemberPickText: {
     color: '#8B0000',
-    fontSize: 13,
     fontWeight: 'bold',
+    fontSize: 12,
   },
   pickerBox: {
     backgroundColor: '#FAF7F2',
     borderRadius: 12,
-    padding: 8,
+    padding: 10,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#D1D5DB',
   },
   pickerSearchInput: {
     backgroundColor: '#FFFFFF',
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#D1D5DB',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    marginBottom: 8,
     textAlign: 'right',
-    fontSize: 12,
-    marginBottom: 6,
-    color: '#1F2937',
   },
   pickerRow: {
     paddingVertical: 8,
-    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
     alignItems: 'flex-end',
@@ -936,18 +1128,17 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   pickerRowSub: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#6B7280',
-    marginTop: 2,
   },
   pickerEmptyText: {
     textAlign: 'center',
     color: '#9CA3AF',
-    paddingVertical: 10,
     fontSize: 12,
+    paddingVertical: 10,
   },
   inputLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#374151',
     marginBottom: 4,
@@ -955,92 +1146,55 @@ const styles = StyleSheet.create({
   },
   manualInput: {
     backgroundColor: '#FAF7F2',
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#D1D5DB',
-    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    textAlign: 'right',
     fontSize: 13,
-    marginBottom: 10,
-    color: '#1F2937',
+    marginBottom: 8,
+    textAlign: 'right',
   },
   squadChip: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: '#FAF7F2',
     borderRadius: 12,
-    marginRight: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: '#D1D5DB',
+    marginLeft: 6,
   },
   squadChipActive: {
     backgroundColor: '#8B0000',
     borderColor: '#8B0000',
   },
   squadChipText: {
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 11,
     color: '#4B5563',
+    fontWeight: '600',
   },
   squadChipTextActive: {
     color: '#FFFFFF',
-  },
-  memberSelectRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    backgroundColor: '#FAF7F2',
-    padding: 10,
-    borderRadius: 14,
-    marginBottom: 10,
-  },
-  memberAvatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FEF2F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  memberAvatarText: {
-    fontSize: 22,
-  },
-  memberDetailsCol: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  selectedMemberName: {
-    fontSize: 15,
     fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  selectedMemberSub: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 2,
   },
   subLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
     color: '#4B5563',
     marginBottom: 8,
     textAlign: 'right',
   },
   yearsRow: {
     flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
+    gap: 8,
   },
   yearPill: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
     paddingVertical: 8,
-    paddingHorizontal: 4,
     borderRadius: 12,
-    marginHorizontal: 3,
-    alignItems: 'center',
+    backgroundColor: '#FAF7F2',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
   },
   yearPillActive: {
     backgroundColor: '#8B0000',
@@ -1057,18 +1211,20 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FAF7F2',
     borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   itemRowChecked: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FEF3C7',
+    borderColor: '#D4A359',
   },
   checkbox: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     borderRadius: 6,
     borderWidth: 2,
     borderColor: '#9CA3AF',
@@ -1082,169 +1238,176 @@ const styles = StyleSheet.create({
   },
   checkIcon: {
     color: '#FFFFFF',
-    fontSize: 14,
     fontWeight: 'bold',
+    fontSize: 12,
   },
   itemInfo: {
     flex: 1,
     alignItems: 'flex-end',
-    paddingRight: 6,
   },
   itemTitle: {
     fontSize: 13,
     fontWeight: 'bold',
     color: '#1F2937',
-    textAlign: 'right',
   },
   itemDesc: {
     fontSize: 10,
     color: '#6B7280',
     marginTop: 2,
-    textAlign: 'right',
   },
   itemPriceBadge: {
-    backgroundColor: '#FAF7F2',
+    backgroundColor: '#E5E7EB',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#D4A359',
   },
   itemPriceText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: '#8B0000',
+    color: '#374151',
   },
-  discountInputRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  discountInput: {
-    flex: 1,
+  fixedDiscountChip: {
     backgroundColor: '#FAF7F2',
     borderWidth: 1,
     borderColor: '#D1D5DB',
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    textAlign: 'right',
-    fontSize: 13,
+    paddingVertical: 6,
+    marginRight: 6,
+  },
+  fixedDiscountChipActive: {
+    backgroundColor: '#059669',
+    borderColor: '#059669',
+  },
+  fixedDiscountChipText: {
+    fontSize: 11,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  fixedDiscountChipTextActive: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    color: '#1F2937',
-    marginLeft: 8,
+  },
+  discountInputRow: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+  },
+  discountInput: {
+    flex: 1,
+    backgroundColor: '#FAF7F2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    textAlign: 'right',
   },
   applyBtn: {
-    backgroundColor: '#8B0000',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    backgroundColor: '#059669',
     borderRadius: 12,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   applyBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
     fontWeight: 'bold',
+    fontSize: 12,
   },
   discountSuccessTag: {
     backgroundColor: '#D1FAE5',
+    borderRadius: 10,
     padding: 8,
-    borderRadius: 8,
-    marginTop: 4,
+    marginTop: 10,
+    alignItems: 'center',
   },
   discountSuccessText: {
     color: '#065F46',
     fontSize: 11,
     fontWeight: 'bold',
-    textAlign: 'right',
+    textAlign: 'center',
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 18,
-    borderWidth: 2,
-    borderColor: '#8B0000',
-    shadowColor: '#8B0000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+    backgroundColor: '#8B0000',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
   },
   summaryTitle: {
-    fontSize: 16,
+    color: '#D4A359',
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#8B0000',
-    marginBottom: 12,
     textAlign: 'right',
+    marginBottom: 10,
   },
   summaryRow: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
-    marginVertical: 4,
+    marginBottom: 6,
   },
   summaryLbl: {
-    fontSize: 13,
-    color: '#4B5563',
+    color: '#F3F4F6',
+    fontSize: 12,
   },
   summaryVal: {
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#1F2937',
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     marginVertical: 10,
   },
   totalNetLbl: {
-    fontSize: 15,
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#1F2937',
   },
   totalNetVal: {
-    fontSize: 20,
+    color: '#D4A359',
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#8B0000',
   },
   confirmPayBtn: {
-    backgroundColor: '#8B0000',
-    borderRadius: 18,
+    backgroundColor: '#D4A359',
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 14,
+    marginTop: 12,
   },
   confirmPayBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: '#1F2937',
     fontWeight: 'bold',
+    fontSize: 14,
   },
   archiveRowCard: {
     backgroundColor: '#FAF7F2',
     borderRadius: 14,
     padding: 12,
-    marginBottom: 10,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   archiveRowHeader: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   archiveReceiptNum: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#8B0000',
   },
   archiveMemberName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#1F2937',
   },
   archiveRowFooter: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
   archiveTotal: {
     fontSize: 14,
@@ -1265,52 +1428,51 @@ const styles = StyleSheet.create({
   modalBox: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 22,
+    padding: 20,
     width: '100%',
     alignItems: 'center',
   },
   modalIcon: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  modalHeading: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#8B0000',
+    fontSize: 36,
     marginBottom: 6,
   },
+  modalHeading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
   modalSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 16,
+    marginTop: 4,
+    marginBottom: 14,
   },
   pinInputField: {
     backgroundColor: '#FAF7F2',
     borderWidth: 2,
     borderColor: '#8B0000',
-    borderRadius: 16,
-    fontSize: 26,
-    letterSpacing: 10,
+    borderRadius: 14,
+    fontSize: 24,
     textAlign: 'center',
+    letterSpacing: 10,
     width: 140,
     paddingVertical: 8,
-    marginBottom: 18,
-    color: '#1F2937',
+    marginBottom: 14,
   },
   modalBtnRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
+    gap: 10,
     width: '100%',
   },
   modalBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: 'center',
   },
   modalBtnCancel: {
     backgroundColor: '#F3F4F6',
-    marginRight: 8,
   },
   modalBtnCancelText: {
     color: '#4B5563',
@@ -1318,7 +1480,6 @@ const styles = StyleSheet.create({
   },
   modalBtnConfirm: {
     backgroundColor: '#8B0000',
-    marginLeft: 8,
   },
   modalBtnConfirmText: {
     color: '#FFFFFF',
@@ -1327,47 +1488,42 @@ const styles = StyleSheet.create({
   receiptBox: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
     width: '100%',
-    maxHeight: '90%',
   },
   receiptHeader: {
     alignItems: 'center',
   },
   receiptGroup: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#8B0000',
   },
   receiptChurch: {
-    fontSize: 11,
-    color: '#D4A359',
+    fontSize: 12,
+    color: '#4B5563',
     marginTop: 2,
   },
   receiptType: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 6,
+    color: '#D4A359',
+    marginTop: 4,
   },
   receiptDivider: {
     height: 1,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
+    backgroundColor: '#E5E7EB',
     marginVertical: 10,
   },
-  receiptBody: {
-    marginVertical: 6,
-  },
+  receiptBody: {},
   receiptLine: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
-    marginVertical: 3,
+    marginBottom: 4,
   },
   receiptLineLbl: {
     fontSize: 12,
-    color: '#4B5563',
+    color: '#6B7280',
   },
   receiptLineVal: {
     fontSize: 12,
@@ -1378,28 +1534,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: '#8B0000',
-    marginBottom: 4,
     textAlign: 'right',
+    marginBottom: 4,
   },
   receiptItem: {
     fontSize: 11,
     color: '#374151',
-    marginVertical: 1,
     textAlign: 'right',
+    marginBottom: 2,
   },
   receiptTotalText: {
     fontSize: 15,
-    color: '#8B0000',
     fontWeight: 'bold',
+    color: '#8B0000',
   },
   receiptFooter: {
-    marginTop: 12,
     alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   receiptFooterText: {
     fontSize: 10,
-    color: '#6B7280',
-    fontWeight: 'bold',
+    color: '#9CA3AF',
   },
   receiptDateText: {
     fontSize: 9,
@@ -1407,28 +1565,27 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   receiptActions: {
-    flexDirection: 'row',
-    marginTop: 16,
+    flexDirection: 'row-reverse',
+    gap: 10,
+    marginTop: 14,
   },
   receiptCloseBtn: {
     flex: 1,
     backgroundColor: '#F3F4F6',
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
-    marginRight: 8,
   },
   receiptCloseBtnText: {
     color: '#4B5563',
     fontWeight: 'bold',
   },
   receiptPrintBtn: {
-    flex: 1.5,
+    flex: 1,
     backgroundColor: '#8B0000',
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
-    marginLeft: 8,
   },
   receiptPrintBtnText: {
     color: '#FFFFFF',

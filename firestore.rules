@@ -108,6 +108,12 @@ service cloud.firestore {
       allow create, update, delete: if isAuthenticated() || isLeaderOrAdmin();
     }
 
+    // 14. Subscription Settings Collection (إعدادات وأسعار الاشتراكات والبنود)
+    match /subscription_settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() || isLeaderOrAdmin();
+    }
+
     // Wildcard Fallback Rule (محصنة ضد الوصول المفتوح غير الموثق)
     match /{document=**} {
       allow read, write: if isAuthenticated();

@@ -78,6 +78,7 @@ export interface SubscriptionRecord {
   badges: boolean;
   subtotal: number;
   discountPercentage: number;
+  fixedDiscountEgp?: number;
   totalPaid: number;
   receiptNumber: string;
   createdAt: string;

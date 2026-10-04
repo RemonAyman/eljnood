@@ -750,24 +750,6 @@ export async function seedInitialFirestoreData(): Promise<{ success: boolean; me
       { merge: true }
     );
 
-    // 4. Initial Sample Subscription Record
-    await setDoc(
-      doc(db, COLLECTIONS.SUBSCRIPTIONS, 'REC-2026-001'),
-      {
-        receiptNumber: 'REC-2026-001',
-        memberName: 'جورج سامي رزق',
-        memberCode: 'JS-2026-102',
-        squadName: 'كشاف',
-        annualSub: true,
-        totalAmount: 549,
-        netAmount: 549,
-        status: 'PAID',
-        cashierName: 'أمين الخزينة جورج',
-        date: new Date().toISOString(),
-      },
-      { merge: true }
-    );
-
     return {
       success: true,
       message: 'تم إنشاء وتهيئة جداول فايربيس (members, users, attendance, subscriptions) بنجاح!',
