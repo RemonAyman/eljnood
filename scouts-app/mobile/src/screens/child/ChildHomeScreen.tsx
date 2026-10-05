@@ -42,6 +42,8 @@ export const ChildHomeScreen = ({ navigation }: any) => {
               squadName: (found.squadName as any) || 'كشاف',
               phone: found.phone || user?.phone || '',
               guardianPhone: found.guardianPhone || user?.guardianPhone || '',
+              avatarBase64: found.avatarBase64 || user?.avatarBase64 || undefined,
+              email: found.email || user?.email || undefined,
               createdAt: found.createdAt || new Date().toISOString(),
             };
             setMember(memberObj);
@@ -61,6 +63,8 @@ export const ChildHomeScreen = ({ navigation }: any) => {
               gradeLevel: 'PREP_1',
               squadName: 'كشاف',
               guardianPhone: user?.guardianPhone || '',
+              avatarBase64: user?.avatarBase64 || undefined,
+              email: user?.email || undefined,
               createdAt: new Date().toISOString(),
             });
           }

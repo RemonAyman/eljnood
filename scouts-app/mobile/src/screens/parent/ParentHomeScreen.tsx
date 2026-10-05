@@ -12,7 +12,8 @@ import {
   findUserOrMemberInFirestore, 
   fetchMemberSubscriptions,
   fetchMembersFromFirestore,
-  saveUserToFirestore
+  saveUserToFirestore,
+  matchesPhone
 } from '../../services/firebaseService';
 import { Member, SubscriptionRecord } from '../../types';
 
@@ -48,7 +49,9 @@ export const ParentHomeScreen = ({ navigation }: any) => {
       if (parentPhone) {
         const allMembers = await fetchMembersFromFirestore();
         allMembers.forEach((m) => {
-          if (m.guardianPhone === parentPhone || m.phone === parentPhone) {
+          const matchGuardian = m.guardianPhone === parentPhone || matchesPhone(m.guardianPhone, parentPhone);
+          const matchPhone = m.phone === parentPhone || matchesPhone(m.phone, parentPhone);
+          if (matchGuardian || matchPhone) {
             if (!matchedChildren.some((c) => c.code === m.code)) {
               matchedChildren.push(m);
             }

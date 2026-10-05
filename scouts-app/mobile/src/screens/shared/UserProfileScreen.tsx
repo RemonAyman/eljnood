@@ -175,6 +175,10 @@ export const UserProfileScreen = ({ navigation }: any) => {
           name: updated.name,
           email: updated.email || '',
           role: updated.role,
+          code: updated.code,
+          phone: updated.phone,
+          guardianPhone: updated.guardianPhone,
+          sectionName: updated.sectionName,
           avatarBase64: base64String,
         });
       }

@@ -302,11 +302,13 @@ export const LoginScreen = ({ navigation }: any) => {
       const realProfile = {
         id: realUserDoc.id || realUserDoc.uid || authUid || `u_${Date.now()}`,
         name: realUserDoc.name || 'عضو مسجل',
+        email: realUserDoc.email || (cleanId.includes('@') ? cleanId : ''),
         code: realUserDoc.code || realUserDoc.sonCode || cleanId,
         role: userRole,
         sectionName: realUserDoc.sectionName || realUserDoc.squadName || realUserDoc.section || 'كشاف',
         phone: realUserDoc.phone || '',
         guardianPhone: realUserDoc.guardianPhone || '',
+        avatarBase64: realUserDoc.avatarBase64 || '',
       };
 
       setUser(realProfile);

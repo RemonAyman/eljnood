@@ -189,13 +189,19 @@ export function RootNavigator() {
       const currentUser = useAuthStore.getState().user;
 
       // 1. Never notify the sender of their own action/message
-      if (latest.senderId && currentUser?.id && latest.senderId === currentUser.id) {
+      const isSenderSelf = !!(
+        (latest.senderId && currentUser?.id && latest.senderId === currentUser.id) ||
+        (latest.senderId && currentUser?.code && latest.senderId === currentUser.code) ||
+        (latest.senderId && currentUser?.phone && latest.senderId === currentUser.phone) ||
+        (latest.senderName && currentUser?.name && latest.senderName.trim() === currentUser.name.trim())
+      );
+      if (isSenderSelf) {
         return;
       }
 
       // 2. Do not show chat banner if user is currently in the Chat screen
       const currentRoute = navigationRef.current?.getCurrentRoute();
-      if (latest.type === 'CHAT' && currentRoute?.name === 'ChatRooms') {
+      if (latest.type === 'CHAT' && (currentRoute?.name === 'ChatRooms' || currentRoute?.name === 'Chat')) {
         return;
       }
 
