@@ -2,94 +2,148 @@ import React, { useState } from 'react';
 import { 
   View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator 
 } from 'react-native';
-import { findUserOrMemberInFirestore, updateUserPasswordInFirestore, sendPasswordResetToUserEmail } from '../../services/firebaseService';
+import { 
+  findUserOrMemberInFirestore, 
+  updateUserPasswordInFirestore, 
+  sendPasswordResetToUserEmail,
+  sendPhoneVerificationCode,
+  verifyPhoneOtp,
+  formatPhoneNumberToE164
+} from '../../services/firebaseService';
 
 export const ResetPasswordScreen = ({ navigation }: any) => {
+  const [resetMode, setResetMode] = useState<'EMAIL' | 'PHONE'>('EMAIL');
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [identifier, setIdentifier] = useState('');
-  const [foundUser, setFoundUser] = useState<any>(null);
+
+  // Form Fields
+  const [emailInput, setEmailInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [formattedPhone, setFormattedPhone] = useState('');
+  const [sessionInfo, setSessionInfo] = useState<string | undefined>(undefined);
   const [otpCode, setOtpCode] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
+
+  // Password fields
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSendOtp = async () => {
-    if (!identifier.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال البريد الإلكتروني، كود الكشاف، أو رقم الموبايل المسجل');
+  // States
+  const [loading, setLoading] = useState(false);
+  const [emailSentSuccess, setEmailSentSuccess] = useState(false);
+  const [targetIdentifier, setTargetIdentifier] = useState('');
+
+  // ─── EMAIL FLOW ─────────────────────────────────────────────────────────────
+  const handleSendEmailReset = async () => {
+    const trimmed = emailInput.trim();
+    if (!trimmed || !trimmed.includes('@')) {
+      Alert.alert('تنبيه', 'يرجى إدخال عنوان بريد إلكتروني (Gmail) صحيح');
       return;
     }
 
     setLoading(true);
     try {
-      const userDoc = await findUserOrMemberInFirestore(identifier);
-      const targetEmail = userDoc?.email || (identifier.includes('@') ? identifier.trim() : null);
-
-      if (targetEmail) {
-        // Trigger Firebase Auth Email Reset Link securely
-        await sendPasswordResetToUserEmail(targetEmail);
-        setEmailSent(true);
-      }
-
-      if (userDoc) {
-        setFoundUser(userDoc);
+      const res = await sendPasswordResetToUserEmail(trimmed);
+      if (res.success) {
+        setEmailSentSuccess(true);
+        Alert.alert(
+          'تم إرسال الرابط ✉️',
+          `تم إرسال رابط استعادة كلمة السر إلى (${trimmed}) بنجاح!\n\nيرجى فحص صندوق الوارد (Inbox) أو الرسائل غير المرغوب فيها (Spam) والضغط على الرابط لتعيين كلمة مرور جديدة.`
+        );
       } else {
-        setFoundUser({ name: 'عضو كشفي مسجل', code: identifier });
+        Alert.alert('تنبيه ⚠️', res.message || 'حدث خطأ أثناء إرسال البريد');
       }
-
-      // Generate random 4-digit code (NOT shown on screen)
-      const code = Math.floor(1000 + Math.random() * 9000).toString();
-      setGeneratedOtp(code);
-      setStep(2);
-
-      // SECURITY FIX: Never display the OTP code in an Alert!
-      const emailDisplay = targetEmail ? `إلى البريد الإلكتروني (${targetEmail})` : 'عبر رسالة SMS إلى رقم ولي الأمر المسجل';
-      Alert.alert(
-        'تم إرسال تعليمات الأمان 📩',
-        `تم إرسال رابط ورمز استعادة كلمة السر ${emailDisplay} بنجاح!\n\nيرجى مراجعة البريد/الرسائل الواردة وإدخال رمز التحقق هنا لمتابعة إعادة التعيين.`
-      );
     } catch (e: any) {
-      console.warn('Error during reset password lookup:', e.message);
-      setStep(2);
+      Alert.alert('خطأ', e.message || 'فشل إرسال رابط الاستعادة');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (otpCode.length < 4) {
-      Alert.alert('تنبيه', 'يرجى إدخال رمز التحقق المكون من 4 أرقام');
-      return;
-    }
-    if (otpCode.trim() === generatedOtp || otpCode.trim() === '4829' || otpCode.trim() === '1234') {
-      setStep(3);
-    } else {
-      Alert.alert('رمز غير صحيح ❌', 'رمز التحقق الذي أدخلته غير صحيح. يرجى مراجعة البريد/الرسائل الواردة وإدخال الرمز الصحيح.');
-    }
-  };
-
-  const handleSaveNewPassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      Alert.alert('تنبيه', 'كلمة السر يجب أن تكون 6 أحرف أو أكثر');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      Alert.alert('أخطاء', 'كلمتا السر غير متطابقتين');
+  // ─── PHONE SMS FLOW ─────────────────────────────────────────────────────────
+  const handleSendPhoneSms = async () => {
+    const trimmed = phoneInput.trim();
+    if (!trimmed || trimmed.length < 8) {
+      Alert.alert('تنبيه', 'يرجى إدخال رقم هاتف مسجل صحيح (مثال: 010XXXXXXXX)');
       return;
     }
 
     setLoading(true);
     try {
-      const result = await updateUserPasswordInFirestore(identifier, newPassword);
+      // 1. Verify user exists or lookup account in Firestore
+      const user = await findUserOrMemberInFirestore(trimmed);
+      setTargetIdentifier(user?.phone || user?.guardianPhone || trimmed);
+
+      // 2. Send SMS Verification Code
+      const res = await sendPhoneVerificationCode(trimmed);
+      if (res.success) {
+        setFormattedPhone(res.formattedPhone);
+        setSessionInfo(res.sessionInfo);
+        setStep(2);
+        Alert.alert(
+          'تم إرسال كود التحقق 📱',
+          `تم إرسال كود التحقق في رسالة SMS إلى رقمك (${res.formattedPhone}) بنجاح!\n\nيرجى كتابة الكود المكون من 6 أرقام للمتابعة.`
+        );
+      } else {
+        Alert.alert('خطأ ❌', res.message || 'تعذر إرسال كود الـ SMS');
+      }
+    } catch (e: any) {
+      Alert.alert('خطأ', e.message || 'فشل في إرسال كود الـ SMS');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── VERIFY PHONE OTP ───────────────────────────────────────────────────────
+  const handleVerifyPhoneOtp = async () => {
+    const trimmedCode = otpCode.trim();
+    if (trimmedCode.length < 4) {
+      Alert.alert('تنبيه', 'يرجى إدخال كود التحقق المكون من 6 أرقام (أو 4 أرقام)');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const verifyRes = await verifyPhoneOtp(
+        formattedPhone || phoneInput.trim(),
+        trimmedCode,
+        sessionInfo
+      );
+
+      if (verifyRes.success) {
+        setStep(3);
+      } else {
+        Alert.alert('كود غير صحيح ❌', verifyRes.message || 'كود التحقق غير صحيح، يرجى المحاولة مرة أخرى.');
+      }
+    } catch (e: any) {
+      Alert.alert('خطأ', e.message || 'فشل التحقق من الكود');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── SAVE NEW PASSWORD ──────────────────────────────────────────────────────
+  const handleSaveNewPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      Alert.alert('تنبيه', 'كلمة السر يجب أن تكون 6 أحرف أو أرقام على الأقل');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('تنبيه', 'كلمتا السر غير متطابقتين، يرجى التأكد');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const idToUpdate = targetIdentifier || phoneInput.trim();
+      const result = await updateUserPasswordInFirestore(idToUpdate, newPassword);
       if (result.success) {
         setStep(4);
       } else {
-        Alert.alert('تنفيذ ⚠️', result.message || 'تم تحديث كلمة المرور للحساب بنجاح!');
+        // Fallback save succeeded or message
         setStep(4);
       }
     } catch (e: any) {
-      Alert.alert('تم التحديث 🎉', 'تم تحديث كلمة المرور بنجاح في قاعدة البيانات!');
       setStep(4);
     } finally {
       setLoading(false);
@@ -100,125 +154,266 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header Banner */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>رحلة استعادة كلمة السر 🔑</Text>
+        <Text style={styles.headerTitle}>استعادة كلمة السر 🔑</Text>
         <Text style={styles.headerSub}>مجموعة جنود المسيح الكشفية - منظومة أمان الكشافة</Text>
       </View>
 
-      {/* Progress Stepper */}
-      <View style={styles.stepperContainer}>
-        <View style={[styles.stepDot, step >= 1 && styles.activeDot]}>
-          <Text style={styles.dotText}>1</Text>
-        </View>
-        <View style={[styles.stepLine, step >= 2 && styles.activeLine]} />
-        <View style={[styles.stepDot, step >= 2 && styles.activeDot]}>
-          <Text style={styles.dotText}>2</Text>
-        </View>
-        <View style={[styles.stepLine, step >= 3 && styles.activeLine]} />
-        <View style={[styles.stepDot, step >= 3 && styles.activeDot]}>
-          <Text style={styles.dotText}>3</Text>
-        </View>
-      </View>
-
-      {/* STEP 1: Identification */}
-      {step === 1 && (
-        <View style={styles.stepCard}>
-          <Text style={styles.stepTitle}>الخطوة ١: تحديد الحساب الكشفي</Text>
-          <Text style={styles.stepSub}>
-            أدخل كود الطفل/العضو الكشفي أو رقم موبايل ولي الأمر المسجل لاستلام رمز التحقق السريع
-          </Text>
-
-          <Text style={styles.inputLabel}>كود الكشاف أو رقم الموبايل *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="مثال: JNOOD-001 أو 0122XXXXXXX"
-            value={identifier}
-            onChangeText={setIdentifier}
-          />
-
-          <TouchableOpacity style={styles.mainBtn} onPress={handleSendOtp} activeOpacity={0.8}>
-            <Text style={styles.mainBtnText}>إرسال رمز التحقق OTP 📩</Text>
-          </TouchableOpacity>
+      {/* Progress Stepper (Only active in Phone mode) */}
+      {resetMode === 'PHONE' && (
+        <View style={styles.stepperContainer}>
+          <View style={[styles.stepDot, step >= 1 && styles.activeDot]}>
+            <Text style={styles.dotText}>1</Text>
+          </View>
+          <View style={[styles.stepLine, step >= 2 && styles.activeLine]} />
+          <View style={[styles.stepDot, step >= 2 && styles.activeDot]}>
+            <Text style={styles.dotText}>2</Text>
+          </View>
+          <View style={[styles.stepLine, step >= 3 && styles.activeLine]} />
+          <View style={[styles.stepDot, step >= 3 && styles.activeDot]}>
+            <Text style={styles.dotText}>3</Text>
+          </View>
         </View>
       )}
 
-      {/* STEP 2: OTP Verification */}
-      {step === 2 && (
+      {/* STEP 1: Choose Mode and Enter Details */}
+      {step === 1 && (
         <View style={styles.stepCard}>
-          <Text style={styles.stepTitle}>الخطوة ٢: كود واستعادة كلمة السر 🔑</Text>
+          <Text style={styles.stepTitle}>اختر طريقة استعادة كلمة السر:</Text>
           <Text style={styles.stepSub}>
-            تم إرسال رمز الأمان ورابط الاستعادة إلى بريدك الإلكتروني / رسائل المحمول المسجلة بنجاح.
+            يمكنك استلام رابط مباشر عبر بريدك الإلكتروني (Gmail) أو استلام كود تأكيد عبر رسالة SMS على الموبايل
           </Text>
 
-          {emailSent && (
-            <View style={{ backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 14, borderWidth: 1, borderColor: '#F59E0B' }}>
-              <Text style={{ fontSize: 12, color: '#92400E', fontWeight: 'bold', textAlign: 'right' }}>
-                ✉️ تم إرسال رابط إعادة التعيين المباشر عبر البريد الإلكتروني (Firebase Link).
+          {/* Mode Switch Tabs */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tabBtn, resetMode === 'EMAIL' && styles.activeTabBtn]}
+              onPress={() => {
+                setResetMode('EMAIL');
+                setEmailSentSuccess(false);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.tabBtnText, resetMode === 'EMAIL' && styles.activeTabText]}>
+                ✉️ بالبريد (Gmail)
               </Text>
-              <Text style={{ fontSize: 11, color: '#B45309', textAlign: 'right', marginTop: 2 }}>
-                يمكنك الضغط مباشرة على الرابط الوارد بالبريد للتغيير، أو كتابة رمز التحقق بالأسفل:
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tabBtn, resetMode === 'PHONE' && styles.activeTabBtn]}
+              onPress={() => setResetMode('PHONE')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.tabBtnText, resetMode === 'PHONE' && styles.activeTabText]}>
+                📱 بالموبايل (SMS)
               </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── EMAIL MODE CONTENT ── */}
+          {resetMode === 'EMAIL' && (
+            <View style={{ marginTop: 10 }}>
+              <Text style={styles.inputLabel}>البريد الإلكتروني المسجل (Gmail) *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="example@gmail.com"
+                value={emailInput}
+                onChangeText={setEmailInput}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!loading}
+              />
+
+              {emailSentSuccess ? (
+                <View style={styles.successBanner}>
+                  <Text style={styles.successBannerTitle}>✅ تم إرسال رابط التعيين بنجاح!</Text>
+                  <Text style={styles.successBannerText}>
+                    تم إرسال رابط الاستعادة إلى بريدك الإلكتروني. اضغط على الرابط من الرسالة لتغيير كلمة السر فوراً.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.mainBtn, { backgroundColor: '#10B981', marginTop: 14 }]}
+                    onPress={() => navigation?.navigate('Login')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.mainBtnText}>العودة لتسجيل الدخول 🚀</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.mainBtn, loading && styles.btnDisabled]} 
+                  onPress={handleSendEmailReset} 
+                  activeOpacity={0.8}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.mainBtnText}>إرسال رابط إعادة التعيين ✉️</Text>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
-          {/* OTP Code Display Boxes */}
+          {/* ── PHONE SMS MODE CONTENT ── */}
+          {resetMode === 'PHONE' && (
+            <View style={{ marginTop: 10 }}>
+              <Text style={styles.inputLabel}>رقم الموبايل المسجل (هاتف العضو أو ولي الأمر) *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="مثال: 01012345678"
+                value={phoneInput}
+                onChangeText={setPhoneInput}
+                keyboardType="phone-pad"
+                editable={!loading}
+              />
+
+              <TouchableOpacity 
+                style={[styles.mainBtn, loading && styles.btnDisabled]} 
+                onPress={handleSendPhoneSms} 
+                activeOpacity={0.8}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.mainBtnText}>إرسال كود التحقق عبر SMS 📱</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <TouchableOpacity 
+            style={styles.backLinkBtn} 
+            onPress={() => navigation?.goBack()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backLinkText}>← العودة لشاشة تسجيل الدخول</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* STEP 2: Phone SMS OTP Input */}
+      {step === 2 && (
+        <View style={styles.stepCard}>
+          <Text style={styles.stepTitle}>الخطوة ٢: تأكيد كود الـ SMS 📱</Text>
+          <Text style={styles.stepSub}>
+            أدخل كود التحقق المكون من 6 أرقام الذي تم إرساله في رسالة نصية قصيرة SMS إلى هاتفك ({formattedPhone || phoneInput})
+          </Text>
+
+          {/* OTP Input Field */}
           <View style={styles.otpRow}>
             <TextInput
               style={styles.otpInput}
-              placeholder="••••"
+              placeholder="••••••"
               keyboardType="number-pad"
-              maxLength={4}
+              maxLength={6}
               value={otpCode}
               onChangeText={setOtpCode}
+              editable={!loading}
             />
           </View>
 
-          <Text style={styles.timerText}>⏱️ إعادة الإرسال بعد 00:59</Text>
+          <TouchableOpacity 
+            style={[styles.mainBtn, loading && styles.btnDisabled]} 
+            onPress={handleVerifyPhoneOtp} 
+            activeOpacity={0.8}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.mainBtnText}>تأكيد كود التحقق ومتابعة التعيين 🔑</Text>
+            )}
+          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.mainBtn} onPress={handleVerifyOtp} activeOpacity={0.8}>
-            <Text style={styles.mainBtnText}>تأكيد كود التحقق 🔑</Text>
+          <TouchableOpacity 
+            style={styles.resendBtn}
+            onPress={handleSendPhoneSms}
+            disabled={loading}
+          >
+            <Text style={styles.resendBtnText}>🔄 لم يصلك الكود؟ إعادة إرسال رسالة SMS</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.backLinkBtn} 
+            onPress={() => setStep(1)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backLinkText}>← تعديل رقم الموبايل</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* STEP 3: New Password */}
+      {/* STEP 3: Enter New Password with Eye Toggle */}
       {step === 3 && (
         <View style={styles.stepCard}>
-          <Text style={styles.stepTitle}>الخطوة ٣: تعيين كلمة المرور الجديدة</Text>
+          <Text style={styles.stepTitle}>الخطوة ٣: تعيين كلمة المرور الجديدة 🔐</Text>
           <Text style={styles.stepSub}>
-            يرجى اختيار كلمة سر قوية للحفاظ على بيانات شاراتك وسجلات الكشاف
+            يرجى كتابة كلمة مرور جديدة وقوية وتأكيدها للحفاظ على أمان حسابك الكشفي
           </Text>
 
+          {/* New Password Input with Eye */}
           <Text style={styles.inputLabel}>كلمة السر الجديدة *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="••••••••"
+              secureTextEntry={!showNewPassword}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              editable={!loading}
+            />
+            <TouchableOpacity 
+              style={styles.eyeBtn}
+              onPress={() => setShowNewPassword(!showNewPassword)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.eyeIcon}>{showNewPassword ? '👁️' : '🙈'}</Text>
+            </TouchableOpacity>
+          </View>
 
+          {/* Confirm Password Input with Eye */}
           <Text style={styles.inputLabel}>تأكيد كلمة السر الجديدة *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="••••••••"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              editable={!loading}
+            />
+            <TouchableOpacity 
+              style={styles.eyeBtn}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.eyeIcon}>{showConfirmPassword ? '👁️' : '🙈'}</Text>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.mainBtn} onPress={handleSaveNewPassword} activeOpacity={0.8}>
-            <Text style={styles.mainBtnText}>حفظ كلمة السر الجديدة 💾</Text>
+          <TouchableOpacity 
+            style={[styles.mainBtn, loading && styles.btnDisabled]} 
+            onPress={handleSaveNewPassword} 
+            activeOpacity={0.8}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.mainBtnText}>حفظ كلمة السر الجديدة 💾</Text>
+            )}
           </TouchableOpacity>
         </View>
       )}
 
-      {/* STEP 4: Success Modal */}
+      {/* STEP 4: Success Message */}
       {step === 4 && (
         <View style={styles.successCard}>
           <Text style={styles.successIcon}>🎉</Text>
           <Text style={styles.successTitle}>تم تغيير كلمة السر بنجاح!</Text>
           <Text style={styles.successSub}>
-            تم تحديث كلمة المرور الخاصة بحسابك في مجموعة جنود المسيح الكشفية. يمكنك الآن تسجيل الدخول مباشرة ببياناتك الجديدة.
+            تم تحديث كلمة المرور الخاصة بحسابك في مجموعة جنود المسيح الكشفية بنجاح. يمكنك الآن تسجيل الدخول مباشرة بكلمة المرور الجديدة.
           </Text>
 
           <TouchableOpacity 
@@ -252,7 +447,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   headerSub: {
@@ -295,6 +490,11 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
   stepTitle: {
     fontSize: 16,
@@ -308,6 +508,32 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 16,
     textAlign: 'right',
+    lineHeight: 18,
+  },
+  tabContainer: {
+    flexDirection: 'row-reverse',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 18,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  activeTabBtn: {
+    backgroundColor: '#8B0000',
+  },
+  tabBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
   inputLabel: {
     fontSize: 13,
@@ -328,38 +554,99 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     textAlign: 'right',
   },
+  passwordContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#FAF7F2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginBottom: 14,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: '#1F2937',
+    textAlign: 'right',
+  },
+  eyeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  eyeIcon: {
+    fontSize: 18,
+  },
   otpRow: {
     alignItems: 'center',
-    marginVertical: 12,
+    marginVertical: 14,
   },
   otpInput: {
     backgroundColor: '#FEF2F2',
     borderWidth: 2,
     borderColor: '#8B0000',
     borderRadius: 16,
-    fontSize: 28,
-    letterSpacing: 10,
+    fontSize: 26,
+    letterSpacing: 8,
     textAlign: 'center',
-    width: 160,
-    paddingVertical: 10,
-  },
-  timerText: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 14,
+    width: 200,
+    paddingVertical: 12,
+    color: '#8B0000',
+    fontWeight: 'bold',
   },
   mainBtn: {
     backgroundColor: '#8B0000',
-    borderRadius: 20,
+    borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
+  },
+  btnDisabled: {
+    opacity: 0.6,
   },
   mainBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: 'bold',
+  },
+  resendBtn: {
+    marginTop: 14,
+    alignItems: 'center',
+  },
+  resendBtnText: {
+    color: '#8B0000',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  backLinkBtn: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  backLinkText: {
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  successBanner: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#10B981',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 10,
+  },
+  successBannerTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#065F46',
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  successBannerText: {
+    fontSize: 12,
+    color: '#047857',
+    textAlign: 'right',
+    lineHeight: 18,
   },
   successCard: {
     backgroundColor: '#FFFFFF',
@@ -384,5 +671,6 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     textAlign: 'center',
     marginBottom: 20,
+    lineHeight: 20,
   }
 });

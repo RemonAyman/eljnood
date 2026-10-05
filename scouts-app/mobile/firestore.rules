@@ -79,6 +79,11 @@ service cloud.firestore {
       allow read, create, update, delete: if isAuthenticated();
     }
 
+    // 14. OTP & Phone SMS Verifications Collection (كود استعادة كلمة السر والتحقق من الهاتف)
+    match /otp_verifications/{otpId} {
+      allow read, write: if true;
+    }
+
     // Wildcard Fallback Rule for App Operations
     match /{document=**} {
       allow read, write: if isAuthenticated();
