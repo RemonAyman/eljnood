@@ -33,21 +33,33 @@ export function sanitizeText(input: string | undefined | null): string {
  * (jpeg, png, webp, gif, svg+xml) and prevents arbitrary data URI code injection.
  */
 export function validateAndSanitizeBase64Image(base64Data: string | undefined | null): string | undefined {
-  if (!base64Data) return undefined;
+  if (!base64Data || typeof base64Data !== 'string') return undefined;
 
   const clean = base64Data.trim();
-  
-  // Accept standard data image base64 format or simple emoji preset
-  const imageMimeRegex = /^data:image\/(png|jpg|jpeg|webp|gif|svg\+xml);base64,[A-Za-z0-9+/=]+$/;
-  const svgDataUriRegex = /^data:image\/svg\+xml;utf8,.*$/;
+  if (clean.length < 20) return undefined;
 
-  if (imageMimeRegex.test(clean) || svgDataUriRegex.test(clean)) {
+  // 1. Check data:image/...;base64 prefix
+  const prefixMatch = clean.match(/^data:image\/(png|jpg|jpeg|webp|gif|heic|heif|svg\+xml);base64,/i);
+  if (prefixMatch) {
     return clean;
   }
 
-  // If payload fails image regex verification, reject for safety
-  console.warn('⚠️ Security Alert: Invalid or potentially unsafe Base64 image payload blocked.');
-  return undefined;
+  // 2. SVG utf8 data URI
+  if (/^data:image\/svg\+xml;utf8,/i.test(clean)) {
+    return clean;
+  }
+
+  // 3. Local or remote URI (file://, content://, http://, https://, blob:)
+  if (/^(file:\/\/|content:\/\/|https?:\/\/|blob:)/i.test(clean)) {
+    return clean;
+  }
+
+  // 4. Raw base64 payload without prefix (auto-wrap in jpeg mime)
+  if (/^[A-Za-z0-9+/=]{20,}/.test(clean)) {
+    return `data:image/jpeg;base64,${clean.replace(/[\r\n\s]/g, '')}`;
+  }
+
+  return clean;
 }
 
 /**

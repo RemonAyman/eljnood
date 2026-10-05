@@ -39,6 +39,7 @@ export interface Member {
   street?: string;
   addressDescription?: string;
   avatarBase64?: string;
+  email?: string;
   createdAt: string;
 }
 
@@ -106,6 +107,7 @@ export interface ChatMessage {
   content: string;
   mediaBase64?: string;
   mediaType?: 'IMAGE' | 'AUDIO' | 'DOCUMENT';
+  senderAvatar?: string;
   createdAt: string;
 }
 

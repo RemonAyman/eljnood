@@ -9,10 +9,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   FlatList,
+  Image,
+  Modal,
+  Keyboard,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useChatStore, getAvailableChatRoomsForUser } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { pickImageFromGallery, takePhotoWithCamera } from '../../utils/imagePickerHelper';
 import { ChatMessage, Role } from '../../types';
 import {
   subscribeToChatMessages,
@@ -20,6 +26,8 @@ import {
   sendNotificationToFirestore,
 } from '../../services/firebaseService';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const getRoleBadge = (role: Role) => {
   switch (role) {
@@ -40,8 +48,15 @@ const getRoleBadge = (role: Role) => {
   }
 };
 
-const ChatBubbleItem = React.memo(({ msg, isMe }: { msg: ChatMessage; isMe: boolean }) => {
+interface ChatBubbleProps {
+  msg: ChatMessage;
+  isMe: boolean;
+  onImagePress?: (uri: string) => void;
+}
+
+const ChatBubbleItem = React.memo(({ msg, isMe, onImagePress }: ChatBubbleProps) => {
   const roleBadge = getRoleBadge(msg.senderRole);
+
   const timeFormatted = useMemo(() => {
     if (!msg.createdAt) return '';
     try {
@@ -52,55 +67,132 @@ const ChatBubbleItem = React.memo(({ msg, isMe }: { msg: ChatMessage; isMe: bool
     }
   }, [msg.createdAt]);
 
+  const senderInitial = useMemo(() => {
+    if (msg.senderName && msg.senderName.trim().length > 0) {
+      return msg.senderName.trim().charAt(0);
+    }
+    return '⚜️';
+  }, [msg.senderName]);
+
   return (
     <View
       style={[
-        styles.messageWrapper,
-        isMe ? styles.myMessageWrapper : styles.otherMessageWrapper,
+        styles.messageRow,
+        isMe ? styles.myMessageRow : styles.otherMessageRow,
       ]}
     >
+      {/* Sender Avatar Circle for Other users */}
       {!isMe && (
-        <View style={styles.senderHeader}>
-          <Text style={styles.senderName}>{msg.senderName}</Text>
-          <View style={[styles.roleBadge, { backgroundColor: roleBadge.bg }]}>
-            <Text style={styles.roleBadgeText}>{roleBadge.label}</Text>
-          </View>
+        <View style={styles.avatarWrap}>
+          {msg.senderAvatar ? (
+            <Image
+              source={{ uri: msg.senderAvatar }}
+              style={styles.avatarImg}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: roleBadge.bg }]}>
+              <Text style={styles.avatarInitialText}>{senderInitial}</Text>
+            </View>
+          )}
         </View>
       )}
 
+      {/* Message Bubble Container */}
       <View
         style={[
-          styles.messageBubble,
-          isMe ? styles.myMessageBubble : styles.otherMessageBubble,
+          styles.messageWrapper,
+          isMe ? styles.myMessageWrapper : styles.otherMessageWrapper,
         ]}
       >
-        {msg.mediaType === 'IMAGE' && (
-          <View style={styles.mediaImagePlaceholder}>
-            <Text style={styles.mediaIcon}>🖼️</Text>
-            <Text style={styles.mediaText}>صورة مرفقة من النشاط</Text>
+        {!isMe && (
+          <View style={styles.senderHeader}>
+            <Text style={styles.senderName}>{msg.senderName}</Text>
+            <View style={[styles.roleBadge, { backgroundColor: roleBadge.bg }]}>
+              <Text style={styles.roleBadgeText}>{roleBadge.label}</Text>
+            </View>
           </View>
         )}
-        {msg.mediaType === 'AUDIO' && (
-          <View style={styles.voiceNoteRow}>
-            <Text style={styles.voiceNotePlay}>▶️</Text>
-            <View style={styles.voiceNoteWaveform} />
-            <Text style={styles.voiceNoteDuration}>0:14</Text>
-          </View>
-        )}
-        <Text
+
+        <View
           style={[
-            styles.messageContent,
-            isMe ? styles.myMessageContent : styles.otherMessageContent,
+            styles.messageBubble,
+            isMe ? styles.myMessageBubble : styles.otherMessageBubble,
           ]}
         >
-          {msg.content}
-        </Text>
-        {timeFormatted ? (
-          <Text style={[styles.timeText, isMe ? styles.myTimeText : styles.otherTimeText]}>
-            {timeFormatted}
-          </Text>
-        ) : null}
+          {/* Attached Image with click to enlarge */}
+          {msg.mediaType === 'IMAGE' && (
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => msg.mediaBase64 && onImagePress && onImagePress(msg.mediaBase64)}
+              style={styles.mediaImageContainer}
+            >
+              {msg.mediaBase64 ? (
+                <View style={styles.imageCard}>
+                  <Image
+                    source={{ uri: msg.mediaBase64 }}
+                    style={styles.chatMediaImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.zoomBadge}>
+                    <Text style={styles.zoomBadgeText}>🔍 اضغط للتكبير</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.mediaImagePlaceholder}>
+                  <Text style={styles.mediaIcon}>🖼️</Text>
+                  <Text style={styles.mediaText}>صورة مرفقة من النشاط</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+
+          {/* Voice note indicator */}
+          {msg.mediaType === 'AUDIO' && (
+            <View style={styles.voiceNoteRow}>
+              <Text style={styles.voiceNotePlay}>▶️</Text>
+              <View style={styles.voiceNoteWaveform} />
+              <Text style={styles.voiceNoteDuration}>0:14</Text>
+            </View>
+          )}
+
+          {/* Text Message Content */}
+          {msg.content ? (
+            <Text
+              style={[
+                styles.messageContent,
+                isMe ? styles.myMessageContent : styles.otherMessageContent,
+              ]}
+            >
+              {msg.content}
+            </Text>
+          ) : null}
+
+          {/* Timestamp */}
+          {timeFormatted ? (
+            <Text style={[styles.timeText, isMe ? styles.myTimeText : styles.otherTimeText]}>
+              {timeFormatted}
+            </Text>
+          ) : null}
+        </View>
       </View>
+
+      {/* Avatar for My Messages (Shows user's current avatar on the right) */}
+      {isMe && (
+        <View style={styles.avatarWrap}>
+          {msg.senderAvatar ? (
+            <Image
+              source={{ uri: msg.senderAvatar }}
+              style={styles.avatarImg}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: '#8B0000' }]}>
+              <Text style={styles.avatarInitialText}>{senderInitial}</Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
 });
@@ -112,7 +204,33 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const [firestoreMessages, setFirestoreMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [previewImageUri, setPreviewImageUri] = useState<string | null>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
   const flatListRef = useRef<FlatList>(null);
+
+  // Monitor keyboard visibility so we can hide BottomNavBar and adjust padding
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Dynamically compute rooms available for current logged-in user
   const userAvailableRooms = useMemo(() => {
@@ -154,7 +272,6 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const displayMessages = useMemo(() => {
     const localRoomMsgs = messages.filter((m) => m.roomId === currentRoomId);
     if (firestoreMessages.length > 0) {
-      // Merge unique messages
       const map = new Map<string, ChatMessage>();
       localRoomMsgs.forEach((m) => map.set(m.id, m));
       firestoreMessages.forEach((m) => map.set(m.id, m));
@@ -168,12 +285,14 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const handleSend = useCallback(async () => {
     if (!inputMessage.trim()) return;
 
+    const text = inputMessage.trim();
     const newMsgData = {
       roomId: currentRoomId,
       senderId: currentUser?.id || `u_${Date.now()}`,
       senderName: currentUser?.name || 'عضو كشفي',
       senderRole: (currentUser?.role as Role) || 'CHILD',
-      content: inputMessage.trim(),
+      content: text,
+      senderAvatar: currentUser?.avatarBase64 || '',
     };
 
     // 1. Local update
@@ -184,10 +303,10 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
       console.warn('Chat firestore sync:', e)
     );
 
-    // 3. Central Push Notification Broadcast
+    // 3. Central Push Notification Broadcast (Sender excluded by senderId)
     sendNotificationToFirestore({
       title: 'رسالة جديدة في الشات 💬',
-      body: `${currentUser?.name || 'عضو'}: ${inputMessage.trim()}`,
+      body: `${currentUser?.name || 'عضو'}: ${text}`,
       type: 'CHAT',
       senderId: currentUser?.id,
       senderName: currentUser?.name,
@@ -211,6 +330,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
         senderRole: (currentUser?.role as Role) || 'CHILD',
         content: '🎙️ تسجيل صوتي (0:14 ثانية)',
         mediaType: 'AUDIO' as const,
+        senderAvatar: currentUser?.avatarBase64 || '',
       };
 
       sendMessage(voiceData);
@@ -221,25 +341,93 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   }, [currentRoomId, currentUser, sendMessage]);
 
   const handleAttachImage = useCallback(() => {
-    Alert.alert('إرفاق وسائط 📷', 'اختر نوع الوسائط للإرسال:', [
+    Alert.alert('إرفاق وسائط 📷', 'اختر مصدر الصورة للإرسال في الشات:', [
       {
-        text: 'صورة من المعرض',
-        onPress: () => {
-          const imgData = {
-            roomId: currentRoomId,
-            senderId: currentUser?.id || `u_${Date.now()}`,
-            senderName: currentUser?.name || 'عضو كشفي',
-            senderRole: (currentUser?.role as Role) || 'CHILD',
-            content: '📸 أرسل صورة من نشاط اليوم الكشفي',
-            mediaType: 'IMAGE' as const,
-          };
-          sendMessage(imgData);
-          sendChatMessageToFirestore(imgData);
-          flatListRef.current?.scrollToEnd({ animated: true });
+        text: '🖼️ صورة من المعرض (Base64)',
+        onPress: async () => {
+          setIsUploadingMedia(true);
+          try {
+            const base64Data = await pickImageFromGallery({
+              allowsEditing: true,
+              quality: 0.4,
+            });
+            if (base64Data) {
+              const imgData = {
+                roomId: currentRoomId,
+                senderId: currentUser?.id || `u_${Date.now()}`,
+                senderName: currentUser?.name || 'عضو كشفي',
+                senderRole: (currentUser?.role as Role) || 'CHILD',
+                content: '📸 صورة مرفقة من نشاط الكشافة',
+                mediaBase64: base64Data,
+                mediaType: 'IMAGE' as const,
+                senderAvatar: currentUser?.avatarBase64 || '',
+              };
+
+              sendMessage(imgData);
+              sendChatMessageToFirestore(imgData);
+
+              sendNotificationToFirestore({
+                title: 'صورة جديدة في الشات 📸',
+                body: `${currentUser?.name || 'عضو'}: أرسل صورة جديدة في الشات`,
+                type: 'CHAT',
+                senderId: currentUser?.id,
+                senderName: currentUser?.name,
+                roomId: currentRoomId,
+              });
+
+              setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+            }
+          } catch (err: any) {
+            Alert.alert('خطأ', 'تعذر إرفاق الصورة: ' + (err?.message || ''));
+          } finally {
+            setIsUploadingMedia(false);
+          }
         },
       },
       {
-        text: 'مستند PDF',
+        text: '📸 التقاط صورة بالكاميرا الحية',
+        onPress: async () => {
+          setIsUploadingMedia(true);
+          try {
+            const base64Data = await takePhotoWithCamera({
+              allowsEditing: true,
+              quality: 0.4,
+            });
+            if (base64Data) {
+              const imgData = {
+                roomId: currentRoomId,
+                senderId: currentUser?.id || `u_${Date.now()}`,
+                senderName: currentUser?.name || 'عضو كشفي',
+                senderRole: (currentUser?.role as Role) || 'CHILD',
+                content: '📸 صورة ملتقطة بالكاميرا الحية',
+                mediaBase64: base64Data,
+                mediaType: 'IMAGE' as const,
+                senderAvatar: currentUser?.avatarBase64 || '',
+              };
+
+              sendMessage(imgData);
+              sendChatMessageToFirestore(imgData);
+
+              sendNotificationToFirestore({
+                title: 'صورة جديدة بالكاميرا 📸',
+                body: `${currentUser?.name || 'عضو'}: أرسل صورة ملتقطة بالكاميرا`,
+                type: 'CHAT',
+                senderId: currentUser?.id,
+                senderName: currentUser?.name,
+                roomId: currentRoomId,
+              });
+
+              setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+            }
+          } catch (err: any) {
+            Alert.alert('خطأ', 'تعذر التقاط الصورة: ' + (err?.message || ''));
+          } finally {
+            setIsUploadingMedia(false);
+          }
+        },
+      },
+      {
+        text: '📑 مستند PDF',
         onPress: () => {
           const docData = {
             roomId: currentRoomId,
@@ -248,10 +436,11 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
             senderRole: (currentUser?.role as Role) || 'CHILD',
             content: '📑 مرفق: جدول الأنشطة الأسبوعية.pdf',
             mediaType: 'DOCUMENT' as const,
+            senderAvatar: currentUser?.avatarBase64 || '',
           };
           sendMessage(docData);
           sendChatMessageToFirestore(docData);
-          flatListRef.current?.scrollToEnd({ animated: true });
+          setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
         },
       },
       { text: 'إلغاء', style: 'cancel' },
@@ -261,7 +450,13 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const renderItem = useCallback(
     ({ item }: { item: ChatMessage }) => {
       const isMe = item.senderId === currentUser?.id;
-      return <ChatBubbleItem msg={item} isMe={isMe} />;
+      return (
+        <ChatBubbleItem
+          msg={item}
+          isMe={isMe}
+          onImagePress={(uri) => setPreviewImageUri(uri)}
+        />
+      );
     },
     [currentUser]
   );
@@ -269,6 +464,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       style={styles.container}
     >
       {/* Header */}
@@ -298,11 +494,16 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
         data={displayMessages}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={styles.messagesContainer}
+        contentContainerStyle={[
+          styles.messagesContainer,
+          { paddingBottom: isKeyboardVisible ? 16 : 80 },
+        ]}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
         windowSize={7}
         removeClippedSubviews={Platform.OS === 'android'}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         ListEmptyComponent={
           <View style={styles.emptyMessages}>
             <Text style={styles.emptyIcon}>💬</Text>
@@ -312,12 +513,26 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
         }
       />
 
+      {/* Loading overlay for image processing */}
+      {isUploadingMedia && (
+        <View style={styles.uploadingOverlay}>
+          <ActivityIndicator size="small" color="#8B0000" />
+          <Text style={styles.uploadingText}>جاري معالجة وإرفاق الصورة (Base64)...</Text>
+        </View>
+      )}
+
       {/* Input Bar */}
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          { paddingBottom: isKeyboardVisible ? (Platform.OS === 'ios' ? 10 : 8) : 68 },
+        ]}
+      >
         <TouchableOpacity
           style={styles.mediaButton}
           onPress={handleAttachImage}
           activeOpacity={0.7}
+          disabled={isUploadingMedia}
         >
           <Text style={styles.mediaButtonText}>📎</Text>
         </TouchableOpacity>
@@ -329,6 +544,9 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
           value={inputMessage}
           onChangeText={setInputMessage}
           multiline
+          onFocus={() => {
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
+          }}
         />
 
         <TouchableOpacity
@@ -348,7 +566,36 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
           <Text style={styles.sendButtonText}>إرسال</Text>
         </TouchableOpacity>
       </View>
-      <BottomNavBar navigation={navigation} currentRoute="ChatRooms" />
+
+      {/* Full-screen Image Preview Modal */}
+      <Modal
+        visible={!!previewImageUri}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImageUri(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={styles.modalCloseBtn}
+            onPress={() => setPreviewImageUri(null)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.modalCloseText}>✕ إغلاق المعاينة</Text>
+          </TouchableOpacity>
+          {previewImageUri && (
+            <Image
+              source={{ uri: previewImageUri }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
+
+      {/* Render Floating BottomNavBar ONLY when keyboard is hidden */}
+      {!isKeyboardVisible && (
+        <BottomNavBar navigation={navigation} currentRoute="ChatRooms" />
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -403,7 +650,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   messagesContainer: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 10,
     flexGrow: 1,
   },
@@ -426,15 +673,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
   },
-  messageWrapper: {
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     marginVertical: 4,
-    maxWidth: '82%',
+    paddingHorizontal: 4,
+    gap: 8,
+  },
+  myMessageRow: {
+    justifyContent: 'flex-start',
+  },
+  otherMessageRow: {
+    justifyContent: 'flex-end',
+  },
+  avatarWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginBottom: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarImg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+  },
+  avatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+  },
+  avatarInitialText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  messageWrapper: {
+    maxWidth: '78%',
   },
   myMessageWrapper: {
-    alignSelf: 'flex-start',
+    alignItems: 'flex-start',
   },
   otherMessageWrapper: {
-    alignSelf: 'flex-end',
+    alignItems: 'flex-end',
   },
   senderHeader: {
     flexDirection: 'row-reverse',
@@ -474,7 +762,7 @@ const styles = StyleSheet.create({
   },
   messageContent: {
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
     textAlign: 'right',
   },
   myMessageContent: {
@@ -493,6 +781,35 @@ const styles = StyleSheet.create({
   },
   otherTimeText: {
     color: '#9CA3AF',
+  },
+  mediaImageContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  imageCard: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#111827',
+  },
+  chatMediaImage: {
+    width: Math.min(screenWidth * 0.65, 250),
+    height: 180,
+    borderRadius: 12,
+  },
+  zoomBadge: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  zoomBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   mediaImagePlaceholder: {
     backgroundColor: 'rgba(0,0,0,0.06)',
@@ -529,13 +846,28 @@ const styles = StyleSheet.create({
     color: '#D4A359',
     fontWeight: 'bold',
   },
+  uploadingOverlay: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F59E0B',
+  },
+  uploadingText: {
+    fontSize: 11,
+    color: '#92400E',
+    fontWeight: 'bold',
+  },
   inputContainer: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
     paddingTop: 8,
-    paddingBottom: 68,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     gap: 6,
@@ -582,5 +914,31 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 12,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.94)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseBtn: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: '#8B0000',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  modalCloseText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  fullScreenImage: {
+    width: '94%',
+    height: '80%',
+    borderRadius: 12,
   },
 });

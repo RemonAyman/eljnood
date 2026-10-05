@@ -158,26 +158,65 @@ export function RootNavigator() {
     }
   }, [isAuthenticated, user]);
 
+  const isInitialSnapshotRef = useRef<boolean>(true);
+  const sessionStartTimeRef = useRef<number>(Date.now());
+
   useEffect(() => {
     // Check & trigger automated 1-day before and same-day party reminders
     checkAndTriggerEventReminders().catch((e) => console.warn('Reminders check note:', e));
 
     // Subscribe to Firestore Real-time Notifications
     const unsubscribe = subscribeToNotifications((notifs) => {
-      if (notifs && notifs.length > 0) {
-        const latest = notifs[0];
-        if (latest.id && latest.id !== lastProcessedIdRef.current) {
-          lastProcessedIdRef.current = latest.id;
-          useNotificationStore.getState().showBanner({
-            id: latest.id,
-            title: latest.title || 'تنبيه جديد 🔔',
-            body: latest.body || 'يوجد إشعار جديد في منظومة الكشافة',
-            type: latest.type || 'SYSTEM',
-            roomId: latest.roomId,
-            senderName: latest.senderName,
-          });
-        }
+      if (!notifs || notifs.length === 0) return;
+
+      // On initial snapshot upon app launch, skip historical notifications so old admin alerts do not fire
+      if (isInitialSnapshotRef.current) {
+        isInitialSnapshotRef.current = false;
+        lastProcessedIdRef.current = notifs[0]?.id || null;
+        return;
       }
+
+      const latest = notifs[0];
+      if (!latest || !latest.id) return;
+      if (latest.id === lastProcessedIdRef.current) return;
+      lastProcessedIdRef.current = latest.id;
+
+      // Do not display notifications created before current app session started
+      if (latest.createdAt && new Date(latest.createdAt).getTime() < sessionStartTimeRef.current - 5000) {
+        return;
+      }
+
+      const currentUser = useAuthStore.getState().user;
+
+      // 1. Never notify the sender of their own action/message
+      if (latest.senderId && currentUser?.id && latest.senderId === currentUser.id) {
+        return;
+      }
+
+      // 2. Do not show chat banner if user is currently in the Chat screen
+      const currentRoute = navigationRef.current?.getCurrentRoute();
+      if (latest.type === 'CHAT' && currentRoute?.name === 'ChatRooms') {
+        return;
+      }
+
+      // 3. Filter by targetRole if specified
+      if (
+        latest.targetRole &&
+        currentUser?.role &&
+        latest.targetRole !== currentUser.role &&
+        currentUser.role !== 'ADMIN'
+      ) {
+        return;
+      }
+
+      useNotificationStore.getState().showBanner({
+        id: latest.id,
+        title: latest.title || 'تنبيه جديد 🔔',
+        body: latest.body || 'يوجد إشعار جديد في منظومة الكشافة',
+        type: latest.type || 'SYSTEM',
+        roomId: latest.roomId,
+        senderName: latest.senderName,
+      });
     });
 
     return () => {

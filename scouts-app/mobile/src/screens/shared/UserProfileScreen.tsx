@@ -18,6 +18,8 @@ import { useThemeStore } from '../../store/themeStore';
 import { isValidPassword } from '../../utils/validation';
 import { saveUserToFirestore, saveMemberToFirestore } from '../../services/firebaseService';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+import { pickImageFromGallery, takePhotoWithCamera } from '../../utils/imagePickerHelper';
+import { Role } from '../../types';
 
 const PRESET_AVATARS = [
   '👑', '⚜️', '⛺', '🐺', '🦁', '🦅', '⛵', '🏆', '🌟', '🕊️'
@@ -125,28 +127,39 @@ export const UserProfileScreen = ({ navigation }: any) => {
     }
   };
 
-  const handlePickBase64Image = () => {
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.onchange = (e: any) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = async (event: any) => {
-            const base64Data = event.target.result;
-            await saveAvatarBase64(base64Data);
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-      input.click();
-    } else {
-      // Fallback sample high-resolution Scout Emblem Base64 for native/mobile demo
-      const sampleScoutBadgeBase64 =
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%238B0000"/><circle cx="50" cy="50" r="40" fill="%23D4A359"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="white">⚜️</text></svg>';
-      saveAvatarBase64(sampleScoutBadgeBase64);
+  const handlePickFromGallery = async () => {
+    setLoadingAvatar(true);
+    try {
+      const base64Data = await pickImageFromGallery({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+      });
+      if (base64Data) {
+        await saveAvatarBase64(base64Data);
+      }
+    } catch (e: any) {
+      Alert.alert('خطأ', 'تعذر اختيار الصورة: ' + (e?.message || ''));
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
+
+  const handlePickFromCamera = async () => {
+    setLoadingAvatar(true);
+    try {
+      const base64Data = await takePhotoWithCamera({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+      });
+      if (base64Data) {
+        await saveAvatarBase64(base64Data);
+      }
+    } catch (e: any) {
+      Alert.alert('خطأ', 'تعذر التقاط الصورة: ' + (e?.message || ''));
+    } finally {
+      setLoadingAvatar(false);
     }
   };
 
@@ -165,9 +178,20 @@ export const UserProfileScreen = ({ navigation }: any) => {
           avatarBase64: base64String,
         });
       }
+
+      if (user?.code) {
+        await saveMemberToFirestore({
+          id: user.id,
+          code: user.code,
+          name: updated.name,
+          role: updated.role as Role,
+          avatarBase64: base64String,
+        } as any).catch((e) => console.warn('Sync member avatar:', e));
+      }
+
       setLoadingAvatar(false);
       setShowAvatarModal(false);
-      Alert.alert('تم التحديث 📸', 'تم حفظ صورة البروفايل بنجاح في قاعدة البيانات كـ Base64!');
+      Alert.alert('تم التحديث 📸', 'تم حفظ وتعيين صورتك الشخصية بنجاح!');
     } catch (e: any) {
       setLoadingAvatar(false);
       Alert.alert('خطأ', 'تعذر حفظ الصورة: ' + e.message);
@@ -483,17 +507,33 @@ export const UserProfileScreen = ({ navigation }: any) => {
             <Text style={styles.modalTitle}>تغيير الصورة الشخصية 📸</Text>
             <Text style={styles.modalSub}>اختر صورة من جهازك أو شارة كشفية رمزية</Text>
 
-            <TouchableOpacity
-              style={styles.uploadFileBtn}
-              onPress={handlePickBase64Image}
-              activeOpacity={0.8}
-            >
-              {loadingAvatar ? (
-                <ActivityIndicator color="#8B0000" />
-              ) : (
-                <Text style={styles.uploadFileBtnText}>📁 اختيار صورة من الجهاز (تخزين Base64)</Text>
-              )}
-            </TouchableOpacity>
+            <View style={{ width: '100%', gap: 10, marginVertical: 8 }}>
+              <TouchableOpacity
+                style={styles.uploadFileBtn}
+                onPress={handlePickFromGallery}
+                activeOpacity={0.8}
+                disabled={loadingAvatar}
+              >
+                {loadingAvatar ? (
+                  <ActivityIndicator color="#8B0000" />
+                ) : (
+                  <Text style={styles.uploadFileBtnText}>🖼️ اختيار صورة من المعرض (Base64)</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.uploadFileBtn, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}
+                onPress={handlePickFromCamera}
+                activeOpacity={0.8}
+                disabled={loadingAvatar}
+              >
+                {loadingAvatar ? (
+                  <ActivityIndicator color="#8B0000" />
+                ) : (
+                  <Text style={[styles.uploadFileBtnText, { color: '#92400E' }]}>📸 التقاط صورة جديدة بالكاميرا</Text>
+                )}
+              </TouchableOpacity>
+            </View>
 
             <Text style={[styles.fieldLabel, { textAlign: 'center', marginVertical: 10 }]}>
               أو اختر شارة رمزيّة كشفية:

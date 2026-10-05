@@ -439,15 +439,24 @@ export async function sendChatMessageToFirestore(msg: {
   senderRole: string;
   content: string;
   mediaType?: string;
+  mediaBase64?: string;
+  senderAvatar?: string;
 }): Promise<boolean> {
   try {
     const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES);
-    await addDoc(messagesRef, {
+    const docData: any = {
       ...msg,
       senderName: sanitizeText(msg.senderName),
       content: sanitizeText(msg.content),
       createdAt: new Date().toISOString(),
-    });
+    };
+    if (msg.mediaBase64) {
+      docData.mediaBase64 = validateAndSanitizeBase64Image(msg.mediaBase64) || msg.mediaBase64;
+    }
+    if (msg.senderAvatar) {
+      docData.senderAvatar = validateAndSanitizeBase64Image(msg.senderAvatar) || msg.senderAvatar;
+    }
+    await addDoc(messagesRef, docData);
     return true;
   } catch (error: any) {
     console.warn('⚠️ Send chat message error:', error.message);

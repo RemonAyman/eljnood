@@ -37,6 +37,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ─── Child Fields ─────────────────────────────────────────────────────────────
   const [name, setName] = useState('');
@@ -176,6 +178,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         squadName: calculatedSquad,
         phone: childPhone.trim(),
         guardianPhone: guardianPhone.trim(),
+        email: email.trim(),
         region: region.trim(),
         street: street.trim(),
         buildingNo: buildingNo.trim(),
@@ -201,6 +204,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       setUser({
         id: uid,
         name: name.trim(),
+        email: email.trim(),
         code: code.trim(),
         role: 'CHILD',
         sectionName: calculatedSquad,
@@ -230,6 +234,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       setUser({
         id: uid,
         name: parentName.trim(),
+        email: email.trim(),
         code: sonCode.trim(),
         role: 'PARENT',
         sectionName: 'أشبال',
@@ -258,6 +263,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       setUser({
         id: uid,
         name: leaderName.trim(),
+        email: email.trim(),
         code: `LEADER-${Math.floor(10 + Math.random() * 90)}`,
         role: 'LEADER',
         sectionName: servingSection,
@@ -600,25 +606,43 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         <FieldError message={errors.email} />
 
         <Text style={styles.inputLabel}>كلمة المرور * [إجباري]</Text>
-        <TextInput
-          style={[styles.input, errors.password ? styles.inputError : null]}
-          placeholder="•••••••• (6 أحرف أو أكثر)"
-          secureTextEntry
-          value={password}
-          onChangeText={(t) => { setPassword(t); if (errors.password) setErrors(e => ({ ...e, password: '' })); }}
-          textAlign="right"
-        />
+        <View style={[styles.passwordContainer, errors.password ? styles.inputError : null]}>
+          <TouchableOpacity
+            style={styles.eyeBtn}
+            onPress={() => setShowPassword(!showPassword)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '🙈'}</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="•••••••• (6 أحرف أو أكثر)"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={(t) => { setPassword(t); if (errors.password) setErrors(e => ({ ...e, password: '' })); }}
+            textAlign="right"
+          />
+        </View>
         <FieldError message={errors.password} />
 
         <Text style={styles.inputLabel}>تأكيد كلمة المرور * [إجباري]</Text>
-        <TextInput
-          style={[styles.input, errors.confirmPassword ? styles.inputError : null]}
-          placeholder="••••••••"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={(t) => { setConfirmPassword(t); if (errors.confirmPassword) setErrors(e => ({ ...e, confirmPassword: '' })); }}
-          textAlign="right"
-        />
+        <View style={[styles.passwordContainer, errors.confirmPassword ? styles.inputError : null]}>
+          <TouchableOpacity
+            style={styles.eyeBtn}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.eyeIcon}>{showConfirmPassword ? '👁️' : '🙈'}</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="••••••••"
+            secureTextEntry={!showConfirmPassword}
+            value={confirmPassword}
+            onChangeText={(t) => { setConfirmPassword(t); if (errors.confirmPassword) setErrors(e => ({ ...e, confirmPassword: '' })); }}
+            textAlign="right"
+          />
+        </View>
         <FieldError message={errors.confirmPassword} />
 
         {/* Submit Button */}
@@ -831,5 +855,31 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 8,
     marginTop: -6,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 14,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  eyeBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    fontSize: 18,
   },
 });
