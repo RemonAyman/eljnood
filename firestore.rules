@@ -61,6 +61,9 @@ service cloud.firestore {
       allow read: if isLeaderOrAdmin();
       allow write: if isLeaderOrAdmin();
     }
+    match /absence_excuses/{excuseId} {
+      allow read, write: if isAuthenticated();
+    }
 
     // 5. Curricula & Educational Materials (المناهج الكشفية)
     match /curricula/{curriculumId} {
