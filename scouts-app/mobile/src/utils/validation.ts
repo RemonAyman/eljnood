@@ -134,13 +134,13 @@ export function validateRegisterForm(data: {
     }
     if (!isRequired(data.guardianPhone)) {
       errors.guardianPhone = ValidationMessages.required('رقم موبايل ولي الأمر');
-    } else if (!isValidEgyptPhone(data.guardianPhone)) {
+    } else if (!isValidEgyptPhone(data.guardianPhone || '')) {
       errors.guardianPhone = ValidationMessages.invalidPhone;
     }
   } else if (data.role === 'LEADER') {
     if (!isRequired(data.phone)) {
       errors.phone = ValidationMessages.required('رقم الموبايل');
-    } else if (!isValidEgyptPhone(data.phone)) {
+    } else if (!isValidEgyptPhone(data.phone || '')) {
       errors.phone = ValidationMessages.invalidPhone;
     }
     if (!isRequired(data.sectionLeaderName)) {
@@ -149,14 +149,14 @@ export function validateRegisterForm(data: {
   } else if (data.role === 'SECTION_LEADER') {
     if (!isRequired(data.phone)) {
       errors.phone = ValidationMessages.required('رقم الموبايل');
-    } else if (!isValidEgyptPhone(data.phone)) {
+    } else if (!isValidEgyptPhone(data.phone || '')) {
       errors.phone = ValidationMessages.invalidPhone;
     }
   } else {
     // Child
     if (!isRequired(data.guardianPhone)) {
       errors.guardianPhone = ValidationMessages.required('رقم موبايل ولي الأمر');
-    } else if (!isValidEgyptPhone(data.guardianPhone)) {
+    } else if (!isValidEgyptPhone(data.guardianPhone || '')) {
       errors.guardianPhone = ValidationMessages.invalidPhone;
     }
 

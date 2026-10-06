@@ -3,15 +3,24 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 
+import { useSwipeTab } from '../../context/SwipeTabContext';
+
 interface BottomNavBarProps {
   navigation: any;
   currentRoute: string;
+  isRootBar?: boolean;
 }
 
-export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) => {
+export const BottomNavBar = ({ navigation, currentRoute, isRootBar }: BottomNavBarProps) => {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
+  const swipeContext = useSwipeTab();
+
+  // If this BottomNavBar is inside an individual screen and the root swipe container is already rendering the bar, skip rendering to prevent duplicate
+  if (!isRootBar && swipeContext.isInsideSwipeContainer) {
+    return null;
+  }
 
   const getNavItems = () => {
     const role = user?.role || 'CHILD';
@@ -69,6 +78,14 @@ export const BottomNavBar = ({ navigation, currentRoute }: BottomNavBarProps) =>
       );
       return;
     }
+
+    // 1. If inside Swipe Container and item is one of the container tabs, smoothly scroll
+    if (swipeContext.isInsideSwipeContainer) {
+      const handled = swipeContext.navigateToTab(item.route);
+      if (handled) return;
+    }
+
+    // 2. Otherwise navigate normally
     if (currentRoute !== item.route) {
       navigation?.navigate(item.route);
     }

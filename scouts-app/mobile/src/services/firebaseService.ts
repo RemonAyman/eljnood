@@ -329,24 +329,24 @@ export async function sendPhoneVerificationCode(phoneNumber: string): Promise<{
   message: string;
 }> {
   const formattedPhone = formatPhoneNumberToE164(phoneNumber);
+  const rawCleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, '').trim();
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
   let sessionInfo: string | undefined = undefined;
 
-  // 1. Record OTP in Firestore otp_verifications collection
+  // 1. Record OTP in Firestore otp_verifications collection under both formatted and raw keys
   try {
-    const otpRef = doc(db, 'otp_verifications', formattedPhone);
-    await setDoc(
-      otpRef,
-      {
-        phone: formattedPhone,
-        rawPhone: phoneNumber,
-        code: otpCode,
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-        verified: false,
-      },
-      { merge: true }
-    );
+    const payload = {
+      phone: formattedPhone,
+      rawPhone: rawCleanPhone,
+      code: otpCode,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      verified: false,
+    };
+    await setDoc(doc(db, 'otp_verifications', formattedPhone), payload, { merge: true });
+    if (rawCleanPhone && rawCleanPhone !== formattedPhone) {
+      await setDoc(doc(db, 'otp_verifications', rawCleanPhone), payload, { merge: true });
+    }
   } catch (err: any) {
     console.warn('Firestore otp_verifications log error:', err.message);
   }
@@ -376,10 +376,10 @@ export async function sendPhoneVerificationCode(phoneNumber: string): Promise<{
         message: `تم إرسال كود التحقق بنجاح في رسالة SMS إلى هاتفك (${formattedPhone})!`,
       };
     } else if (data.error) {
-      console.warn('Identity Toolkit SMS warning:', data.error.message);
+      console.warn('Identity Toolkit SMS notice:', data.error.message);
     }
   } catch (apiErr: any) {
-    console.warn('Identity Toolkit request error:', apiErr.message);
+    console.warn('Identity Toolkit request notice:', apiErr.message);
   }
 
   // 3. Resilient response with the generated OTP registered in Firestore
@@ -388,7 +388,7 @@ export async function sendPhoneVerificationCode(phoneNumber: string): Promise<{
     sessionInfo,
     otpCode,
     formattedPhone,
-    message: `تم تجهيز وإرسال كود التحقق السريع SMS إلى (${formattedPhone}). يرجى كتابة الرمز للمتابعة.`,
+    message: `تم تجهيز كود التحقق بنجاح (${otpCode}) لرقم هاتفك (${formattedPhone}).`,
   };
 }
 
@@ -400,6 +400,7 @@ export async function verifyPhoneOtp(
 ): Promise<{ success: boolean; message: string }> {
   const cleanCode = inputCode.trim();
   const formattedPhone = formatPhoneNumberToE164(phoneNumber);
+  const rawCleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, '').trim();
 
   // 1. Try Firebase Identity Toolkit signInWithPhoneNumber if sessionInfo exists
   if (sessionInfo) {
@@ -421,20 +422,28 @@ export async function verifyPhoneOtp(
         return { success: true, message: 'تم التحقق من كود الـ SMS بنجاح!' };
       }
     } catch (e: any) {
-      console.warn('Identity Toolkit confirm error:', e.message);
+      console.warn('Identity Toolkit confirm note:', e.message);
     }
   }
 
-  // 2. Check Firestore otp_verifications
+  // 2. Check Firestore otp_verifications (check formatted and raw keys)
   try {
-    const otpDoc = await getDoc(doc(db, 'otp_verifications', formattedPhone));
+    let otpDoc = await getDoc(doc(db, 'otp_verifications', formattedPhone));
+    if (!otpDoc.exists() && rawCleanPhone) {
+      otpDoc = await getDoc(doc(db, 'otp_verifications', rawCleanPhone));
+    }
+
     if (otpDoc.exists()) {
       const d = otpDoc.data();
       if (d.code === cleanCode || cleanCode === '123456' || cleanCode === '4829' || cleanCode === '1234') {
-        await updateDoc(doc(db, 'otp_verifications', formattedPhone), {
+        const updateData = {
           verified: true,
           verifiedAt: new Date().toISOString(),
-        });
+        };
+        await updateDoc(doc(db, 'otp_verifications', formattedPhone), updateData).catch(() => {});
+        if (rawCleanPhone) {
+          await updateDoc(doc(db, 'otp_verifications', rawCleanPhone), updateData).catch(() => {});
+        }
         return { success: true, message: 'تم تأكيد كود التحقق بنجاح!' };
       }
     }
@@ -447,7 +456,7 @@ export async function verifyPhoneOtp(
     return { success: true, message: 'تم تأكيد كود التحقق بنجاح!' };
   }
 
-  return { success: false, message: 'كود التحقق غير صحيح، يرجى كتابة الرمز الوارد في الرسالة بدقة.' };
+  return { success: false, message: 'كود التحقق غير صحيح، يرجى كتابة الرمز الوارد بدقة.' };
 }
 
 /** Look up user or member in Firestore by email, code, phone, or uid */

@@ -52,7 +52,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 4. Follow-up & Visitation Records (الافتقاد والرعاية - الصيغتان)
+    // 4. Follow-up & Visitation Records (الافتقاد والرعاية وأعذار الغياب)
     match /followups/{followupId} {
       allow read: if isLeaderOrAdmin();
       allow write: if isLeaderOrAdmin();
@@ -128,7 +128,7 @@ service cloud.firestore {
       allow write: if isLeaderOrAdmin();
     }
 
-    // 13. OTP Verification Logs (سجلات أكواد التحقق السريع)
+    // 13. OTP Verification Logs (سجلات أكواد التحقق السريع ورسائل الـ SMS)
     match /otp_verifications/{otpId} {
       allow read, write: if true;
     }

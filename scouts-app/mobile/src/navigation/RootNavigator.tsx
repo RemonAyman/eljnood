@@ -34,73 +34,24 @@ import { ActivitiesScreen } from '../screens/public/ActivitiesScreen';
 import { PublicGalleryScreen } from '../screens/public/PublicGalleryScreen';
 import { ContactUsScreen } from '../screens/public/ContactUsScreen';
 
+import { MainSwipeAppNavigator } from './MainSwipeAppNavigator';
+
 export const navigationRef = createNavigationContainerRef<any>();
 const Stack = createStackNavigator();
 
 // ─── Guarded Screen Components ─────────────────────────────────────────────
-const ProtectedChildHome = (props: any) => (
+const ProtectedMainSwipe = (props: any) => (
   <AuthGuard navigation={props.navigation} requireAuth={true}>
-    <ChildHomeScreen {...props} />
+    <MainSwipeAppNavigator {...props} />
   </AuthGuard>
 );
 
-const ProtectedParentHome = (props: any) => (
+const createMainSwipeTabScreen = (tabKey: string) => (props: any) => (
   <AuthGuard navigation={props.navigation} requireAuth={true}>
-    <ParentHomeScreen {...props} />
-  </AuthGuard>
-);
-
-const ProtectedAdminDashboard = (props: any) => (
-  <AuthGuard
-    navigation={props.navigation}
-    requireAuth={true}
-    allowedRoles={['ADMIN', 'GROUP_MANAGER']}
-  >
-    <AdminDashboardScreen {...props} />
-  </AuthGuard>
-);
-
-const ProtectedAttendance = (props: any) => (
-  <AuthGuard
-    navigation={props.navigation}
-    requireAuth={true}
-    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER']}
-  >
-    <AttendanceManageScreen {...props} />
-  </AuthGuard>
-);
-
-const ProtectedFollowUp = (props: any) => (
-  <AuthGuard
-    navigation={props.navigation}
-    requireAuth={true}
-    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER']}
-  >
-    <FollowUpScreen {...props} />
-  </AuthGuard>
-);
-
-const ProtectedSubscriptions = (props: any) => (
-  <AuthGuard navigation={props.navigation} requireAuth={true}>
-    <SubscriptionsScreen {...props} />
-  </AuthGuard>
-);
-
-const ProtectedCurricula = (props: any) => (
-  <AuthGuard navigation={props.navigation} requireAuth={true}>
-    <CurriculaScreen {...props} />
-  </AuthGuard>
-);
-
-const ProtectedChatRooms = (props: any) => (
-  <AuthGuard navigation={props.navigation} requireAuth={true}>
-    <ChatRoomsScreen {...props} />
-  </AuthGuard>
-);
-
-const ProtectedMemories = (props: any) => (
-  <AuthGuard navigation={props.navigation} requireAuth={true}>
-    <MemoriesScreen {...props} />
+    <MainSwipeAppNavigator
+      {...props}
+      route={{ ...props.route, params: { ...props.route?.params, initialTab: tabKey } }}
+    />
   </AuthGuard>
 );
 
@@ -130,12 +81,6 @@ const ProtectedScoutingPlan = (props: any) => (
   </AuthGuard>
 );
 
-const ProtectedUserProfile = (props: any) => (
-  <AuthGuard navigation={props.navigation} requireAuth={true}>
-    <UserProfileScreen {...props} />
-  </AuthGuard>
-);
-
 export function RootNavigator() {
   const lastProcessedIdRef = useRef<string | null>(null);
   const user = useAuthStore((s) => s.user);
@@ -143,19 +88,7 @@ export function RootNavigator() {
 
   const initialRouteName = React.useMemo(() => {
     if (!isAuthenticated || !user) return 'Login';
-    switch (user.role) {
-      case 'ADMIN':
-      case 'GROUP_MANAGER':
-        return 'AdminDashboard';
-      case 'PARENT':
-        return 'ParentHome';
-      case 'LEADER':
-      case 'SECTION_LEADER':
-      case 'JOWALAH':
-        return 'Attendance';
-      default:
-        return 'ChildHome';
-    }
+    return 'MainSwipeApp';
   }, [isAuthenticated, user]);
 
   const isInitialSnapshotRef = useRef<boolean>(true);
@@ -291,54 +224,68 @@ export function RootNavigator() {
           options={{ title: 'تواصل مع القيادة' }}
         />
 
-        {/* Role Home Dashboards (Guarded - No Back to Login) */}
+        {/* Main Unified Swipe Application (Facebook-style Smooth Horizontal Pager) */}
+        <Stack.Screen
+          name="MainSwipeApp"
+          component={ProtectedMainSwipe}
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+
+        {/* Role Home Dashboards (Redirect into Main Swipe Experience) */}
         <Stack.Screen
           name="ChildHome"
-          component={ProtectedChildHome}
-          options={{ title: 'جنود المسيح الكشفية', headerLeft: () => null, gestureEnabled: false }}
+          component={createMainSwipeTabScreen('ChildHome')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="ParentHome"
-          component={ProtectedParentHome}
-          options={{ title: 'متابعة أولياء الأمور', headerLeft: () => null, gestureEnabled: false }}
+          component={createMainSwipeTabScreen('ParentHome')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="AdminDashboard"
-          component={ProtectedAdminDashboard}
-          options={{ title: 'لوحة القيادة الإدارية', headerLeft: () => null, gestureEnabled: false }}
+          component={createMainSwipeTabScreen('AdminDashboard')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
 
-        {/* Scout Operations & Shared Modules (Guarded) */}
+        {/* Scout Operations & Shared Modules as Swipe Tabs */}
+        <Stack.Screen
+          name="Attendance"
+          component={createMainSwipeTabScreen('Attendance')}
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
         <Stack.Screen
           name="FollowUp"
-          component={ProtectedFollowUp}
-          options={{ title: 'سجل الافتقاد والمتابعة' }}
+          component={createMainSwipeTabScreen('FollowUp')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="Subscriptions"
-          component={ProtectedSubscriptions}
-          options={{ title: 'الاشتراكات والماليات' }}
-        />
-        <Stack.Screen
-          name="Attendance"
-          component={ProtectedAttendance}
-          options={{ title: 'سجل التحضير والغياب الذكي' }}
+          component={createMainSwipeTabScreen('Subscriptions')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="Curricula"
-          component={ProtectedCurricula}
-          options={{ title: 'المناهج والمسابقات الروحية' }}
+          component={createMainSwipeTabScreen('Curricula')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="ChatRooms"
-          component={ProtectedChatRooms}
-          options={{ title: 'غرف التواصل والدردشة' }}
+          component={createMainSwipeTabScreen('ChatRooms')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="Memories"
-          component={ProtectedMemories}
-          options={{ title: 'أرشيف الذكريات والمعسكرات' }}
+          component={createMainSwipeTabScreen('Memories')}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
+        <Stack.Screen
+          name="UserProfile"
+          component={createMainSwipeTabScreen('UserProfile')}
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+
+        {/* Dedicated Sub-Screens (Preserve stack with top header and back button) */}
         <Stack.Screen
           name="InventoryRequest"
           component={ProtectedInventoryRequest}
@@ -353,11 +300,6 @@ export function RootNavigator() {
           name="ScoutingPlan"
           component={ProtectedScoutingPlan}
           options={{ title: 'الخطة السنوية الكشفية' }}
-        />
-        <Stack.Screen
-          name="UserProfile"
-          component={ProtectedUserProfile}
-          options={{ title: 'الملف الشخصي والحساب' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

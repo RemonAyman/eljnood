@@ -141,7 +141,7 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
   },
 
   updatePrices: (newPrices) => {
-    set((state) => ({ prices: { ...state.prices, ...newPrices } }));
+    set((state) => ({ prices: { ...state.prices, ...newPrices } as any }));
   },
 
   addCustomItem: (item) => {

@@ -22,7 +22,7 @@ export const ChildHomeScreen = ({ navigation }: any) => {
       try {
         const identifier = user?.code || user?.email || user?.phone;
         if (identifier) {
-          let found = getMemberByCode(identifier);
+          let found: any = getMemberByCode(identifier);
           if (!found) {
             found = await fetchMemberByCodeFromFirestore(identifier);
           }
