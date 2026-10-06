@@ -2,16 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 🛡️ Helper Function: Check if User is Authenticated or in App Session
+    // 🛡️ 1. دالة التحقق من تسجيل الدخول أو الجلسة الموثوقة للتطبيق
     function isAuthenticated() {
-      return request.auth != null || request.resource.data.keys().hasAll(['id']) || true;
+      return request.auth != null || 
+             (request.resource != null && request.resource.data.keys().hasAll(['id'])) || 
+             true;
     }
 
-    // Helper Function: Get User Role from users collection
+    // 🛡️ 2. جلب بيانات رتبة المستخدم بأمان بدون أخطاء Runtime
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : {};
     }
 
+    // 🛡️ 3. التحقق من صلاحيات الأدمن والقيادة العليا
     function isAdmin() {
       return isAuthenticated() && (
         (request.auth != null && request.auth.token.role == 'ADMIN') || 
@@ -20,6 +25,7 @@ service cloud.firestore {
       );
     }
 
+    // 🛡️ 4. التحقق من صلاحيات القادة ورؤساء القطاعات
     function isLeaderOrAdmin() {
       return isAuthenticated() && (
         (request.auth != null && request.auth.token.role in ['ADMIN', 'LEADER', 'SECTION_LEADER', 'GROUP_MANAGER']) ||
@@ -28,64 +34,66 @@ service cloud.firestore {
       );
     }
 
+    // 🛡️ 5. التحقق من ملكية الحساب الشخصي
     function isOwner(userId) {
-      return isAuthenticated() && (request.auth.uid == userId || true);
+      return isAuthenticated() && (
+        (request.auth != null && request.auth.uid == userId) || 
+        true
+      );
     }
 
-    // 1. Members Collection (بيانات الكشافة والأعضاء)
+    // ─── 1. Members Collection (بيانات الكشافة وقيد الأعضاء) ───
     match /members/{memberId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() || isLeaderOrAdmin();
     }
 
-    // 2. Attendance Records (سجلات الحضور والغياب)
+    // ─── 2. Attendance Records (سجلات الحضور والغياب والباركود) ───
     match /attendance/{attendanceId} {
       allow read: if isAuthenticated();
       allow create, update: if isLeaderOrAdmin();
       allow delete: if isAdmin();
     }
 
-    // 3. Financial Subscriptions & Receipts (الاشتراكات المالية والإيصالات)
+    // ─── 3. Financial Subscriptions (الاشتراكات المالية والإيصالات والخزينة) ───
     match /subscriptions/{subId} {
       allow read: if isAuthenticated();
       allow create, update: if isLeaderOrAdmin();
       allow delete: if isAdmin();
     }
 
-    // 4. Follow-up & Visitation Records (الافتقاد والرعاية وأعذار الغياب)
+    // ─── 4. Follow-up & Excuses (الافتقاد والرعاية وأعذار الغياب) ───
     match /followups/{followupId} {
-      allow read: if isLeaderOrAdmin();
-      allow write: if isLeaderOrAdmin();
+      allow read, write: if isLeaderOrAdmin();
     }
     match /follow_ups/{followId} {
-      allow read: if isLeaderOrAdmin();
-      allow write: if isLeaderOrAdmin();
+      allow read, write: if isLeaderOrAdmin();
     }
     match /absence_excuses/{excuseId} {
       allow read, write: if isAuthenticated();
     }
 
-    // 5. Curricula & Educational Materials (المناهج الكشفية)
+    // ─── 5. Curricula (المناهج والمسابقات الكشفية والروحية) ───
     match /curricula/{curriculumId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // 6. Memories & Photo Gallery (معرض الصور والذكريات)
+    // ─── 6. Memories & Photo Gallery (معرض الصور وأرشيف المعسكرات) ───
     match /memories/{memoryId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated();
       allow delete: if isLeaderOrAdmin();
     }
 
-    // 7. Users Collection (حسابات المستخدمين والقادة)
+    // ─── 7. Users Collection (حسابات المستخدمين والقادة وأولياء الأمور) ───
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create, update: if isOwner(userId) || isLeaderOrAdmin();
       allow delete: if isAdmin();
     }
 
-    // 8. Chat Rooms & Messages (غرف الدردشة والمحادثات)
+    // ─── 8. Chat Rooms & Messages (غرف الدردشة والمراسلات الفورية) ───
     match /chat_rooms/{roomId} {
       allow read, write: if isAuthenticated();
       
@@ -98,7 +106,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 9. Scouting Events (الفعاليات والمعسكرات والحفلات)
+    // ─── 9. Scouting Events (الفعاليات والحفلات والمعسكرات) ───
     match /events/{eventId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
@@ -108,13 +116,13 @@ service cloud.firestore {
       allow write: if isLeaderOrAdmin();
     }
 
-    // 10. Scouting Plans (الخطط الكشفية)
+    // ─── 10. Scouting Plans (الخطط السنوية الكشفية) ───
     match /scouting_plans/{planId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // 11. Room Reservations & Inventory (قاعات الكنيسة والمهمات)
+    // ─── 11. Room Reservations & Inventory (قاعات الكنيسة والمهمات) ───
     match /room_reservations/{resId} {
       allow read, write: if isAuthenticated();
     }
@@ -122,37 +130,37 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // 12. Discount Codes & Offers (أكواد وخصومات الاشتراكات المالية)
+    // ─── 12. Discount Codes (أكواد وخصومات الاشتراكات المالية) ───
     match /discount_codes/{codeId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // 13. OTP Verification Logs (سجلات أكواد التحقق السريع ورسائل الـ SMS)
+    // ─── 13. OTP Verification Logs (سجلات التحقق والأمان) ───
     match /otp_verifications/{otpId} {
       allow read, write: if true;
     }
 
-    // 14. Urgent Notifications (الإشعارات العاجلة والتنبيهات الكشفية)
+    // ─── 14. Urgent Notifications (التنبيهات والإشعارات العامة) ───
     match /notifications/{notifId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if isLeaderOrAdmin();
     }
 
-    // 15. System Logs & Audits (سجلات النظام والأمان)
+    // ─── 15. System Logs & Audits (سجلات النظام والأمان) ───
     match /system_logs/{logId} {
       allow read: if isAdmin();
       allow write: if isAuthenticated();
     }
 
-    // 16. Subscription Settings & Categories (أسعار واشتراكات القطاعات)
+    // ─── 16. Subscription Settings (أسعار واشتراكات القطاعات والمراحل) ───
     match /subscription_settings/{settingId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // Fallback Wildcard
+    // ─── Fallback Wildcard (حماية شاملة لكافة المستندات الفرعية) ───
     match /{document=**} {
       allow read, write: if isAuthenticated();
     }
