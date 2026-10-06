@@ -10,6 +10,7 @@ import {
   NativeScrollEvent,
   StatusBar,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -44,6 +45,22 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
 
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsKeyboardVisible(true)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setIsKeyboardVisible(false)
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Tab definitions by Role
   const tabs: TabConfig[] = useMemo(() => {
@@ -220,12 +237,14 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
           })}
         </ScrollView>
 
-        {/* ─── Persistent Bottom Navigation Bar ─── */}
-        <BottomNavBar
-          navigation={wrappedNavigation}
-          currentRoute={activeTab.key}
-          isRootBar={true}
-        />
+        {/* ─── Persistent Bottom Navigation Bar (Hidden when typing to prevent covering screen) ─── */}
+        {!isKeyboardVisible && (
+          <BottomNavBar
+            navigation={wrappedNavigation}
+            currentRoute={activeTab.key}
+            isRootBar={true}
+          />
+        )}
       </View>
     </SwipeTabContext.Provider>
   );

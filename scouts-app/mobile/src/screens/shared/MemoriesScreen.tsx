@@ -217,7 +217,7 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
       body: `تم نشر: ${newItem.title} (${newItem.location})`,
       type: 'MEMORY',
     });
-    Alert.alert('تم بنجاح 🎉', 'تم حفظ ومشاركة الذكرى الكشفية بـ Firestore بنجاح!');
+    Alert.alert('تم بنجاح 🎉', 'تم حفظ ومشاركة الذكرى الكشفية بنجاح!');
   };
 
   return (

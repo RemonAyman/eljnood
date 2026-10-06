@@ -285,7 +285,7 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
 
     setShowExcelModal(false);
     setExcelTextData('');
-    Alert.alert('تم بنجاح ✅', `تم استيراد ومطابقة ${markedCount} سجل بصمة بنجاح إلى قاعدة بيانات فايربيس! 🎉`);
+    Alert.alert('تم بنجاح ✅', `تم استيراد ومطابقة ${markedCount} سجل بصمة بنجاح إلى المنظومة الكشفية السحابية! 🎉`);
   };
 
   return (

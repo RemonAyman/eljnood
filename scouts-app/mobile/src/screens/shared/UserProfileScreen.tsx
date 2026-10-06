@@ -365,8 +365,8 @@ export const UserProfileScreen = ({ navigation }: any) => {
           >
             <Text style={styles.actionArrow}>➔</Text>
             <View style={styles.actionTextWrap}>
-              <Text style={styles.actionTitle}>تغيير الصورة الشخصية (Base64) 📸</Text>
-              <Text style={styles.actionSub}>رفع صورة شخصية وتخزينها في قاعدة بيانات الفايربيز</Text>
+              <Text style={styles.actionTitle}>تغيير الصورة الشخصية 📸</Text>
+              <Text style={styles.actionSub}>رفع وتحديث صورتك الشخصية في المنظومة الكشفية</Text>
             </View>
           </TouchableOpacity>
 
@@ -521,7 +521,7 @@ export const UserProfileScreen = ({ navigation }: any) => {
                 {loadingAvatar ? (
                   <ActivityIndicator color="#8B0000" />
                 ) : (
-                  <Text style={styles.uploadFileBtnText}>🖼️ اختيار صورة من المعرض (Base64)</Text>
+                  <Text style={styles.uploadFileBtnText}>🖼️ اختيار صورة من المعرض</Text>
                 )}
               </TouchableOpacity>
 

@@ -173,12 +173,12 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
 
   const handleSeedFirestore = useCallback(async () => {
     Alert.alert(
-      '🔥 تهيئة فايربيس',
-      'سيتم إنشاء جداول البيانات الأساسية (أعضاء، مستخدمين، حضور، اشتراكات) في فايربيس للمرة الأولى. هل أنت متأكد؟',
+      '⚜️ تهيئة المنظومة الكشفية',
+      'سيتم إنشاء ومزامنة البيانات الأساسية (أعضاء، قادة، حضور، اشتراكات) في المنظومة السحابية للمرة الأولى. هل أنت متأكد؟',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
-          text: 'تهيئة الآن 🔥',
+          text: 'تأكيد التهيئة الآن ⚜️',
           style: 'destructive',
           onPress: async () => {
             setSeeding(true);
@@ -188,7 +188,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
               Alert.alert('✅ تم بنجاح', result.message);
               loadRealDashboardData();
             } else {
-              Alert.alert('❌ خطأ', result.message + '\n\nتأكد من تعديل قواعد فايربيس للسماح بالكتابة');
+              Alert.alert('❌ خطأ', result.message + '\n\nتأكد من الاتصال بالشبكة وصلاحيات النظام');
             }
           },
         },
@@ -262,7 +262,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
           disabled={seeding}
         >
           <Text style={styles.seedBtnText}>
-            {seeding ? '⏳ جاري تهيئة قاعدة البيانات...' : '🔥 تهيئة وزرع بيانات فايربيس (أول مرة فقط)'}
+            {seeding ? '⏳ جاري تهيئة النظام السحابي...' : '⚜️ تهيئة ومزامنة البيانات الأولية للنظام'}
           </Text>
           <Text style={styles.seedBtnSub}>ينشئ جداول: أعضاء · مستخدمين · حضور · اشتراكات</Text>
         </TouchableOpacity>

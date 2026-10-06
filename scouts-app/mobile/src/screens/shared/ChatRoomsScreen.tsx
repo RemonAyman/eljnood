@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { useChatStore, getAvailableChatRoomsForUser } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
+import { useMembersStore } from '../../store/membersStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
 import { pickImageFromGallery, takePhotoWithCamera } from '../../utils/imagePickerHelper';
 import { ChatMessage, Role } from '../../types';
@@ -51,10 +52,12 @@ const getRoleBadge = (role: Role) => {
 interface ChatBubbleProps {
   msg: ChatMessage;
   isMe: boolean;
+  currentUserAvatar?: string;
+  memberAvatar?: string;
   onImagePress?: (uri: string) => void;
 }
 
-const ChatBubbleItem = React.memo(({ msg, isMe, onImagePress }: ChatBubbleProps) => {
+const ChatBubbleItem = React.memo(({ msg, isMe, currentUserAvatar, memberAvatar, onImagePress }: ChatBubbleProps) => {
   const roleBadge = getRoleBadge(msg.senderRole);
 
   const timeFormatted = useMemo(() => {
@@ -74,6 +77,19 @@ const ChatBubbleItem = React.memo(({ msg, isMe, onImagePress }: ChatBubbleProps)
     return '⚜️';
   }, [msg.senderName]);
 
+  const resolvedAvatar = useMemo(() => {
+    if (msg.senderAvatar && msg.senderAvatar.trim().length > 0) {
+      return msg.senderAvatar;
+    }
+    if (isMe && currentUserAvatar) {
+      return currentUserAvatar;
+    }
+    if (memberAvatar) {
+      return memberAvatar;
+    }
+    return null;
+  }, [msg.senderAvatar, isMe, currentUserAvatar, memberAvatar]);
+
   return (
     <View
       style={[
@@ -81,12 +97,12 @@ const ChatBubbleItem = React.memo(({ msg, isMe, onImagePress }: ChatBubbleProps)
         isMe ? styles.myMessageRow : styles.otherMessageRow,
       ]}
     >
-      {/* Sender Avatar Circle for Other users */}
+      {/* Sender Avatar Circle for Other users (shown on the left) */}
       {!isMe && (
         <View style={styles.avatarWrap}>
-          {msg.senderAvatar ? (
+          {resolvedAvatar ? (
             <Image
-              source={{ uri: msg.senderAvatar }}
+              source={{ uri: resolvedAvatar }}
               style={styles.avatarImg}
               resizeMode="cover"
             />
@@ -105,14 +121,20 @@ const ChatBubbleItem = React.memo(({ msg, isMe, onImagePress }: ChatBubbleProps)
           isMe ? styles.myMessageWrapper : styles.otherMessageWrapper,
         ]}
       >
-        {!isMe && (
-          <View style={styles.senderHeader}>
-            <Text style={styles.senderName}>{msg.senderName}</Text>
-            <View style={[styles.roleBadge, { backgroundColor: roleBadge.bg }]}>
-              <Text style={styles.roleBadgeText}>{roleBadge.label}</Text>
-            </View>
+        {/* Sender Header with Name & Role Badge for BOTH Me and Others */}
+        <View
+          style={[
+            styles.senderHeader,
+            isMe ? styles.mySenderHeader : styles.otherSenderHeader,
+          ]}
+        >
+          <Text style={[styles.senderName, isMe ? styles.mySenderName : styles.otherSenderName]}>
+            {isMe ? `${msg.senderName || 'أنت'} (أنت)` : msg.senderName}
+          </Text>
+          <View style={[styles.roleBadge, { backgroundColor: roleBadge.bg }]}>
+            <Text style={styles.roleBadgeText}>{roleBadge.label}</Text>
           </View>
-        )}
+        </View>
 
         <View
           style={[
@@ -177,17 +199,17 @@ const ChatBubbleItem = React.memo(({ msg, isMe, onImagePress }: ChatBubbleProps)
         </View>
       </View>
 
-      {/* Avatar for My Messages (Shows user's current avatar on the right) */}
+      {/* Avatar for My Messages (Shows user's avatar on the right) */}
       {isMe && (
         <View style={styles.avatarWrap}>
-          {msg.senderAvatar ? (
+          {resolvedAvatar ? (
             <Image
-              source={{ uri: msg.senderAvatar }}
+              source={{ uri: resolvedAvatar }}
               style={styles.avatarImg}
               resizeMode="cover"
             />
           ) : (
-            <View style={[styles.avatarFallback, { backgroundColor: '#8B0000' }]}>
+            <View style={[styles.avatarFallback, { backgroundColor: roleBadge.bg }]}>
               <Text style={styles.avatarInitialText}>{senderInitial}</Text>
             </View>
           )}
@@ -200,6 +222,7 @@ const ChatBubbleItem = React.memo(({ msg, isMe, onImagePress }: ChatBubbleProps)
 export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const { currentRoomId, messages, sendMessage, setRoom } = useChatStore();
   const currentUser = useAuthStore((s) => s.user);
+  const members = useMembersStore((s) => s.members);
 
   const [firestoreMessages, setFirestoreMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -209,6 +232,17 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
+
+  const membersAvatarMap = useMemo(() => {
+    const map = new Map<string, string>();
+    members.forEach((m) => {
+      if (m.avatarBase64) {
+        map.set(m.id, m.avatarBase64);
+        map.set(m.name, m.avatarBase64);
+      }
+    });
+    return map;
+  }, [members]);
 
   // Monitor keyboard visibility so we can hide BottomNavBar and adjust padding
   useEffect(() => {
@@ -292,7 +326,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
       senderName: currentUser?.name || 'عضو كشفي',
       senderRole: (currentUser?.role as Role) || 'CHILD',
       content: text,
-      senderAvatar: currentUser?.avatarBase64 || '',
+      senderAvatar: currentUser?.avatarBase64 || (currentUser as any)?.avatar || '',
     };
 
     // 1. Local update
@@ -330,7 +364,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
         senderRole: (currentUser?.role as Role) || 'CHILD',
         content: '🎙️ تسجيل صوتي (0:14 ثانية)',
         mediaType: 'AUDIO' as const,
-        senderAvatar: currentUser?.avatarBase64 || '',
+        senderAvatar: currentUser?.avatarBase64 || (currentUser as any)?.avatar || '',
       };
 
       sendMessage(voiceData);
@@ -343,7 +377,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const handleAttachImage = useCallback(() => {
     Alert.alert('إرفاق وسائط 📷', 'اختر مصدر الصورة للإرسال في الشات:', [
       {
-        text: '🖼️ صورة من المعرض (Base64)',
+        text: '🖼️ صورة من المعرض',
         onPress: async () => {
           setIsUploadingMedia(true);
           try {
@@ -360,7 +394,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
                 content: '📸 صورة مرفقة من نشاط الكشافة',
                 mediaBase64: base64Data,
                 mediaType: 'IMAGE' as const,
-                senderAvatar: currentUser?.avatarBase64 || '',
+                senderAvatar: currentUser?.avatarBase64 || (currentUser as any)?.avatar || '',
               };
 
               sendMessage(imgData);
@@ -402,7 +436,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
                 content: '📸 صورة ملتقطة بالكاميرا الحية',
                 mediaBase64: base64Data,
                 mediaType: 'IMAGE' as const,
-                senderAvatar: currentUser?.avatarBase64 || '',
+                senderAvatar: currentUser?.avatarBase64 || (currentUser as any)?.avatar || '',
               };
 
               sendMessage(imgData);
@@ -436,7 +470,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
             senderRole: (currentUser?.role as Role) || 'CHILD',
             content: '📑 مرفق: جدول الأنشطة الأسبوعية.pdf',
             mediaType: 'DOCUMENT' as const,
-            senderAvatar: currentUser?.avatarBase64 || '',
+            senderAvatar: currentUser?.avatarBase64 || (currentUser as any)?.avatar || '',
           };
           sendMessage(docData);
           sendChatMessageToFirestore(docData);
@@ -450,15 +484,18 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
   const renderItem = useCallback(
     ({ item }: { item: ChatMessage }) => {
       const isMe = item.senderId === currentUser?.id;
+      const memberAvatar = membersAvatarMap.get(item.senderId) || membersAvatarMap.get(item.senderName);
       return (
         <ChatBubbleItem
           msg={item}
           isMe={isMe}
+          currentUserAvatar={currentUser?.avatarBase64 || (currentUser as any)?.avatar}
+          memberAvatar={memberAvatar}
           onImagePress={(uri) => setPreviewImageUri(uri)}
         />
       );
     },
-    [currentUser]
+    [currentUser, membersAvatarMap]
   );
 
   return (
@@ -517,7 +554,7 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
       {isUploadingMedia && (
         <View style={styles.uploadingOverlay}>
           <ActivityIndicator size="small" color="#8B0000" />
-          <Text style={styles.uploadingText}>جاري معالجة وإرفاق الصورة (Base64)...</Text>
+          <Text style={styles.uploadingText}>جاري معالجة وإرفاق الصورة...</Text>
         </View>
       )}
 
@@ -681,10 +718,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   myMessageRow: {
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
   },
   otherMessageRow: {
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
   avatarWrap: {
     width: 36,
@@ -719,16 +756,33 @@ const styles = StyleSheet.create({
     maxWidth: '78%',
   },
   myMessageWrapper: {
-    alignItems: 'flex-start',
-  },
-  otherMessageWrapper: {
     alignItems: 'flex-end',
   },
+  otherMessageWrapper: {
+    alignItems: 'flex-start',
+  },
   senderHeader: {
-    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 4,
     gap: 6,
+  },
+  mySenderHeader: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row-reverse',
+  },
+  otherSenderHeader: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+  },
+  mySenderName: {
+    color: '#8B0000',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  otherSenderName: {
+    color: '#1F2937',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   senderName: {
     fontSize: 12,
@@ -752,11 +806,13 @@ const styles = StyleSheet.create({
   },
   myMessageBubble: {
     backgroundColor: '#8B0000',
-    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+    borderBottomLeftRadius: 14,
   },
   otherMessageBubble: {
     backgroundColor: '#FFFFFF',
-    borderBottomRightRadius: 2,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },

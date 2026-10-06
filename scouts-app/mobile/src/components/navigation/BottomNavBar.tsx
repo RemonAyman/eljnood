@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Keyboard, Platform } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 
@@ -16,6 +16,28 @@ export const BottomNavBar = ({ navigation, currentRoute, isRootBar }: BottomNavB
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
   const swipeContext = useSwipeTab();
+
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsKeyboardOpen(true)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setIsKeyboardOpen(false)
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // When keyboard is visible, hide bottom nav bar to prevent covering screen/inputs
+  if (isKeyboardOpen) {
+    return null;
+  }
 
   // If this BottomNavBar is inside an individual screen and the root swipe container is already rendering the bar, skip rendering to prevent duplicate
   if (!isRootBar && swipeContext.isInsideSwipeContainer) {
