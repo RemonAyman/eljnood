@@ -406,8 +406,8 @@ export const UserProfileScreen = ({ navigation }: any) => {
           >
             <Text style={styles.actionArrow}>➔</Text>
             <View style={styles.actionTextWrap}>
-              <Text style={styles.actionTitle}>استعادة وتعيين كلمة السر OTP 🔑</Text>
-              <Text style={styles.actionSub}>إعادة تعيين كلمة السر عبر كود التحقق السريع SMS</Text>
+              <Text style={styles.actionTitle}>استعادة كلمة السر 🔑</Text>
+              <Text style={styles.actionSub}>إعادة تعيين كلمة السر عبر البريد الإلكتروني (Gmail)</Text>
             </View>
           </TouchableOpacity>
 
