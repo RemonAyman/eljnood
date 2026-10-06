@@ -388,7 +388,7 @@ export async function sendPhoneVerificationCode(phoneNumber: string): Promise<{
     sessionInfo,
     otpCode,
     formattedPhone,
-    message: `تم تجهيز كود التحقق بنجاح (${otpCode}) لرقم هاتفك (${formattedPhone}).`,
+    message: `تم إرسال كود التحقق بنجاح في رسالة SMS إلى رقم هاتفك (${formattedPhone}).`,
   };
 }
 

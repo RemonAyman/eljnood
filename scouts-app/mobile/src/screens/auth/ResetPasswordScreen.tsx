@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Linking 
+  View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator 
 } from 'react-native';
 import { 
   findUserOrMemberInFirestore, 
@@ -21,7 +21,6 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
   const [formattedPhone, setFormattedPhone] = useState('');
   const [sessionInfo, setSessionInfo] = useState<string | undefined>(undefined);
   const [otpCode, setOtpCode] = useState('');
-  const [receivedOtpCode, setReceivedOtpCode] = useState('');
 
   // Password fields
   const [newPassword, setNewPassword] = useState('');
@@ -80,11 +79,10 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
       if (res.success) {
         setFormattedPhone(res.formattedPhone);
         setSessionInfo(res.sessionInfo);
-        setReceivedOtpCode(res.otpCode);
         setStep(2);
         Alert.alert(
-          'كود التحقق الخاص بك 📱',
-          `تم إرسال وتوليد كود التحقق بنجاح لهاتفك (${res.formattedPhone})!\n\nكود التحقق السريع الخاص بك هو:\n👉  ${res.otpCode}  👈\n\n(تم تسجيل الكود، يمكنك الضغط على "ملء الكود تلقائياً" للمتابعة فوراً)`
+          'تم إرسال كود التحقق 📱',
+          `تم إرسال كود التحقق في رسالة نصية قصيرة SMS إلى رقم هاتفك (${res.formattedPhone}).\n\nيرجى فتح الرسائل الواردة وكتابة الرمز المكون من 6 أرقام للمتابعة.`
         );
       } else {
         Alert.alert('خطأ ❌', res.message || 'تعذر إرسال كود الـ SMS');
@@ -299,45 +297,8 @@ export const ResetPasswordScreen = ({ navigation }: any) => {
         <View style={styles.stepCard}>
           <Text style={styles.stepTitle}>الخطوة ٢: تأكيد كود الـ SMS 📱</Text>
           <Text style={styles.stepSub}>
-            أدخل كود التحقق المكون من 6 أرقام لهاتفك ({formattedPhone || phoneInput})
+            أدخل كود التحقق المكون من 6 أرقام المرسل في رسالة SMS إلى هاتفك ({formattedPhone || phoneInput})
           </Text>
-
-          {/* Quick OTP Helper Banner */}
-          {receivedOtpCode ? (
-            <View style={styles.quickOtpCard}>
-              <View style={styles.quickOtpHeader}>
-                <Text style={styles.quickOtpBadge}>⚡ كود التحقق السريع المولد</Text>
-              </View>
-              <Text style={styles.quickOtpValue}>{receivedOtpCode}</Text>
-              <Text style={styles.quickOtpNote}>
-                في حال تأخرت رسالة الـ SMS من شبكة المحمول، يمكنك استخدام هذا الرمز فوراً.
-              </Text>
-              <View style={styles.quickOtpActions}>
-                <TouchableOpacity
-                  style={styles.autoFillBtn}
-                  onPress={() => setOtpCode(receivedOtpCode)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.autoFillBtnText}>📋 ملء الكود تلقائياً</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.whatsappOtpBtn}
-                  onPress={() => {
-                    const text = encodeURIComponent(
-                      `كود التحقق الخاص بك في تطبيق كشافة جنود المسيح هو: ${receivedOtpCode}`
-                    );
-                    Linking.openURL(`https://wa.me/?text=${text}`).catch(() => {
-                      Alert.alert('تنبيه', 'تعذر فتح تطبيق واتساب');
-                    });
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.whatsappOtpBtnText}>💬 إرسال عبر واتساب</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
 
           {/* OTP Input Field */}
           <View style={styles.otpRow}>
@@ -711,72 +672,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
     lineHeight: 20,
-  },
-  quickOtpCard: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1.5,
-    borderColor: '#F59E0B',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  quickOtpHeader: {
-    marginBottom: 6,
-  },
-  quickOtpBadge: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#92400E',
-    backgroundColor: 'rgba(245, 158, 11, 0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  quickOtpValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#8B0000',
-    letterSpacing: 6,
-    marginVertical: 4,
-  },
-  quickOtpNote: {
-    fontSize: 11,
-    color: '#78350F',
-    textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 16,
-  },
-  quickOtpActions: {
-    flexDirection: 'row',
-    gap: 8,
-    width: '100%',
-    justifyContent: 'center',
-  },
-  autoFillBtn: {
-    flex: 1,
-    backgroundColor: '#8B0000',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  autoFillBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  whatsappOtpBtn: {
-    flex: 1,
-    backgroundColor: '#059669',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  whatsappOtpBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
 });
