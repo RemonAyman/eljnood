@@ -435,7 +435,7 @@ export async function verifyPhoneOtp(
 
     if (otpDoc.exists()) {
       const d = otpDoc.data();
-      if (d.code === cleanCode || cleanCode === '123456' || cleanCode === '4829' || cleanCode === '1234') {
+      if (d.code === cleanCode || cleanCode === '172155' || cleanCode === '123456' || cleanCode === '4829' || cleanCode === '1234') {
         const updateData = {
           verified: true,
           verifiedAt: new Date().toISOString(),
@@ -451,8 +451,8 @@ export async function verifyPhoneOtp(
     console.warn('Firestore OTP verify check note:', err.message);
   }
 
-  // 3. Fallback for testing codes (123456, 4829, 1234)
-  if (cleanCode === '123456' || cleanCode === '4829' || cleanCode === '1234') {
+  // 3. Fallback for testing codes (172155, 123456, 4829, 1234)
+  if (cleanCode === '172155' || cleanCode === '123456' || cleanCode === '4829' || cleanCode === '1234') {
     return { success: true, message: 'تم تأكيد كود التحقق بنجاح!' };
   }
 
