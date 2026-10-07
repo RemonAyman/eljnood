@@ -21,6 +21,12 @@ android/app/build/
 android/.gradle/
 android/build/
 android/local.properties
+**/android/build/
+**/android/app/build/
+**/android/.gradle/
+**/android/local.properties
+**/android/.cxx/
+**/android/app/.cxx/
 
 # iOS
 ios/Pods/

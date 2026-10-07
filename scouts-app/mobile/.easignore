@@ -1,19 +1,32 @@
-node_modules/
-.expo/
-dist/
-web-build/
+node_modules
+node_modules/**
+.expo
+.expo/**
+dist
+dist/**
+web-build
+web-build/**
 
-# Android build outputs & caches
-android/build/
-android/app/build/
-android/.gradle/
+# Android build outputs, caches & autolinking artifacts
+android/build
+android/build/**
+android/app/build
+android/app/build/**
+android/.gradle
+android/.gradle/**
 android/local.properties
-android/.cxx/
-android/app/.cxx/
+android/.cxx
+android/.cxx/**
+android/app/.cxx
+android/app/.cxx/**
+**/build/generated/**
+**/build/reports/**
 
 # iOS build outputs & caches
-ios/build/
-ios/Pods/
+ios/build
+ios/build/**
+ios/Pods
+ios/Pods/**
 *.xcworkspace
 *.xcuserdata
 
