@@ -306,7 +306,20 @@ export async function updateUserPasswordInFirestore(
 export async function sendPasswordResetToUserEmail(email: string): Promise<{ success: boolean; message: string }> {
   try {
     const cleanEmail = email.trim().toLowerCase();
-    await sendPasswordResetEmail(auth, cleanEmail);
+
+    // Use official encrypted HTTPS Firebase domain to prevent spam filters
+    const actionCodeSettings = {
+      url: `https://eljnood.firebaseapp.com`,
+      handleCodeInApp: false,
+    };
+
+    try {
+      await sendPasswordResetEmail(auth, cleanEmail, actionCodeSettings);
+    } catch {
+      // Graceful fallback to default Firebase configuration
+      await sendPasswordResetEmail(auth, cleanEmail);
+    }
+
     return {
       success: true,
       message: `تم إرسال رابط إعادة تعيين كلمة المرور المعمية والآمنة إلى البريد (${cleanEmail}) بنجاح!`,
