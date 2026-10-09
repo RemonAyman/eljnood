@@ -12,6 +12,7 @@ import {
 } from '../../services/firebaseService';
 import { Member, SquadName, SubscriptionRecord } from '../../types';
 import { exportSubscriptionsReport } from '../../utils/reportExportUtils';
+import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScrollView';
 
 const FIXED_DISCOUNT_OPTIONS = [
   0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 
@@ -443,7 +444,7 @@ export const SubscriptionsScreen = () => {
                 </View>
 
                 <Text style={styles.inputLabel}>الفرقة / القطاع المنضم إليه *</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 6 }}>
+                <SafeHorizontalScrollView style={{ marginVertical: 6 }}>
                   {squadOptions.map((sq) => (
                     <TouchableOpacity
                       key={sq}
@@ -455,7 +456,7 @@ export const SubscriptionsScreen = () => {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                </SafeHorizontalScrollView>
               </View>
             )}
 
@@ -564,7 +565,7 @@ export const SubscriptionsScreen = () => {
             
             {/* A) Fixed Amount Discount Selector (10 EGP up to 200 EGP) */}
             <Text style={styles.subLabel}>أ) اختر خصم مالي مباشر بالجنيه (من 10 ج إلى 200 ج):</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 6 }}>
+            <SafeHorizontalScrollView style={{ marginVertical: 6 }}>
               {FIXED_DISCOUNT_OPTIONS.map((amt) => {
                 const isSelected = selectedFixedDiscountEgp === amt;
                 return (
@@ -580,7 +581,7 @@ export const SubscriptionsScreen = () => {
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </SafeHorizontalScrollView>
 
             {/* B) Code Percentage Discount */}
             <Text style={[styles.subLabel, { marginTop: 12 }]}>ب) أدخل كود خصم كنسبة مئوية (مثال: SCOUT10 - SCOUT90 أو 50%):</Text>

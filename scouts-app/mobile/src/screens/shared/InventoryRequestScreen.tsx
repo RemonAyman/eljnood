@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScrollView';
 import { InventoryRequest } from '../../types';
 import { saveInventoryRequestToFirestore, fetchInventoryRequestsFromFirestore } from '../../services/firebaseService';
 
@@ -172,7 +173,7 @@ export const InventoryRequestScreen = () => {
 
             <ScrollView style={{ maxHeight: 380 }}>
               <Text style={styles.inputLabel}>الخدمة المستعيرة:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.serviceScroll}>
+              <SafeHorizontalScrollView style={styles.serviceScroll}>
                 {CHURCH_SERVICES.map((srv) => (
                   <TouchableOpacity
                     key={srv}
@@ -184,7 +185,7 @@ export const InventoryRequestScreen = () => {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </SafeHorizontalScrollView>
 
               <Text style={styles.inputLabel}>الأدوات والمهمات المطلوبة بالتفصيل:</Text>
               <TextInput

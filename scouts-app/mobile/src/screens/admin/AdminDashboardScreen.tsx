@@ -21,6 +21,7 @@ import {
 } from '../../services/firebaseService';
 import { useMembersStore } from '../../store/membersStore';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScrollView';
 import { Member } from '../../types';
 
 export const AdminDashboardScreen = ({ navigation }: any) => {
@@ -392,7 +393,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
               onChangeText={setRosterSearch}
             />
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.squadPillsScroll}>
+            <SafeHorizontalScrollView style={styles.squadPillsScroll}>
               {['ALL', 'براعم', 'أشبال', 'زهرات', 'كشاف', 'مرشدات', 'متقدم', 'رائدات', 'جوالة', 'قادة'].map((sq) => (
                 <TouchableOpacity
                   key={sq}
@@ -404,7 +405,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </SafeHorizontalScrollView>
 
             <ScrollView style={styles.rosterListScroll}>
               {filteredRoster.length > 0 ? (

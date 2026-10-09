@@ -46,6 +46,7 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [swipeEnabled, setSwipeEnabled] = useState(true);
 
   useEffect(() => {
     const showSub = Keyboard.addListener(
@@ -162,8 +163,10 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
       activeRoute: activeTab.key,
       navigateToTab,
       isInsideSwipeContainer: true,
+      swipeEnabled,
+      setSwipeEnabled,
     }),
-    [activeTab.key, navigateToTab]
+    [activeTab.key, navigateToTab, swipeEnabled, setSwipeEnabled]
   );
 
   return (
@@ -218,6 +221,8 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
           ref={scrollRef}
           horizontal
           pagingEnabled
+          scrollEnabled={swipeEnabled}
+          nestedScrollEnabled={true}
           showsHorizontalScrollIndicator={false}
           bounces={true}
           scrollEventThrottle={16}

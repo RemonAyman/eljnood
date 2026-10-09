@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, Image 
 } from 'react-native';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
+import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScrollView';
 import { useAuthStore } from '../../store/authStore';
 import { useMembersStore } from '../../store/membersStore';
 import { useAttendanceStore } from '../../store/attendanceStore';
@@ -189,7 +190,7 @@ export const ParentHomeScreen = ({ navigation }: any) => {
         </View>
 
         {childrenList.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.childrenPillsScroll}>
+          <SafeHorizontalScrollView style={styles.childrenPillsScroll}>
             {childrenList.map((child, idx) => {
               const isSelected = selectedChildIndex === idx;
               return (
@@ -213,7 +214,7 @@ export const ParentHomeScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </SafeHorizontalScrollView>
         ) : null}
       </View>
 

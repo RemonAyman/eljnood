@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScrollView';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 import { fetchCurriculaFromFirestore } from '../../services/firebaseService';
 
@@ -307,7 +308,7 @@ export const CurriculaScreen = ({ navigation }: any) => {
             onChangeText={setSearchQuery}
           />
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
+          <SafeHorizontalScrollView style={styles.typeScroll}>
             {[
               { id: 'ALL', label: 'الكل' },
               { id: 'PDF', label: '📕 كتب PDF' },
@@ -325,7 +326,7 @@ export const CurriculaScreen = ({ navigation }: any) => {
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </SafeHorizontalScrollView>
         </View>
 
         {/* Curricula List */}

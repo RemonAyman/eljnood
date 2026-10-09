@@ -16,6 +16,7 @@ import { useMembersStore } from '../../store/membersStore';
 import { useAuthStore } from '../../store/authStore';
 import { EventType, Member } from '../../types';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScrollView';
 import { saveAttendanceToFirestore, fetchAttendanceFromFirestore } from '../../services/firebaseService';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 import { exportAttendanceReport } from '../../utils/reportExportUtils';
@@ -393,7 +394,7 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
             onChangeText={setSearchQuery}
           />
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.squadFilterScroll}>
+          <SafeHorizontalScrollView style={styles.squadFilterScroll}>
             {['ALL', 'براعم', 'أشبال', 'زهرات', 'كشاف', 'مرشدات', 'متقدم', 'رائدات', 'جوالة', 'قادة'].map((sq) => (
               <TouchableOpacity
                 key={sq}
@@ -405,7 +406,7 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </SafeHorizontalScrollView>
         </View>
 
         {/* Members Roster & Attendance Toggles */}

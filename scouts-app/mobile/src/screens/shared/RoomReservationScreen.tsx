@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
+import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScrollView';
 import { RoomReservation } from '../../types';
 import { saveRoomReservationToFirestore, fetchRoomReservationsFromFirestore } from '../../services/firebaseService';
 
@@ -216,7 +217,7 @@ export const RoomReservationScreen = () => {
 
             <ScrollView style={{ maxHeight: 380 }}>
               <Text style={styles.inputLabel}>الخدمة الحاجزة (اختر من ١٢ خدمة):</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.serviceScroll}>
+              <SafeHorizontalScrollView style={styles.serviceScroll}>
                 {SERVICES_LIST.map((srv) => (
                   <TouchableOpacity
                     key={srv}
@@ -228,7 +229,7 @@ export const RoomReservationScreen = () => {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </SafeHorizontalScrollView>
 
               <View style={styles.hoursRangeRow}>
                 <View style={styles.hourInputBlock}>
