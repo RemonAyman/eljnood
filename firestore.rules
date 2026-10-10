@@ -132,11 +132,10 @@ service cloud.firestore {
 
     // ─── 12. Discount Codes (أكواد وخصومات الاشتراكات المالية) ───
     match /discount_codes/{codeId} {
-      allow read: if isAuthenticated();
-      allow write: if isLeaderOrAdmin();
+      allow read, write: if isLeaderOrAdmin();
     }
 
-    // ─── 13. OTP Verification Logs (سجلات التحقق والأمان) ───
+    // ─── 13. OTP Verification Logs (سجلات التحقق والأمان من الهاتف) ───
     match /otp_verifications/{otpId} {
       allow read, write: if true;
     }
@@ -148,19 +147,24 @@ service cloud.firestore {
       allow update, delete: if isLeaderOrAdmin();
     }
 
-    // ─── 15. System Logs & Audits (سجلات النظام والأمان) ───
+    // ─── 15. Push Notification Device Tokens (توكن إشعارات النظام للأجهزة والمستخدمين) ───
+    match /push_tokens/{tokenId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ─── 16. System Logs & Audits (سجلات النظام والأمان) ───
     match /system_logs/{logId} {
       allow read: if isAdmin();
       allow write: if isAuthenticated();
     }
 
-    // ─── 16. Subscription Settings (أسعار واشتراكات القطاعات والمراحل) ───
+    // ─── 17. Subscription Settings (أسعار وااشتراكات القطاعات والمراحل) ───
     match /subscription_settings/{settingId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // ─── Fallback Wildcard (حماية شاملة لكافة المستندات الفرعية) ───
+    // ─── 18. Fallback Wildcard (حماية شاملة لكافة المستندات الفرعية) ───
     match /{document=**} {
       allow read, write: if isAuthenticated();
     }
