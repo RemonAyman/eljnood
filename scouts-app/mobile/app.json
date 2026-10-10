@@ -33,6 +33,15 @@
         "projectId": "2fe808e9-237d-4dae-9ec4-b5250ab99852"
       }
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1E3A8A"
+        }
+      ]
+    ],
     "owner": "remonaymananes"
   }
 }

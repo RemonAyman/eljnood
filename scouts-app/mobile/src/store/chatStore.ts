@@ -109,62 +109,7 @@ interface ChatState {
 
 export const useChatStore = create<ChatState>((set) => ({
   currentRoomId: 'GENERAL',
-  messages: [
-    {
-      id: 'msg_gen_1',
-      roomId: 'GENERAL',
-      senderId: 'l1',
-      senderName: 'الخادم مينا نبيل',
-      senderRole: 'SECTION_LEADER' as Role,
-      content: 'سلام ونعمة يا أبطال، متنسوش ميعاد طابور الصباح الجمعة القادمة الساعة 8:30 صباحاً بالزي الكشفي الرسمي ⚜️',
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: 'msg_gen_2',
-      roomId: 'GENERAL',
-      senderId: 'u1',
-      senderName: 'بيتر يوسف',
-      senderRole: 'CHILD' as Role,
-      content: 'حاضر يا قائد، هل محتاجين نجيب كشكول العقد والكتاب المقدس معانا؟',
-      createdAt: new Date(Date.now() - 1800000).toISOString(),
-    },
-    {
-      id: 'msg_sec_1',
-      roomId: 'SECTOR_أشبال',
-      senderId: 'l3',
-      senderName: 'القائد كيرلس',
-      senderRole: 'LEADER' as Role,
-      content: 'يا أبطال قطاع الأشبال، تم تجهيز مسابقة حفظ الألحان وشارات الهواية لهذا الأسبوع 🦁',
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-    },
-    {
-      id: 'msg_sec_2',
-      roomId: 'SECTOR_كشاف',
-      senderId: 'l2',
-      senderName: 'القائد جورج سامي',
-      senderRole: 'SECTION_LEADER' as Role,
-      content: 'يا فتيان قطاع الكشاف، اجتماع النيران والخيام الكشفية يوم السبت الساعة 5 مساءً ⛺',
-      createdAt: new Date(Date.now() - 5400000).toISOString(),
-    },
-    {
-      id: 'msg_ldr_1',
-      roomId: 'LEADERS_كشاف',
-      senderId: 'l2',
-      senderName: 'القائد جورج سامي (رئيس القطاع)',
-      senderRole: 'SECTION_LEADER' as Role,
-      content: 'اجتماع تحضير خخدام قطاع الكشاف يوم الخميس الساعة 8 مساءً بقاعة الكنيسة ⚜️',
-      createdAt: new Date(Date.now() - 9000000).toISOString(),
-    },
-    {
-      id: 'msg_mgr_1',
-      roomId: 'MANAGERS_ROOM',
-      senderId: 'admin_1',
-      senderName: 'القائد العام / مسؤول الكشافة',
-      senderRole: 'ADMIN' as Role,
-      content: 'اجتماع رؤساء القطاعات وأمناء الخدمة لمناقشة ميزانية المعسكر الصيفي القادم 🛡️',
-      createdAt: new Date(Date.now() - 12000000).toISOString(),
-    },
-  ],
+  messages: [],
   setRoom: (roomId: string) => {
     set({ currentRoomId: roomId });
   },

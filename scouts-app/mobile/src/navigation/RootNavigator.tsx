@@ -4,7 +4,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AuthGuard } from '../components/auth/AuthGuard';
 import { NotificationBanner } from '../components/ui/NotificationBanner';
 import { useNotificationStore } from '../store/notificationStore';
+import { useChatStore } from '../store/chatStore';
 import { subscribeToNotifications, checkAndTriggerEventReminders } from '../services/firebaseService';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from '../services/pushNotificationService';
 
 // Operational & Internal Screens
 import { LoginScreen } from '../screens/auth/LoginScreen';
@@ -160,6 +163,44 @@ export function RootNavigator() {
 
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  // 🔔 1. Register Push Notifications Token with Cloud Firestore on launch & user switch
+  useEffect(() => {
+    registerForPushNotificationsAsync(
+      user
+        ? {
+            id: user.id,
+            name: user.name,
+            role: user.role,
+            sector: user.sectionName,
+          }
+        : undefined
+    ).catch((err) => console.warn('Register push token error:', err));
+  }, [user]);
+
+  // 📲 2. Handle tapping notifications when the app is in background or closed
+  useEffect(() => {
+    if (!(Notifications as any)?.addNotificationResponseReceivedListener) return;
+    const responseSubscription = (Notifications as any).addNotificationResponseReceivedListener((response: any) => {
+      const data = response?.notification?.request?.content?.data;
+      if (!data) return;
+
+      if (data.type === 'CHAT') {
+        if (data.roomId) {
+          useChatStore.getState().setRoom(data.roomId);
+        }
+        navigationRef.current?.navigate('ChatRooms' as never);
+      } else if (data.type === 'MEMORY') {
+        navigationRef.current?.navigate('Memories' as never);
+      } else if (data.type === 'SCOUTING_PLAN') {
+        navigationRef.current?.navigate('ScoutingPlans' as never);
+      }
+    });
+
+    return () => {
+      responseSubscription.remove();
     };
   }, []);
 

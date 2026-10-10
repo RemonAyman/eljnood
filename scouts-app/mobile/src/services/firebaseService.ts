@@ -31,6 +31,7 @@ export const COLLECTIONS = {
   SCOUTING_PLANS: 'scouting_plans',
   NOTIFICATIONS: 'notifications',
   PARTIES_EVENTS: 'parties_events',
+  PUSH_TOKENS: 'push_tokens',
 } as const;
 
 // ─── 1. Members Operations ───────────────────────────────────────────────────
@@ -987,6 +988,16 @@ export async function sendNotificationToFirestore(notifData: {
       ...notifData,
       createdAt: new Date().toISOString(),
     });
+
+    // 🚀 External System Push Notification (Deliver even if app is closed/in background)
+    import('./pushNotificationService')
+      .then(({ broadcastPushNotification }) => {
+        broadcastPushNotification(notifData).catch((err) =>
+          console.warn('⚠️ Push dispatch warning:', err?.message)
+        );
+      })
+      .catch(() => {});
+
     return true;
   } catch (error: any) {
     console.warn('⚠️ Send notification error:', error.message);

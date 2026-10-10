@@ -369,6 +369,14 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
 
       sendMessage(voiceData);
       sendChatMessageToFirestore(voiceData);
+      sendNotificationToFirestore({
+        title: 'تسجيل صوتي جديد في الشات 🎙️',
+        body: `${currentUser?.name || 'عضو'}: أرسل تسجيلاً صوتياً`,
+        type: 'CHAT',
+        senderId: currentUser?.id,
+        senderName: currentUser?.name,
+        roomId: currentRoomId,
+      });
       Alert.alert('تم بنجاح', 'تم إرسال التسجيل الصوتي 🎙️');
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 1200);
