@@ -16,49 +16,49 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
           id: 'about-group',
           path: '/',
           title: 'عن مجموعة جنود المسيح',
-          icon: 'church',
+          icon: 'fa-solid fa-church',
           roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'],
         },
         {
           id: 'member-audit-history',
           path: '/member-audit-history',
           title: 'سجل واستعلام الأعضاء الشامل',
-          icon: 'manage_search',
+          icon: 'fa-solid fa-magnifying-glass-chart',
           roles: ['admin', 'sector_head', 'festival_leader'],
         },
         {
           id: 'digital-card',
           path: '/digital-card',
           title: 'الكارنيه الكشفي الرقمي',
-          icon: 'badge',
+          icon: 'fa-solid fa-id-badge',
           roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'],
         },
         {
           id: 'smart-attendance',
           path: '/smart-attendance',
           title: 'تسجيل الحضور والغياب الذكي',
-          icon: 'qr_code_scanner',
+          icon: 'fa-solid fa-qrcode',
           roles: ['admin', 'sector_head', 'festival_leader'],
         },
         {
           id: 'finances-and-dues',
           path: '/finances-and-dues',
           title: 'الاشتراكات والماليات',
-          icon: 'receipt_long',
+          icon: 'fa-solid fa-receipt',
           roles: ['admin', 'sub_officer', 'sector_head', 'parent', 'child'],
         },
         {
           id: 'price-list',
           path: '/price-list',
           title: 'لائحة الأسعار والتحصيل',
-          icon: 'sell',
+          icon: 'fa-solid fa-tags',
           roles: ['admin', 'sector_head', 'festival_leader', 'sub_officer', 'leader', 'parent', 'child'],
         },
         {
           id: 'parent',
           path: '/parent',
           title: 'بوابة متابعة أبنائي',
-          icon: 'family_restroom',
+          icon: 'fa-solid fa-people-roof',
           roles: ['parent', 'admin'],
         }
       ]
@@ -70,14 +70,14 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
           id: 'detailed-programs',
           path: '/detailed-programs',
           title: 'برامج واجتماعات القطاعات والعهدة',
-          icon: 'assignment',
+          icon: 'fa-solid fa-clipboard-list',
           roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'],
         },
         {
           id: 'annual-schedule',
           path: '/annual-schedule',
           title: 'خطة الأيام الكشفية والموسم السنوي',
-          icon: 'calendar_month',
+          icon: 'fa-solid fa-calendar-days',
           roles: ['admin', 'sector_head'],
         },
 
@@ -85,21 +85,21 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
           id: 'bible-and-competitions',
           path: '/bible-and-competitions',
           title: 'الكتاب المقدس والمسابقات',
-          icon: 'auto_stories',
+          icon: 'fa-solid fa-book-bible',
           roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'],
         },
         {
           id: 'care-and-visitation',
           path: '/care-and-visitation',
           title: 'إدارة وتوزيع الافتقاد (رؤساء القطاعات)',
-          icon: 'diversity_1',
+          icon: 'fa-solid fa-users-line',
           roles: ['admin', 'sector_head'],
         },
         {
           id: 'field-visitations',
           path: '/field-visitations',
           title: 'افتفاد القادة والجوالة الميداني',
-          icon: 'home_pin',
+          icon: 'fa-solid fa-location-dot',
           roles: ['admin', 'sector_head', 'leader', 'rovers', 'festival_leader'],
         }
       ]
@@ -111,21 +111,21 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
           id: 'communications-chat',
           path: '/communications-chat',
           title: 'غرف الشات والمراسلات',
-          icon: 'forum',
+          icon: 'fa-solid fa-comments',
           roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'],
         },
         {
           id: 'halls-reservation',
           path: '/halls-reservation',
           title: 'حجز وتنسيق القاعات والمقرات',
-          icon: 'meeting_room',
+          icon: 'fa-solid fa-door-open',
           roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'],
         },
         {
           id: 'inventory-and-equipment',
           path: '/inventory-and-equipment',
           title: 'طلب العهد والمهمات والمخازن',
-          icon: 'inventory_2',
+          icon: 'fa-solid fa-boxes-stacked',
           roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'sub_officer'],
         }
       ]
@@ -162,7 +162,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
               onClick={onCloseMobile}
               className="lg:hidden p-1.5 rounded-lg text-[#5a403c] hover:bg-[#ebe8e3]"
             >
-              <span className="material-symbols-outlined text-xl">close</span>
+              <i className="fa-solid fa-xmark text-xl"></i>
             </button>
           )}
         </div>
@@ -196,7 +196,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
                           : 'text-[#5a403c] hover:bg-[#ebe8e3] hover:text-[#1c1c19]'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                      <i className={`${item.icon.startsWith('fa-') ? item.icon : `fa-solid fa-${item.icon}`} text-[18px] w-5 text-center`}></i>
                       <span className="flex-1">{item.title}</span>
                     </button>
                   );
@@ -231,7 +231,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
               }}
               className="w-full py-2.5 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-[#8b0000] font-black text-xs transition border border-red-200 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
+              <i className="fa-solid fa-right-from-bracket text-[18px]"></i>
               <span>تسجيل الخروج</span>
             </button>
           </div>
@@ -243,7 +243,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile, onOpenAuth }) => {
             }}
             className="w-full py-3 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer border border-amber-400/30"
           >
-            <span className="material-symbols-outlined text-[20px]">login</span>
+            <i className="fa-solid fa-right-to-bracket text-[20px]"></i>
             <span>تسجيل الدخول للكشافة</span>
           </button>
         )}

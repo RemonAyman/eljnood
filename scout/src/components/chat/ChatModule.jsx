@@ -6,10 +6,10 @@ export const ChatModule = () => {
   const role = currentUser?.role || 'admin';
 
   const channels = [
-    { id: 'leaders', name: 'قادة وجوالة القطاع', icon: 'military_tech', count: '24 قائد وجوال', badge: 'تنسيق الميدان', unread: 0, roles: ['admin', 'sector_head', 'leader', 'rovers'] },
-    { id: 'heads', name: 'رؤوساء القطاعات ومجلس القيادة', icon: 'shield', count: 'مشفرة ومحمية', badge: 'سرية', unread: 2, roles: ['admin', 'sector_head'] },
-    { id: 'troop', name: 'طليعة النسر والأنشطة', icon: 'flight_takeoff', count: '18 عضو', badge: 'أنشطة ومسابقات', unread: 0, roles: ['admin', 'sector_head', 'leader', 'child', 'parent'] },
-    { id: 'general', name: 'الكشافة العامة (الجميع)', icon: 'groups', count: '142 عضو', badge: 'إعلانات وتكريمات', unread: 0, roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'] },
+    { id: 'leaders', name: 'قادة وجوالة القطاع', icon: 'fa-solid fa-medal', count: '24 قائد وجوال', badge: 'تنسيق الميدان', unread: 0, roles: ['admin', 'sector_head', 'leader', 'rovers'] },
+    { id: 'heads', name: 'رؤوساء القطاعات ومجلس القيادة', icon: 'fa-solid fa-shield-halved', count: 'مشفرة ومحمية', badge: 'سرية', unread: 2, roles: ['admin', 'sector_head'] },
+    { id: 'troop', name: 'طليعة النسر والأنشطة', icon: 'fa-solid fa-feather-pointed', count: '18 عضو', badge: 'أنشطة ومسابقات', unread: 0, roles: ['admin', 'sector_head', 'leader', 'child', 'parent'] },
+    { id: 'general', name: 'الكشافة العامة (الجميع)', icon: 'fa-solid fa-users', count: '142 عضو', badge: 'إعلانات وتكريمات', unread: 0, roles: ['admin', 'sector_head', 'festival_leader', 'leader', 'rovers', 'child', 'parent', 'sub_officer'] },
   ];
 
   const visibleChannels = channels.filter(ch => ch.roles.includes(role));
@@ -31,7 +31,7 @@ export const ChatModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">forum</span>
+            <i className="fa-solid fa-comments text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -44,7 +44,7 @@ export const ChatModule = () => {
           onClick={() => setShowBroadcastModal(true)}
           className="flex items-center gap-2 bg-[#8b0000] hover:bg-[#610000] text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md transition shrink-0 self-start sm:self-auto"
         >
-          <span className="material-symbols-outlined text-[18px]">campaign</span>
+          <i className="fa-solid fa-bullhorn text-[18px]"></i>
           <span>إرسال تعميم كشفي موجه</span>
         </button>
       </div>
@@ -57,7 +57,7 @@ export const ChatModule = () => {
           {/* Room Profile Card */}
           <div className="text-center p-4 bg-[#fcf9f4] rounded-xl border border-[#e5e2dd] space-y-2">
             <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-[#ffddb1] flex items-center justify-center mx-auto shadow border border-[#ffddb1]/30">
-              <span className="material-symbols-outlined text-3xl">military_tech</span>
+              <i className="fa-solid fa-medal text-3xl"></i>
             </div>
             <h3 className="font-extrabold text-sm text-[#610000]">غرفة قادة وجوالة القطاع</h3>
             <p className="text-[10px] text-[#5a403c]">تأسست: سبتمبر 2024</p>
@@ -81,13 +81,13 @@ export const ChatModule = () => {
             <span className="font-bold text-[#8e706b] block">الوسائط والمستندات المشتركة (38 ملف):</span>
             <div className="p-2.5 bg-[#f6f3ee] rounded-xl border border-[#e5e2dd] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#8b0000]">picture_as_pdf</span>
+                <i className="fa-solid fa-file-pdf text-[#8b0000]"></i>
                 <div>
                   <h4 className="font-bold text-[#1c1c19] text-[11px]">خريطة طوبوغرافية...</h4>
                   <span className="text-[9px] text-[#5a403c]">5.2 MB • 22 أكتوبر</span>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-[#7e5713] text-sm cursor-pointer">download</span>
+              <i className="fa-solid fa-download text-[#7e5713] text-sm cursor-pointer"></i>
             </div>
           </div>
 
@@ -125,7 +125,7 @@ export const ChatModule = () => {
           <div className="p-4 bg-[#f6f3ee] border-b border-[#e5e2dd] flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#8b0000] text-white flex items-center justify-center font-bold shadow">
-                <span className="material-symbols-outlined text-[20px]">military_tech</span>
+                <i className="fa-solid fa-medal text-[20px]"></i>
               </div>
               <div>
                 <h3 className="font-extrabold text-sm text-[#610000]">غرفة قادة وجوالة القطاع</h3>
@@ -143,7 +143,7 @@ export const ChatModule = () => {
             <div className="p-4 rounded-xl bg-[#ffdad4] border border-[#8b0000]/30 space-y-2 shadow-sm">
               <div className="flex items-center justify-between text-xs font-bold text-[#8b0000]">
                 <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[18px]">verified</span>
+                  <i className="fa-solid fa-certificate text-[18px]"></i>
                   أمر قيادي عام من قائد المجموعة
                 </span>
                 <span className="text-[10px]">09:15 ص</span>
@@ -169,13 +169,13 @@ export const ChatModule = () => {
               <div className="p-3 rounded-2xl bg-white border border-[#e5e2dd] space-y-2 text-xs">
                 <div className="p-2.5 bg-[#f6f3ee] rounded-xl flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#8b0000] text-2xl">picture_as_pdf</span>
+                    <i className="fa-solid fa-file-pdf text-[#8b0000] text-2xl"></i>
                     <div>
                       <h5 className="font-bold text-[#1c1c19] text-xs">دليل_المعسكر_الكشفي...</h5>
                       <span className="text-[10px] text-[#5a403c]">3.8 ميجابايت • تم التحقق</span>
                     </div>
                   </div>
-                  <span className="material-symbols-outlined text-[#7e5713] text-lg">download</span>
+                  <i className="fa-solid fa-download text-[#7e5713] text-lg"></i>
                 </div>
               </div>
             </div>
@@ -184,7 +184,7 @@ export const ChatModule = () => {
           {/* Chat Message Input Bar */}
           <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-[#e5e2dd] flex gap-2 items-center">
             <button type="button" onClick={() => alert('إرفاق ملف أو صورة...')} className="p-2 text-[#5a403c] hover:bg-[#f6f3ee] rounded-lg">
-              <span className="material-symbols-outlined text-[20px]">attach_file</span>
+              <i className="fa-solid fa-paperclip text-[20px]"></i>
             </button>
             <input
               type="text"
@@ -198,7 +198,7 @@ export const ChatModule = () => {
               className="px-5 py-2.5 bg-[#8b0000] hover:bg-[#610000] text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1"
             >
               <span>إرسال</span>
-              <span className="material-symbols-outlined text-[16px]">send</span>
+              <i className="fa-solid fa-paper-plane text-[16px]"></i>
             </button>
           </form>
         </div>
@@ -211,9 +211,7 @@ export const ChatModule = () => {
               placeholder="البحث في القنوات..."
               className="w-full bg-[#f6f3ee] px-3 py-2 pr-9 rounded-xl text-xs border border-[#e5e2dd]"
             />
-            <span className="material-symbols-outlined text-[18px] text-[#8e706b] absolute right-2.5 top-2.5">
-              search
-            </span>
+            <i className="fa-solid fa-magnifying-glass text-[18px] text-[#8e706b] absolute right-2.5 top-2.5"></i>
           </div>
 
           <div className="space-y-2">
@@ -228,7 +226,7 @@ export const ChatModule = () => {
                   }`}
               >
                 <div className="w-8 h-8 rounded-lg bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0">
-                  <span className="material-symbols-outlined text-[18px]">{ch.icon}</span>
+                  <i className={`${ch.icon} text-[16px]`}></i>
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <h4 className="font-bold text-xs truncate">{ch.name}</h4>
@@ -239,7 +237,7 @@ export const ChatModule = () => {
           </div>
 
           <div className="p-4 bg-[#ffddb1] rounded-xl border border-[#7e5713]/30 text-center space-y-2 text-xs">
-            <span className="material-symbols-outlined text-2xl text-[#291800]">podcasts</span>
+            <i className="fa-solid fa-podcast text-2xl text-[#291800]"></i>
             <h4 className="font-bold text-[#291800]">محطة التنبيهات الكشفية العاجلة</h4>
             <p className="text-[10px] text-[#7e5713]">إطلاق نداء طوارئ أو تعليمات تجميع للقطاعات</p>
             <button onClick={() => setShowBroadcastModal(true)} className="w-full py-2 bg-[#8b0000] text-white font-bold rounded-lg text-xs">

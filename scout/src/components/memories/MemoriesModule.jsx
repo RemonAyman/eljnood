@@ -93,7 +93,7 @@ export const MemoriesModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">photo_library</span>
+            <i className="fa-solid fa-images text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -112,7 +112,7 @@ export const MemoriesModule = () => {
           </div>
 
           <button onClick={() => alert('رفع وسائط جديدة...')} className="bg-[#8b0000] hover:bg-[#610000] text-white px-4 py-2.5 rounded-full text-xs font-bold shadow transition flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[18px]">add_photo_alternate</span>
+            <i className="fa-solid fa-photo-film text-[18px]"></i>
             <span>رفع وسائط جديدة</span>
           </button>
         </div>
@@ -148,7 +148,7 @@ export const MemoriesModule = () => {
           <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80" alt="Video thumbnail" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <button onClick={() => alert('تشغيل فيلم المعسكر السنوي...')} className="w-16 h-16 rounded-full bg-[#8b0000] text-white flex items-center justify-center shadow-2xl hover:scale-110 transition">
-              <span className="material-symbols-outlined text-3xl">play_arrow</span>
+              <i className="fa-solid fa-play text-3xl"></i>
             </button>
           </div>
           <span className="absolute top-4 right-4 bg-black/60 text-amber-300 px-3 py-1 rounded-full text-xs font-bold backdrop-blur">
@@ -175,11 +175,11 @@ export const MemoriesModule = () => {
 
             <div className="flex gap-2">
               <button onClick={() => alert('تشغيل فيلم المعسكر السنوي...')} className="flex-1 py-2.5 rounded-xl bg-[#8b0000] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow">
-                <span className="material-symbols-outlined text-[18px]">play_circle</span>
+                <i className="fa-solid fa-circle-play text-[18px]"></i>
                 <span>تشغيل العرض</span>
               </button>
               <button onClick={() => alert('تحميل الفيديو بدقة عالية...')} className="px-4 py-2.5 rounded-xl bg-[#f6f3ee] text-[#5a403c] text-xs font-bold border border-[#e5e2dd]">
-                <span className="material-symbols-outlined text-[18px]">download</span>
+                <i className="fa-solid fa-download text-[18px]"></i>
               </button>
             </div>
           </div>
@@ -197,7 +197,7 @@ export const MemoriesModule = () => {
                 {alb.badge}
               </span>
               <span className="absolute bottom-3 right-3 text-white text-xs font-extrabold flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+                <i className="fa-solid fa-camera text-[16px]"></i>
                 {alb.photosCount}
               </span>
             </div>

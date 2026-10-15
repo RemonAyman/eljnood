@@ -210,7 +210,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                       onChange={(e) => setLoginForm({ ...loginForm, codeOrEmail: e.target.value })}
                       className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-[#f6f3ee] rounded-2xl border border-[#e5e2dd] text-xs font-bold text-[#1c1c19] focus:outline-none focus:ring-2 focus:ring-[#8b0000]"
                     />
-                    <span className="material-symbols-outlined absolute left-3 top-2.5 sm:top-3 text-[#8e706b] text-[18px]">badge</span>
+                    <i className="fa-solid fa-id-badge absolute left-3 top-2.5 sm:top-3 text-[#8e706b] text-[18px]"></i>
                   </div>
                 </div>
 
@@ -237,16 +237,16 @@ export const AuthModal = ({ isOpen, onClose }) => {
                     <button
                       type="button"
                       onClick={() => setLoginForm({ ...loginForm, showPassword: !loginForm.showPassword })}
-                      className="material-symbols-outlined absolute left-3 top-2.5 sm:top-3 text-[#8e706b] text-[18px]"
+                      className="absolute left-3 top-2.5 sm:top-3 text-[#8e706b] hover:text-[#1c1c19] text-[16px] transition cursor-pointer"
                     >
-                      {loginForm.showPassword ? 'visibility_off' : 'visibility'}
+                      <i className={`fa-solid ${loginForm.showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                     </button>
                   </div>
                 </div>
 
                 {loginError && (
                   <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-[#8b0000] text-xs font-bold flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">error</span>
+                    <i className="fa-solid fa-circle-exclamation text-[18px]"></i>
                     <span>{loginError}</span>
                   </div>
                 )}
@@ -256,7 +256,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                   className="w-full py-3 sm:py-3.5 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>تسجيل الدخول إلى حسابك</span>
-                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                  <i className="fa-solid fa-arrow-right text-[18px]"></i>
                 </button>
               </form>
 
@@ -329,7 +329,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                   onClick={() => setViewMode('login')}
                   className="px-3 py-1.5 rounded-xl bg-[#f6f3ee] hover:bg-[#e5e2dd] text-[#8b0000] font-extrabold text-xs flex items-center gap-1.5 transition cursor-pointer border border-[#e5e2dd]"
                 >
-                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <i className="fa-solid fa-arrow-left text-[16px]"></i>
                   <span>رجوع لتسجيل الدخول</span>
                 </button>
 
@@ -355,9 +355,9 @@ export const AuthModal = ({ isOpen, onClose }) => {
               {/* Section 0: Top Segmented Tab Switcher */}
               <div className="bg-[#f6f3ee] p-1.5 rounded-2xl border border-[#e5e2dd] grid grid-cols-3 gap-1.5 text-center text-xs font-bold shadow-xs">
                 {[
-                  { id: 'child', title: 'عضو كشفي', icon: 'badge' },
-                  { id: 'leader', title: 'قائد / جوالة', icon: 'military_tech' },
-                  { id: 'parent', title: 'ولي أمر الكشاف', icon: 'family_restroom' },
+                  { id: 'child', title: 'عضو كشفي', icon: 'fa-solid fa-id-badge' },
+                  { id: 'leader', title: 'قائد / جوالة', icon: 'fa-solid fa-medal' },
+                  { id: 'parent', title: 'ولي أمر الكشاف', icon: 'fa-solid fa-people-roof' },
                 ].map((roleTab) => (
                   <button
                     key={roleTab.id}
@@ -369,7 +369,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                         : 'text-[#5a403c] hover:bg-[#e5e2dd]/60'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[18px] sm:text-[20px]">{roleTab.icon}</span>
+                    <i className={`${roleTab.icon} text-[16px] sm:text-[18px]`}></i>
                     <span className="text-[11px] sm:text-xs leading-tight">{roleTab.title}</span>
                   </button>
                 ))}
@@ -637,7 +637,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                             className="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-0.5"
                           >
                             <span>حذف</span>
-                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                            <i className="fa-solid fa-trash-can text-[14px]"></i>
                           </button>
                         </div>
 
@@ -675,7 +675,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                         onClick={handleAddChildField}
                         className="w-full py-2.5 px-3 rounded-xl bg-[#f6f3ee] hover:bg-amber-100 text-[#7e5713] border border-[#7e5713]/30 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                       >
-                        <span className="material-symbols-outlined text-[18px]">group_add</span>
+                        <i className="fa-solid fa-user-group text-[18px]"></i>
                         <span>➕ إضافة كود ابن/ابنة آخر لمتابعة أكثر من ابن</span>
                       </button>
                     </div>
@@ -889,7 +889,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                     {selectedRole === 'leader' && 'اعتماد قيد القائد/الجوال وتسجيل الحساب ➔'}
                     {selectedRole === 'parent' && 'اعتماد قيد ولي الأمر ومتابعة الأبناء ➔'}
                   </span>
-                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                  <i className="fa-solid fa-arrow-right text-[18px]"></i>
                 </button>
               </div>
             </form>
@@ -909,7 +909,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
                   onClick={() => setViewMode('login')}
                   className="px-3 py-1.5 rounded-xl bg-[#f6f3ee] hover:bg-[#e5e2dd] text-[#8b0000] font-extrabold text-xs flex items-center gap-1.5 transition cursor-pointer border border-[#e5e2dd]"
                 >
-                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <i className="fa-solid fa-arrow-left text-[16px]"></i>
                   <span>رجوع لتسجيل الدخول</span>
                 </button>
 
@@ -1068,7 +1068,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
             {/* Step 4: Reset Success */}
             {resetStep === 4 && (
               <div className="p-4 sm:p-5 rounded-2xl bg-amber-100 border border-amber-300 text-amber-950 text-center space-y-3">
-                <span className="material-symbols-outlined text-4xl text-amber-800">workspace_premium</span>
+                <i className="fa-solid fa-award text-4xl text-amber-800"></i>
                 <h4 className="font-black text-sm text-[#8b0000]">تم تغيير كلمة السر بنجاح! 🚀</h4>
                 <p className="text-xs leading-relaxed">
                   تم تحديث كلمة المرور الخاصة بحسابك في مجموعة جنود المسيح. يمكنك الآن تسجيل الدخول لمتابعة التقييمات والشارات الأسبوعية.

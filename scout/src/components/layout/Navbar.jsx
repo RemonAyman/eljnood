@@ -90,7 +90,7 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = fa
               className="p-1.5 rounded-lg text-white hover:bg-white/10 transition"
               aria-label="القائمة"
             >
-              <span className="material-symbols-outlined text-[26px]">menu</span>
+              <i className="fa-solid fa-bars text-[26px]"></i>
             </button>
           )}
 
@@ -114,7 +114,7 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = fa
               onClick={onOpenAuth}
               className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#3a0000] font-black text-xs shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
+              <i className="fa-solid fa-user-check text-[18px]"></i>
               <span>تسجيل الدخول</span>
             </button>
           )}
@@ -122,7 +122,7 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = fa
             onClick={() => setShowAnnounceModal(true)}
             className="relative p-1.5 rounded-full text-amber-100 hover:bg-white/10 transition"
           >
-            <span className="material-symbols-outlined text-[22px]">notifications</span>
+            <i className="fa-solid fa-bell text-[22px]"></i>
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#8b0000]"></span>
           </button>
         </div>
@@ -151,7 +151,7 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = fa
           /* Original System Desktop Left Header: Breadcrumb + Icon + Active Tab Title */
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#f6f3ee] text-[#8b0000] border border-[#e5e2dd] flex items-center justify-center font-bold shadow-2xs">
-              <span className="material-symbols-outlined text-[20px]">explore</span>
+              <i className="fa-solid fa-compass text-[20px]"></i>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-sm text-[#610000]">{activeTabTitle}</span>
@@ -170,7 +170,7 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = fa
               onClick={onOpenAuth}
               className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#3a0000] font-black text-xs shadow-md hover:scale-105 transition active:scale-95 flex items-center gap-2 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[20px]">how_to_reg</span>
+              <i className="fa-solid fa-user-check text-[20px]"></i>
               <span>تسجيل الدخول</span>
             </button>
           )}
@@ -179,7 +179,7 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = fa
             className="relative w-10 h-10 rounded-full bg-[#fcf9f4] hover:bg-[#f6f3ee] border border-[#e5e2dd] flex items-center justify-center text-[#8b0000] transition cursor-pointer shadow-2xs group"
             title="فتح مركز التعميمات والإعلانات"
           >
-            <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition">notifications</span>
+            <i className="fa-solid fa-bell text-[22px] group-hover:scale-110 transition"></i>
             <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-[#8b0000] ring-2 ring-white animate-pulse"></span>
           </button>
         </div>
@@ -198,7 +198,7 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = fa
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center">
-                <span className="material-symbols-outlined text-[24px]">campaign</span>
+                <i className="fa-solid fa-bullhorn text-[24px]"></i>
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-[#610000]">مركز التعميمات والإعلانات العاجلة</h3>

@@ -51,7 +51,7 @@ export const HallsReservationModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">meeting_room</span>
+            <i className="fa-solid fa-door-open text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -105,7 +105,7 @@ export const HallsReservationModule = () => {
         {/* Capacity Strip Pill */}
         <div className="p-4 bg-[#ffddb1]/40 rounded-2xl border border-[#7e5713]/30 flex items-center justify-between flex-wrap gap-2 text-xs font-bold text-[#291800]">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#7e5713]">info</span>
+            <i className="fa-solid fa-circle-info text-[#7e5713]"></i>
             <span>السعة الاستيعابية: <strong className="font-mono text-sm text-[#8b0000]">120 مقعد</strong></span>
           </div>
           <span className="px-3 py-1 bg-white rounded-full text-[#7e5713] border border-[#7e5713]/20">
@@ -124,7 +124,7 @@ export const HallsReservationModule = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-black text-xs text-[#1c1c19] flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[18px] text-[#7e5713]">schedule</span>
+              <i className="fa-solid fa-clock text-[18px] text-[#7e5713]"></i>
               <span>الفترات الزمنية (8 ص - 11 م)</span>
             </h4>
             <span className="text-xs font-extrabold text-[#8b0000] bg-[#ffdad4] px-3 py-1 rounded-full">
@@ -164,7 +164,7 @@ export const HallsReservationModule = () => {
           onClick={handleConfirmReservation}
           className="w-full py-4 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-sm shadow-xl transition flex items-center justify-center gap-2 cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[22px]">check_circle</span>
+          <i className="fa-solid fa-circle-check text-[22px]"></i>
           <span>تأكيد حجز القاعة فورياً</span>
         </button>
 

@@ -95,7 +95,7 @@ export const ParentPortal = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">family_history</span>
+            <i className="fa-solid fa-people-roof text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -110,7 +110,7 @@ export const ParentPortal = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center font-bold shadow">
-              <span className="material-symbols-outlined text-[22px]">family_history</span>
+              <i className="fa-solid fa-people-roof text-[22px]"></i>
             </div>
             <div>
               <span className="text-[10px] font-bold text-[#7e5713] block">الابن الحالي المختار للمتابعة:</span>
@@ -133,7 +133,7 @@ export const ParentPortal = () => {
                     : 'bg-white text-[#5a403c] border border-[#e5e2dd] hover:bg-amber-50'
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]">child_care</span>
+                <i className="fa-solid fa-child text-[16px]"></i>
                 <span>{child.name}</span>
                 <span className="font-mono text-[10px] opacity-80">({child.code})</span>
               </button>
@@ -147,7 +147,7 @@ export const ParentPortal = () => {
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-right">
           <div className="relative shrink-0">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#f6f3ee] border-4 border-amber-400 p-1 shadow-lg overflow-hidden flex items-center justify-center text-[#8b0000] font-black text-2xl">
-              <span className="material-symbols-outlined text-[48px]">person</span>
+              <i className="fa-solid fa-user text-[48px]"></i>
             </div>
             <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-emerald-600 border-2 border-white flex items-center justify-center text-white text-[12px] font-bold">
               ✓
@@ -168,7 +168,7 @@ export const ParentPortal = () => {
 
             {/* Scarf Status Banner */}
             <div className="p-3 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] flex items-center gap-3 text-xs font-bold text-[#1c1c19]">
-              <span className="material-symbols-outlined text-[24px] text-amber-600">workspace_premium</span>
+              <i className="fa-solid fa-award text-[24px] text-amber-600"></i>
               <div>
                 <span className="text-[#8b0000] font-black block">أدى الوعد الكشفي الرسمي 🎖️</span>
                 <span className="text-[11px] text-[#5a403c]">استلم المنديل الكشفي الموحد ومستمر بالالتزام والانضباط.</span>
@@ -181,7 +181,7 @@ export const ParentPortal = () => {
       {/* 3. Discipline & Attendance Gauge Card matching Image 2 */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#e5e2dd] shadow-md space-y-5">
         <h3 className="font-extrabold text-base text-[#610000] flex items-center gap-2 border-b pb-3">
-          <span className="material-symbols-outlined text-[22px] text-[#8b0000]">trending_up</span>
+          <i className="fa-solid fa-arrow-trend-up text-[22px] text-[#8b0000]"></i>
           مؤشر الانضباط والحضور العام
         </h3>
 
@@ -190,25 +190,25 @@ export const ParentPortal = () => {
         {/* 4 Metrics Grid matching Image 2 */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3.5 bg-[#f6f3ee] rounded-2xl border border-[#e5e2dd] text-center space-y-1">
-            <span className="material-symbols-outlined text-[#8b0000] text-[20px]">flag</span>
+            <i className="fa-solid fa-flag text-[#8b0000] text-[20px]"></i>
             <span className="text-[11px] text-[#5a403c] block font-bold">الأيام الكشفية</span>
             <span className="text-base font-black text-[#610000]">18 / 19 يوم</span>
           </div>
 
           <div className="p-3.5 bg-[#f6f3ee] rounded-2xl border border-[#e5e2dd] text-center space-y-1">
-            <span className="material-symbols-outlined text-[#7e5713] text-[20px]">church</span>
+            <i className="fa-solid fa-church text-[#7e5713] text-[20px]"></i>
             <span className="text-[11px] text-[#5a403c] block font-bold">القداسات والتناول</span>
             <span className="text-base font-black text-[#7e5713]">12 / 12 قداس</span>
           </div>
 
           <div className="p-3.5 bg-[#f6f3ee] rounded-2xl border border-[#e5e2dd] text-center space-y-1">
-            <span className="material-symbols-outlined text-amber-700 text-[20px]">cabin</span>
+            <i className="fa-solid fa-campground text-amber-700 text-[20px]"></i>
             <span className="text-[11px] text-[#5a403c] block font-bold">المعسكرات والرحلات</span>
             <span className="text-base font-black text-amber-900">4 / 4 معسكر</span>
           </div>
 
           <div className="p-3.5 bg-[#f6f3ee] rounded-2xl border border-[#e5e2dd] text-center space-y-1">
-            <span className="material-symbols-outlined text-emerald-800 text-[20px]">menu_book</span>
+            <i className="fa-solid fa-book-open text-emerald-800 text-[20px]"></i>
             <span className="text-[11px] text-[#5a403c] block font-bold">درس الكتاب والافتثاد</span>
             <span className="text-base font-black text-emerald-900">8 / 8 لقاء</span>
           </div>
@@ -219,7 +219,7 @@ export const ParentPortal = () => {
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#e5e2dd] shadow-md space-y-4">
         <div className="flex items-center justify-between border-b pb-3 flex-wrap gap-2">
           <h3 className="font-extrabold text-base text-[#610000] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[22px] text-[#8b0000]">edit_calendar</span>
+            <i className="fa-solid fa-calendar-plus text-[22px] text-[#8b0000]"></i>
             سجل الحضور الأخير
           </h3>
 
@@ -227,7 +227,7 @@ export const ParentPortal = () => {
             onClick={() => setShowExcuseModal(true)}
             className="px-3.5 py-1.5 rounded-xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs shadow transition flex items-center gap-1"
           >
-            <span className="material-symbols-outlined text-[16px]">add</span>
+            <i className="fa-solid fa-plus text-[16px]"></i>
             <span>+ تقديم عذر غياب</span>
           </button>
         </div>
@@ -302,7 +302,7 @@ export const ParentPortal = () => {
       {/* 5. Financial Status & Subscriptions Card matching Image 2 */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#e5e2dd] shadow-md space-y-4">
         <h3 className="font-extrabold text-base text-[#610000] flex items-center gap-2 border-b pb-3">
-          <span className="material-symbols-outlined text-[22px] text-[#8b0000]">receipt_long</span>
+          <i className="fa-solid fa-receipt text-[22px] text-[#8b0000]"></i>
           موقف الاشتراكات والماليات
         </h3>
 
@@ -322,13 +322,13 @@ export const ParentPortal = () => {
             onClick={() => alert('جاري طباعة وتحميل الإيصال الحراري الرسمي (REC-8849)...')}
             className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-[#8b0000] font-bold text-xs border border-[#8b0000]/30 shadow-xs transition flex items-center justify-center gap-1.5"
           >
-            <span className="material-symbols-outlined text-[18px]">print</span>
+            <i className="fa-solid fa-print text-[18px]"></i>
             <span>تحميل الإيصال الحراري</span>
           </button>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px]">verified_user</span>
+          <i className="fa-solid fa-shield-halved text-[18px]"></i>
           <span>✅ لا توجد أي متأخرات أو مستحقات مالية على الكشاف كيرلس.</span>
         </div>
       </div>
@@ -336,7 +336,7 @@ export const ParentPortal = () => {
       {/* 6. Direct Leader Contact Card matching Image 2 */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#e5e2dd] shadow-md space-y-4">
         <h3 className="font-extrabold text-base text-[#610000] flex items-center gap-2 border-b pb-3">
-          <span className="material-symbols-outlined text-[22px] text-[#8b0000]">contact_phone</span>
+          <i className="fa-solid fa-phone-volume text-[22px] text-[#8b0000]"></i>
           التواصل المباشر مع قيادة الفرقة
         </h3>
 
@@ -356,14 +356,14 @@ export const ParentPortal = () => {
               onClick={() => window.open('tel:01229876543')}
               className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#8b0000] hover:bg-[#610000] text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-[18px]">call</span>
+              <i className="fa-solid fa-phone text-[18px]"></i>
               <span>اتصال مباشر</span>
             </button>
             <button
               onClick={() => window.open('https://wa.me/201229876543', '_blank')}
               className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-[18px]">chat</span>
+              <i className="fa-solid fa-comment-dots text-[18px]"></i>
               <span>واتساب</span>
             </button>
           </div>
@@ -376,7 +376,7 @@ export const ParentPortal = () => {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-[#e5e2dd] shadow-2xl space-y-4">
             <div className="flex items-center gap-3 border-b pb-3">
               <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center">
-                <span className="material-symbols-outlined text-[24px]">group_add</span>
+                <i className="fa-solid fa-user-group text-[24px]"></i>
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-[#610000]">إضافة / ربط كود ابن أو ابنة جديد</h3>

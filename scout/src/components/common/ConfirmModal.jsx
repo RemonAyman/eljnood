@@ -29,9 +29,7 @@ export const ConfirmModal = ({ isOpen, title, message, confirmText, cancelText, 
             ? 'bg-amber-100 text-[#7e5713] border border-amber-200' 
             : 'bg-blue-100 text-blue-900 border border-blue-200'
         }`}>
-          <span className="material-symbols-outlined text-[36px]">
-            {isDanger ? 'delete_forever' : isWarning ? 'warning' : 'help_outline'}
-          </span>
+          <i className={`text-[32px] ${isDanger ? 'fa-solid fa-trash-can' : isWarning ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-question'} text-[36px]`}></i>
         </div>
 
         {/* Title & Message */}
@@ -61,9 +59,7 @@ export const ConfirmModal = ({ isOpen, title, message, confirmText, cancelText, 
                 : 'bg-amber-600 hover:bg-amber-700'
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">
-              {isDanger ? 'check_circle' : 'done'}
-            </span>
+            <i className={`text-[16px] ${isDanger ? 'fa-solid fa-circle-check' : 'fa-solid fa-check'} text-[18px]`}></i>
             <span>{confirmText || (isDanger ? 'تأكيد الحذف (OK)' : 'موافق (OK)')}</span>
           </button>
         </div>

@@ -50,7 +50,7 @@ export const CurriculumModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">auto_stories</span>
+            <i className="fa-solid fa-book-bible text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -66,7 +66,7 @@ export const CurriculumModule = () => {
 
         <div className="flex items-center gap-2">
           <span className="px-3 py-1.5 rounded-2xl bg-[#ffddb1] text-[#291800] text-xs font-black border border-amber-300 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[18px]">emoji_events</span>
+            <i className="fa-solid fa-trophy text-[18px]"></i>
             <span>148 وجبة كشفية</span>
           </span>
         </div>
@@ -77,9 +77,9 @@ export const CurriculumModule = () => {
         {/* Category tags */}
         <div className="flex items-center gap-2 flex-wrap">
           {[
-            { id: 'روحي', icon: 'church', label: 'روحي ✝️' },
-            { id: 'كشفي', icon: 'military_tech', label: 'كشفي ⚜️' },
-            { id: 'تنموي', icon: 'psychology', label: 'تنموي تربوي 🧠' },
+            { id: 'روحي', icon: 'fa-solid fa-church', label: 'روحي ✝️' },
+            { id: 'كشفي', icon: 'fa-solid fa-medal', label: 'كشفي ⚜️' },
+            { id: 'تنموي', icon: 'fa-solid fa-brain', label: 'تنموي تربوي 🧠' },
           ].map(cat => (
             <button
               key={cat.id}
@@ -120,7 +120,7 @@ export const CurriculumModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-5">
         <div className="flex items-center justify-between border-b border-[#f0ede9] pb-3">
           <h3 className="font-black text-sm text-[#610000] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#7e5713]">folder_open</span>
+            <i className="fa-solid fa-folder-open text-[#7e5713]"></i>
             <span>الحقيبة التعليمية والوسائط (9 وسائط معتمدة)</span>
           </h3>
           <span className="text-xs font-bold text-[#7e5713] bg-[#ffddb1] px-3 py-1 rounded-full">
@@ -136,7 +136,7 @@ export const CurriculumModule = () => {
                 <span className="px-2.5 py-0.5 rounded bg-red-100 text-red-800 font-mono font-bold text-[10px]">
                   PDF دليل 4.8 ميجابايت
                 </span>
-                <span className="material-symbols-outlined text-red-700">picture_as_pdf</span>
+                <i className="fa-solid fa-file-pdf text-red-700"></i>
               </div>
               <h4 className="font-extrabold text-sm text-[#1c1c19]">دليل الريادة والعقد والربطات الكشفية</h4>
               <p className="text-xs text-[#5a403c]">
@@ -157,9 +157,7 @@ export const CurriculumModule = () => {
           <div className="p-4 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-3 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="h-32 rounded-xl bg-slate-900 text-white relative overflow-hidden flex items-center justify-center">
-                <span className="material-symbols-outlined text-5xl text-amber-300 opacity-90 hover:scale-110 transition cursor-pointer">
-                  play_circle
-                </span>
+                <i className="fa-solid fa-circle-play text-5xl text-amber-300 opacity-90 hover:scale-110 transition cursor-pointer"></i>
                 <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/70 text-white font-mono text-[10px]">
                   13:24
                 </span>
@@ -171,7 +169,7 @@ export const CurriculumModule = () => {
             </div>
             <button onClick={() => alert('جاري تشغيل الشرح...')} className="w-full py-2 bg-[#7e5713] text-white text-xs font-bold rounded-xl shadow hover:bg-[#5a403c] flex items-center justify-center gap-1">
               <span>مشاهدة الشرح</span>
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <i className="fa-solid fa-arrow-left text-[16px]"></i>
             </button>
           </div>
 
@@ -181,7 +179,7 @@ export const CurriculumModule = () => {
               <span className="px-2.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold text-[10px]">
                 تسجيل صوتي • ألحان كنسية
               </span>
-              <span className="material-symbols-outlined text-[#7e5713]">graphic_eq</span>
+              <i className="fa-solid fa-headphones text-[#7e5713]"></i>
             </div>
             <h4 className="font-extrabold text-sm text-[#1c1c19]">شرح ألحان وثانون الكشافة الأرثوذكسية</h4>
             <div className="p-3 bg-white rounded-xl border border-[#e5e2dd] flex items-center justify-between">
@@ -190,9 +188,7 @@ export const CurriculumModule = () => {
                   onClick={() => setIsPlayingAudio(!isPlayingAudio)}
                   className="w-10 h-10 rounded-full bg-[#8b0000] text-white flex items-center justify-center shadow"
                 >
-                  <span className="material-symbols-outlined text-[22px]">
-                    {isPlayingAudio ? 'pause' : 'play_arrow'}
-                  </span>
+                  <i className={`fa-solid ${isPlayingAudio ? 'fa-pause' : 'fa-play'} text-[22px]`}></i>
                 </button>
                 <div>
                   <h5 className="font-bold text-xs text-[#1c1c19]">عقيدة مجموعة جنود المسيح</h5>
@@ -217,7 +213,7 @@ export const CurriculumModule = () => {
               <span className="px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 font-bold text-[10px]">
                 معرض صور • 12 مخطط فوتوغرافي
               </span>
-              <span className="material-symbols-outlined text-blue-700">photo_library</span>
+              <i className="fa-solid fa-images text-blue-700"></i>
             </div>
             <h4 className="font-extrabold text-sm text-[#1c1c19]">أطلس النوافد والنيران الميدانية</h4>
             <div className="grid grid-cols-2 gap-2">
@@ -239,7 +235,7 @@ export const CurriculumModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-5">
         <div className="flex items-center justify-between border-b border-[#f0ede9] pb-3">
           <h3 className="font-black text-sm text-[#610000] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#7e5713]">menu_book</span>
+            <i className="fa-solid fa-book-open text-[#7e5713]"></i>
             <span>الإنجيل والمسابقات اليومية (الأسبوع الثالث)</span>
           </h3>
           <span className="text-xs font-mono font-bold text-[#8b0000]">لوقا - الأصحاح 10</span>
@@ -268,7 +264,7 @@ export const CurriculumModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-5">
         <div className="flex items-center justify-between border-b border-[#f0ede9] pb-3">
           <h3 className="font-black text-sm text-[#610000] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#7e5713]">quiz</span>
+            <i className="fa-solid fa-circle-question text-[#7e5713]"></i>
             <span>مسابقة إنجيل لوقا الأسبوعية (50 نقطة)</span>
           </h3>
           <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
@@ -327,7 +323,7 @@ export const CurriculumModule = () => {
       {/* Section 4: صدارة المتسابقين الكشفية matching Image 3 */}
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
         <h3 className="font-black text-sm text-[#610000] flex items-center gap-2 border-b border-[#f0ede9] pb-3">
-          <span className="material-symbols-outlined text-[#7e5713]">leaderboard</span>
+          <i className="fa-solid fa-ranking-star text-[#7e5713]"></i>
           <span>صدارة المتسابقين الكشفية</span>
         </h3>
 

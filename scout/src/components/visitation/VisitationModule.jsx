@@ -154,7 +154,7 @@ export const VisitationModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">diversity_1</span>
+            <i className="fa-solid fa-users-line text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -176,7 +176,7 @@ export const VisitationModule = () => {
             onClick={() => handleOpenAssignModal(null)}
             className="px-4 py-2.5 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">person_add</span>
+            <i className="fa-solid fa-user-plus text-[18px]"></i>
             <span>توزيع وتكليف بافتقاد عضو 👥</span>
           </button>
         </div>
@@ -190,7 +190,7 @@ export const VisitationModule = () => {
             <span className="text-2xl font-black text-[#8b0000]">{totalServed} عضو</span>
             <span className="text-[10px] text-gray-500 block font-bold">مخدومين فقط (دون القادة)</span>
           </div>
-          <span className="material-symbols-outlined text-3xl text-amber-800">child_care</span>
+          <i className="fa-solid fa-child text-3xl text-amber-800"></i>
         </div>
 
         <div className="p-4 bg-white rounded-3xl border border-[#e5e2dd] shadow-sm flex items-center justify-between">
@@ -199,7 +199,7 @@ export const VisitationModule = () => {
             <span className="text-2xl font-black text-emerald-700">{coveragePercent}%</span>
             <span className="text-[10px] text-emerald-700 block font-bold">{totalCompleted} مخدوم تم افتقادهم</span>
           </div>
-          <span className="material-symbols-outlined text-3xl text-emerald-700">task_alt</span>
+          <i className="fa-solid fa-circle-check text-3xl text-emerald-700"></i>
         </div>
 
         <div className="p-4 bg-rose-50 rounded-3xl border border-rose-200 shadow-sm flex items-center justify-between">
@@ -208,7 +208,7 @@ export const VisitationModule = () => {
             <span className="text-2xl font-black text-rose-900">{totalOverdue} مخدوم</span>
             <span className="text-[10px] text-rose-700 block font-bold">تتطلب زيارة عاجلة فورية</span>
           </div>
-          <span className="material-symbols-outlined text-3xl text-rose-700 animate-pulse">warning</span>
+          <i className="fa-solid fa-triangle-exclamation text-3xl text-rose-700 animate-pulse"></i>
         </div>
 
         <div className="p-4 bg-white rounded-3xl border border-[#e5e2dd] shadow-sm flex items-center justify-between">
@@ -217,7 +217,7 @@ export const VisitationModule = () => {
             <span className="text-2xl font-black text-sky-800">{availableLeadersAndRovers.length}</span>
             <span className="text-[10px] text-sky-700 block font-bold">يقومون بالزيارات الميدانية</span>
           </div>
-          <span className="material-symbols-outlined text-3xl text-sky-800">groups</span>
+          <i className="fa-solid fa-users text-3xl text-sky-800"></i>
         </div>
       </div>
 
@@ -227,7 +227,7 @@ export const VisitationModule = () => {
           
           {/* Search Served Member */}
           <div className="relative w-full md:w-80">
-            <span className="material-symbols-outlined absolute right-3 top-3 text-amber-800 text-lg">search</span>
+            <i className="fa-solid fa-magnifying-glass absolute right-3 top-3 text-amber-800 text-lg"></i>
             <input
               type="text"
               placeholder="بحث باسم المخدوم، الكود، أو رقم الهاتف..."
@@ -293,7 +293,7 @@ export const VisitationModule = () => {
       <div className="space-y-4">
         {memberAuditCards.length === 0 ? (
           <div className="bg-[#fcf9f4] border border-[#e5e2dd] rounded-3xl p-12 text-center text-gray-500 space-y-3">
-            <span className="material-symbols-outlined text-6xl text-amber-700/40">search_off</span>
+            <i className="fa-solid fa-magnifying-glass-minus text-6xl text-amber-700/40"></i>
             <h3 className="text-lg font-bold text-gray-700">لا يوجد مخدومين متطابقين مع الفلتر الحالي</h3>
           </div>
         ) : (
@@ -329,7 +329,7 @@ export const VisitationModule = () => {
                         <span className="text-xs font-mono font-black text-amber-800">#{card.code}</span>
                         {isOverdue && (
                           <span className="bg-rose-600 text-white text-[11px] font-black px-3 py-0.5 rounded-full border border-rose-700 shadow-sm flex items-center gap-1 animate-pulse">
-                            <span className="material-symbols-outlined text-xs">warning</span>
+                            <i className="fa-solid fa-triangle-exclamation text-xs"></i>
                             🚨 متأخر عن الافتقاد (&gt; 30 يوم!)
                           </span>
                         )}
@@ -350,9 +350,7 @@ export const VisitationModule = () => {
                           : 'bg-amber-100 text-amber-900 border border-amber-300'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-sm">
-                        {isCompleted ? 'check_circle' : 'hourglass_top'}
-                      </span>
+                      <i className={`${isCompleted ? 'fa-solid fa-circle-check text-emerald-600' : 'fa-solid fa-hourglass-start text-amber-600'} text-sm`}></i>
                       {isCompleted ? 'تم الافتقاد ✅' : 'في انتظار الافتقاد ⏳'}
                     </span>
 
@@ -361,7 +359,7 @@ export const VisitationModule = () => {
                       onClick={() => handleOpenAssignModal(card)}
                       className="bg-amber-500 hover:bg-amber-400 text-[#3d0000] font-black px-4 py-2 rounded-2xl text-xs shadow transition flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-base">person_add</span>
+                      <i className="fa-solid fa-user-plus text-base"></i>
                       <span>توزيع لقائد/جوال</span>
                     </button>
                   </div>
@@ -388,7 +386,7 @@ export const VisitationModule = () => {
                 {card.latestTask?.feedback || card.lastVisit?.notes ? (
                   <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200 text-xs space-y-1">
                     <span className="font-extrabold text-amber-900 block flex items-center gap-1">
-                      <span className="material-symbols-outlined text-base">chat</span>
+                      <i className="fa-solid fa-comment-dots text-base"></i>
                       تقرير الافتقاد والفيدباك الأخير من الميدان:
                     </span>
                     <p className="text-gray-800 leading-relaxed font-semibold">
@@ -413,11 +411,11 @@ export const VisitationModule = () => {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-amber-300 my-auto">
             <div className="flex justify-between items-center border-b border-gray-200 pb-3">
               <h3 className="text-lg font-extrabold text-[#8b0000] flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-700">person_add</span>
+                <i className="fa-solid fa-user-plus text-amber-700"></i>
                 توزيع وتكليف مخدوم لقائد أو جوال
               </h3>
               <button onClick={() => setIsAssignModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <span className="material-symbols-outlined">close</span>
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 

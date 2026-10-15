@@ -169,15 +169,15 @@ export const AttendanceModule = () => {
 
   const availableNavTabs = useMemo(() => {
     const list = [
-      { id: 'stream', label: 'البث المباشر والكود السريع', icon: 'bolt' },
-      { id: 'by_date', label: 'كشوف الغياب اليومية', icon: 'calendar_month', badge: groupedLogsByDate.length },
+      { id: 'stream', label: 'البث المباشر والكود السريع', icon: 'fa-solid fa-bolt' },
+      { id: 'by_date', label: 'كشوف الغياب اليومية', icon: 'fa-solid fa-calendar-days', badge: groupedLogsByDate.length },
     ];
 
     if (canViewFestivalTab) {
       list.push({
         id: 'festival',
         label: 'غياب أيام المهرجان العام',
-        icon: 'emoji_events',
+        icon: 'fa-solid fa-trophy',
         badge: festivalLogs.length,
         highlight: isFestivalLeader,
       });
@@ -186,7 +186,7 @@ export const AttendanceModule = () => {
     list.push({
       id: 'by_sector',
       label: 'كشوف غياب القطاعات والفرق',
-      icon: 'corporate_fare',
+      icon: 'fa-solid fa-building-columns',
       badge: SECTORS.length,
     });
 
@@ -200,9 +200,7 @@ export const AttendanceModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className={`w-14 h-14 rounded-2xl ${isFestivalLeader ? 'bg-[#7e5713]' : 'bg-[#8b0000]'} text-white flex items-center justify-center font-bold shrink-0 shadow-md`}>
-            <span className="material-symbols-outlined text-[32px]">
-              {isFestivalLeader ? 'emoji_events' : 'qr_code_scanner'}
-            </span>
+            <i className={`fa-solid ${isFestivalLeader ? 'fa-trophy' : 'fa-qrcode'} text-[28px]`}></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -226,7 +224,7 @@ export const AttendanceModule = () => {
                 : 'bg-[#f6f3ee] text-[#5a403c] hover:bg-[#ebe8e3]'
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+            <i className={`${tab.icon} text-[16px]`}></i>
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
               <span className={`px-2 py-0.2 rounded-full text-[10px] font-mono font-black ${
@@ -243,7 +241,7 @@ export const AttendanceModule = () => {
       {isAdmin && (
         <div className="bg-white p-4 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#8b0000]">filter_alt</span>
+            <i className="fa-solid fa-filter text-[#8b0000]"></i>
             <span className="text-xs font-black text-[#610000]">تحديد قطاع العرض والغياب:</span>
           </div>
 
@@ -280,7 +278,7 @@ export const AttendanceModule = () => {
       {isSectorHead && (
         <div className="bg-white p-3.5 px-5 rounded-3xl border border-[#e5e2dd] shadow-2xs flex items-center justify-between gap-2 text-xs font-bold text-[#610000]">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#8b0000]">shield_person</span>
+            <i className="fa-solid fa-user-shield text-[#8b0000]"></i>
             <span>حساب رئيس القطاع: ({sectorName}) — يتم عرض أعضاء وكروت غياب قطاعك فقط تلقائياً.</span>
           </div>
           <span className="px-3 py-1 rounded-full bg-[#ffddb1] text-[#291800] text-[11px] font-black">
@@ -299,7 +297,7 @@ export const AttendanceModule = () => {
             {/* Visual Camera Scanner Simulator */}
             <div className="h-64 rounded-3xl bg-[#090d16] border-2 border-dashed border-[#8b0000] flex flex-col items-center justify-center text-white relative overflow-hidden p-5 shadow-inner">
               <div className="w-20 h-20 rounded-full border-2 border-[#ffddb1] border-t-transparent animate-spin mb-3 flex items-center justify-center">
-                <span className="material-symbols-outlined text-amber-300 text-3xl">crop_free</span>
+                <i className="fa-solid fa-expand text-amber-300 text-3xl"></i>
               </div>
               <span className="text-xs font-black text-amber-300">كاميرا المسح الضوئي المباشرة نشطة (HD)</span>
               <span className="text-[10px] text-slate-400 mt-1">
@@ -333,7 +331,7 @@ export const AttendanceModule = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between border-b pb-2">
                   <h3 className="font-extrabold text-sm text-[#610000] flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#8b0000]">how_to_reg</span>
+                    <i className="fa-solid fa-user-check text-[#8b0000]"></i>
                     <span>محطة الإدخال السريع بالباركود</span>
                   </h3>
                   <span className="text-[10px] font-bold text-[#7e5713] bg-[#ffddb1] px-2.5 py-0.5 rounded-full">
@@ -354,7 +352,7 @@ export const AttendanceModule = () => {
                         onChange={(e) => setQrCodeInput(e.target.value)}
                         className="w-full pr-10 pl-3.5 py-3 rounded-2xl bg-[#f6f3ee] border border-[#e5e2dd] text-sm font-mono font-black focus:outline-none focus:ring-2 focus:ring-[#8b0000]"
                       />
-                      <span className="material-symbols-outlined absolute right-3 top-3 text-[#8e706b]">badge</span>
+                      <i className="fa-solid fa-id-badge absolute right-3 top-3 text-[#8e706b]"></i>
                     </div>
                   </div>
 
@@ -362,7 +360,7 @@ export const AttendanceModule = () => {
                     type="submit"
                     className={`w-full py-3.5 rounded-2xl ${isFestivalLeader ? 'bg-[#7e5713] hover:bg-[#5a403c]' : 'bg-[#8b0000] hover:bg-[#610000]'} text-white font-black text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer`}
                   >
-                    <span className="material-symbols-outlined text-[20px]">how_to_reg</span>
+                    <i className="fa-solid fa-user-check text-[20px]"></i>
                     <span>تسجيل حضور الفرد ورصد التوقيت</span>
                   </button>
                 </form>
@@ -370,7 +368,7 @@ export const AttendanceModule = () => {
 
               {successMsg && (
                 <div className="p-3 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
-                  <span className="material-symbols-outlined text-emerald-700">check_circle</span>
+                  <i className="fa-solid fa-circle-check text-emerald-700"></i>
                   <span>{successMsg}</span>
                 </div>
               )}
@@ -417,7 +415,7 @@ export const AttendanceModule = () => {
           <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="font-extrabold text-sm text-[#610000] flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#8b0000]">dynamic_feed</span>
+                <i className="fa-solid fa-stream text-[#8b0000]"></i>
                 <span>سجل الكروت الممسوحة مباشرة اليوم (الساعة والدقيقة)</span>
               </h3>
               <span className="text-xs font-bold text-[#7e5713]">
@@ -431,7 +429,7 @@ export const AttendanceModule = () => {
                   <div className="flex items-center justify-between border-b border-[#e5e2dd] pb-2">
                     <span className="font-mono font-black text-xs text-[#8b0000]">#{log.memberCode}</span>
                     <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-black text-[11px] flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">schedule</span>
+                      <i className="fa-solid fa-clock text-[14px]"></i>
                       <span>{log.time}</span>
                     </span>
                   </div>
@@ -478,7 +476,7 @@ export const AttendanceModule = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center font-bold shadow-2xs">
-                        <span className="material-symbols-outlined text-[22px]">calendar_month</span>
+                        <i className="fa-solid fa-calendar-days text-[22px]"></i>
                       </div>
                       <div>
                         <h3 className="font-black text-sm sm:text-base text-[#610000]">{dayGroup.dayLabel}</h3>
@@ -500,7 +498,7 @@ export const AttendanceModule = () => {
                         <div className="flex items-center justify-between border-b pb-1.5">
                           <span className="font-mono font-black text-xs text-[#8b0000]">#{log.memberCode}</span>
                           <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-black text-[11px] flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[14px]">schedule</span>
+                            <i className="fa-solid fa-clock text-[14px]"></i>
                             <span>الساعة {log.time}</span>
                           </span>
                         </div>
@@ -533,9 +531,7 @@ export const AttendanceModule = () => {
                             : 'bg-[#8b0000] text-white shadow-md hover:bg-[#610000]'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          {isExpanded ? 'unfold_less' : 'unfold_more'}
-                        </span>
+                        <i className={`fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-[18px]`}></i>
                         <span>
                           {isExpanded
                             ? `طي كشف يوم (${dayGroup.dayLabel}) - إظهار 3 أعضاء فقط`
@@ -559,7 +555,7 @@ export const AttendanceModule = () => {
           <div className="bg-amber-100 p-5 rounded-3xl border border-amber-400 space-y-3 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#7e5713] text-white flex items-center justify-center font-black shrink-0">
-                <span className="material-symbols-outlined text-2xl">emoji_events</span>
+                <i className="fa-solid fa-trophy text-2xl"></i>
               </div>
               <div>
                 <h3 className="font-black text-base text-amber-950">منظومة غياب وتفقد أيام المهرجان الكشفي العام</h3>
@@ -573,7 +569,7 @@ export const AttendanceModule = () => {
           <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="font-extrabold text-sm text-[#610000] flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#7e5713]">military_tech</span>
+                <i className="fa-solid fa-medal text-[#7e5713]"></i>
                 <span>كشف غياب المهرجان (جميع القطاعات)</span>
               </h3>
               <span className="px-3 py-1 rounded-full bg-amber-200 text-amber-950 text-xs font-black">
@@ -587,7 +583,7 @@ export const AttendanceModule = () => {
                   <div className="flex items-center justify-between border-b border-amber-200 pb-1.5">
                     <span className="font-mono font-black text-xs text-[#8b0000]">#{log.memberCode}</span>
                     <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-950 font-mono font-black text-[11px] flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">schedule</span>
+                      <i className="fa-solid fa-clock text-[14px]"></i>
                       <span>الساعة {log.time}</span>
                     </span>
                   </div>
@@ -621,7 +617,7 @@ export const AttendanceModule = () => {
           {!isSectorHead && (
             <div className="bg-white p-4 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-3">
               <h4 className="text-xs font-bold text-[#7e5713] flex items-center gap-1">
-                <span className="material-symbols-outlined text-[18px]">corporate_fare</span>
+                <i className="fa-solid fa-building-columns text-[18px]"></i>
                 <span>حدد القطاع لمعاينة أعضائه وحضورهم:</span>
               </h4>
 
@@ -648,7 +644,7 @@ export const AttendanceModule = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
               <div>
                 <h3 className="font-extrabold text-sm text-[#610000] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#8b0000]">groups</span>
+                  <i className="fa-solid fa-users text-[#8b0000]"></i>
                   <span>كشوف غياب وأعضاء قطاع ({isSectorHead ? sectorName : (SECTORS.find(s => s.id === selectedSectorTab)?.name || 'جميع القطاعات')})</span>
                 </h3>
                 <p className="text-xs text-[#5a403c] font-bold mt-1">
@@ -726,7 +722,7 @@ export const AttendanceModule = () => {
                       
                       {m.lastAttendanceDate && (
                         <p className="text-[11px] text-[#7e5713] font-bold flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">schedule</span>
+                          <i className="fa-solid fa-clock text-[14px]"></i>
                           <span>آخر حضور: {m.lastAttendanceDate}</span>
                         </p>
                       )}
@@ -736,7 +732,7 @@ export const AttendanceModule = () => {
                       onClick={() => handleScanSubmit(m.code, isFestivalLeader)}
                       className="w-full py-2 bg-[#8b0000] hover:bg-[#610000] text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                      <i className="fa-solid fa-user-check text-[16px]"></i>
                       <span>تسجيل حضور الفرد الآن</span>
                     </button>
                   </div>
@@ -750,12 +746,12 @@ export const AttendanceModule = () => {
       {/* Fingerprint Machine Upload Section */}
       <div className="bg-white rounded-3xl p-5 border border-[#e5e2dd] shadow-sm space-y-3">
         <h3 className="font-black text-sm text-[#610000] flex items-center gap-2 border-b pb-3">
-          <span className="material-symbols-outlined text-[22px] text-[#7e5713]">upload_file</span>
+          <i className="fa-solid fa-file-arrow-up text-[22px] text-[#7e5713]"></i>
           <span>رفع شيت غياب البصمة (ZKTeco Fingerprint Machine)</span>
         </h3>
 
         <div className="border-2 border-dashed border-[#e5e2dd] hover:border-[#8b0000] rounded-2xl p-6 text-center bg-[#fcf9f4] transition">
-          <span className="material-symbols-outlined text-4xl text-[#8b0000] mb-2">cloud_upload</span>
+          <i className="fa-solid fa-cloud-arrow-up text-4xl text-[#8b0000] mb-2"></i>
           <h4 className="text-xs font-bold text-[#1c1c19]">اسحب ملف البصمة وأسقطه هنا، أو اضغط للتصفح</h4>
           <p className="text-[11px] text-[#5a403c] mt-0.5">يدعم صيغ CSV, XLSX, ZKTeco logs</p>
           <input

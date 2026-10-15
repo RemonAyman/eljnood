@@ -762,7 +762,7 @@ export const ScoutProvider = ({ children }) => {
       price: Number(newItem.price),
       desc: newItem.desc || '',
       category: newItem.category || 'اشتراكات رئيسية',
-      icon: newItem.icon || 'sell',
+      icon: newItem.icon || 'fa-solid fa-tags',
     };
     setPriceList(prev => [...prev, item]);
     logActivity(`إضافة بند جديد في لائحة الأسعار: "${item.title}" بسعر ${item.price} ج.م`);

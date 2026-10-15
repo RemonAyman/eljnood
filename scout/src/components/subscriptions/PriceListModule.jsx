@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useScout } from '../../context/ScoutContext';
+import { getFaClass } from '../common/Icon';
 
 export const PriceListModule = () => {
   const { currentUser, priceList, addPriceListItem, updatePriceListItem, deletePriceListItem } = useScout();
@@ -24,19 +25,19 @@ export const PriceListModule = () => {
   const [formPrice, setFormPrice] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formCategory, setFormCategory] = useState('اشتراكات رئيسية');
-  const [formIcon, setFormIcon] = useState('sell');
+  const [formIcon, setFormIcon] = useState('fa-solid fa-tags');
 
   const categories = ['الكل', 'اشتراكات رئيسية', 'مهرجانات وأنشطة', 'مستلزمات وأدوات', 'خدمات أخرى'];
 
   const iconOptions = [
-    { value: 'sell', label: 'بطاقة سعر (sell)' },
-    { value: 'card_membership', label: 'بطاقة عضوية (card_membership)' },
-    { value: 'military_tech', label: 'مهرجان / وسام (military_tech)' },
-    { value: 'workspace_premium', label: 'حفل ترقية / شارة (workspace_premium)' },
-    { value: 'dry_cleaning', label: 'منديل كشفي (dry_cleaning)' },
-    { value: 'interests', label: 'عقدة / وجلة (interests)' },
-    { value: 'label', label: 'شارة قميص (label)' },
-    { value: 'payments', label: 'رسوم مالية (payments)' },
+    { value: 'fa-solid fa-tags', label: 'بطاقة سعر (tags)' },
+    { value: 'fa-solid fa-id-card', label: 'بطاقة عضوية (id-card)' },
+    { value: 'fa-solid fa-medal', label: 'مهرجان / وسام (medal)' },
+    { value: 'fa-solid fa-award', label: 'حفل ترقية / شارة (award)' },
+    { value: 'fa-solid fa-vest', label: 'منديل كشفي (vest)' },
+    { value: 'fa-solid fa-shapes', label: 'عقدة / وجلة (shapes)' },
+    { value: 'fa-solid fa-tag', label: 'شارة قميص (tag)' },
+    { value: 'fa-solid fa-money-bill-wave', label: 'رسوم مالية (money-bill-wave)' },
   ];
 
   // Open modal for new item
@@ -45,7 +46,7 @@ export const PriceListModule = () => {
     setFormPrice('');
     setFormDesc('');
     setFormCategory('اشتراكات رئيسية');
-    setFormIcon('sell');
+    setFormIcon('fa-solid fa-tags');
     setShowAddModal(true);
   };
 
@@ -56,7 +57,7 @@ export const PriceListModule = () => {
     setFormPrice(item.price || '');
     setFormDesc(item.desc || '');
     setFormCategory(item.category || 'اشتراكات رئيسية');
-    setFormIcon(item.icon || 'sell');
+    setFormIcon(item.icon ? (item.icon.startsWith('fa-') ? item.icon : getFaClass(item.icon)) : 'fa-solid fa-tags');
     setShowEditModal(true);
   };
 
@@ -155,7 +156,7 @@ export const PriceListModule = () => {
       <div className="bg-white p-6 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="flex items-center gap-4 z-10">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">sell</span>
+            <i className="fa-solid fa-tags text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-3 flex-wrap">
@@ -170,7 +171,7 @@ export const PriceListModule = () => {
             onClick={openAddModal}
             className="z-10 px-5 py-3 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white text-xs font-black shadow-lg transition flex items-center justify-center gap-2 border border-amber-400/30 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">add_circle</span>
+            <i className="fa-solid fa-circle-plus text-[20px]"></i>
             <span>إضافة بند سعر جديد</span>
           </button>
         )}
@@ -186,7 +187,7 @@ export const PriceListModule = () => {
             <span className="text-2xl font-black text-[#610000] font-mono">{totalItemsCount}</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-red-50 text-[#8b0000] flex items-center justify-center font-bold">
-            <span className="material-symbols-outlined text-[22px]">format_list_bulleted</span>
+            <i className="fa-solid fa-list-ul text-[22px]"></i>
           </div>
         </div>
 
@@ -196,7 +197,7 @@ export const PriceListModule = () => {
             <span className="text-2xl font-black text-[#8b0000] font-mono">{maxPrice} ج.م</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#7e5713] flex items-center justify-center font-bold">
-            <span className="material-symbols-outlined text-[22px]">workspace_premium</span>
+            <i className="fa-solid fa-award text-[22px]"></i>
           </div>
         </div>
 
@@ -206,7 +207,7 @@ export const PriceListModule = () => {
             <span className="text-2xl font-black text-emerald-800 font-mono">{avgPrice} ج.م</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold">
-            <span className="material-symbols-outlined text-[22px]">finance</span>
+            <i className="fa-solid fa-chart-pie text-[22px]"></i>
           </div>
         </div>
       </div>
@@ -241,7 +242,7 @@ export const PriceListModule = () => {
               placeholder="ابحث بالاسم أو التفاصيل..."
               className="w-full bg-[#f6f3ee] text-[#1c1c19] text-xs font-bold rounded-2xl py-2.5 pr-4 pl-9 border border-[#e5e2dd] focus:outline-none focus:ring-2 focus:ring-[#8b0000]"
             />
-            <span className="material-symbols-outlined absolute left-3 top-2.5 text-[#7e5713] text-[18px]">search</span>
+            <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-[#7e5713] text-[18px]"></i>
           </div>
         </div>
       </div>
@@ -249,7 +250,7 @@ export const PriceListModule = () => {
       {/* Price Items Cards Grid */}
       {itemsToDisplay.length === 0 ? (
         <div className="bg-white p-12 rounded-3xl border border-[#e5e2dd] text-center space-y-3">
-          <span className="material-symbols-outlined text-[48px] text-[#8e706b]">sell_off</span>
+          <i className="fa-solid fa-tag text-[48px] text-[#8e706b]"></i>
           <h3 className="font-black text-base text-[#610000]">لا توجد بنود أسعار تطابق بحثك</h3>
           <p className="text-xs text-[#5a403c]">جرب البحث باسم آخر أو اختر تصنيفاً مختلفاً</p>
         </div>
@@ -265,7 +266,7 @@ export const PriceListModule = () => {
                 <div className="flex items-center justify-between gap-2 border-b border-[#f0ede9] pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-2xl bg-[#ffddb1]/50 text-[#7e5713] border border-[#7e5713]/20 flex items-center justify-center font-bold">
-                      <span className="material-symbols-outlined text-[22px]">{item.icon || 'sell'}</span>
+                      <i className={`${getFaClass(item.icon || 'sell')} text-[20px]`}></i>
                     </div>
                     <span className="px-2.5 py-1 rounded-full bg-[#f6f3ee] text-[#7e5713] text-[10px] font-extrabold border border-[#e5e2dd]">
                       {item.category || 'اشتراكات'}
@@ -280,14 +281,14 @@ export const PriceListModule = () => {
                         className="p-1.5 rounded-xl bg-slate-50 hover:bg-amber-100 text-slate-600 hover:text-[#7e5713] border border-slate-200 transition cursor-pointer"
                         title="تعديل الكلام والأسعار والملاحظات"
                       >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        <i className="fa-solid fa-pen-to-square text-[18px]"></i>
                       </button>
                       <button
                         onClick={() => openDeleteModal(item)}
                         className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-800 border border-red-200 transition cursor-pointer"
                         title="حذف البند"
                       >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        <i className="fa-solid fa-trash-can text-[18px]"></i>
                       </button>
                     </div>
                   )}
@@ -325,7 +326,7 @@ export const PriceListModule = () => {
             <div className="flex items-center justify-between border-b border-[#e5e2dd] pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-[#8b0000] text-white flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-[20px]">add_circle</span>
+                  <i className="fa-solid fa-circle-plus text-[20px]"></i>
                 </div>
                 <h3 className="font-black text-base text-[#610000]">إضافة بند سعر جديد للائحة</h3>
               </div>
@@ -430,7 +431,7 @@ export const PriceListModule = () => {
             <div className="flex items-center justify-between border-b border-[#e5e2dd] pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-[#7e5713] text-white flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-[20px]">edit</span>
+                  <i className="fa-solid fa-pen-to-square text-[20px]"></i>
                 </div>
                 <h3 className="font-black text-base text-[#610000]">تعديل بيانات البند والسعر</h3>
               </div>
@@ -530,7 +531,7 @@ export const PriceListModule = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center animate-in fade-in zoom-in-95">
             <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-[32px]">delete_forever</span>
+              <i className="fa-solid fa-trash-can text-[32px]"></i>
             </div>
             <div>
               <h3 className="font-black text-base text-[#610000]">تأكيد حذف البند</h3>
@@ -549,7 +550,7 @@ export const PriceListModule = () => {
                 onClick={handleConfirmDelete}
                 className="flex-1 py-3 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white text-xs font-extrabold shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                <i className="fa-solid fa-circle-check text-[18px]"></i>
                 <span>تأكيد الحذف (OK)</span>
               </button>
             </div>

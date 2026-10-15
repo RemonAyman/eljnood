@@ -185,7 +185,7 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">calendar_month</span>
+            <i className="fa-solid fa-calendar-days text-[32px]"></i>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -303,7 +303,7 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
               {/* Requirement Strip */}
               {event.reqs && (
                 <div className="p-3 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] text-xs font-bold text-[#5a403c] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-[#7e5713]">inventory_2</span>
+                  <i className="fa-solid fa-boxes-stacked text-[18px] text-[#7e5713]"></i>
                   <span>{event.reqs}</span>
                 </div>
               )}
@@ -325,7 +325,7 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
               ✕
             </button>
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[32px] text-[#8b0000]">picture_as_pdf</span>
+              <i className="fa-solid fa-file-pdf text-[32px] text-[#8b0000]"></i>
               <div>
                 <h3 className="font-extrabold text-lg text-[#610000]">معاينة وثيقة الخطة السنوية والتنسيق</h3>
                 <p className="text-xs text-[#5a403c]">المسودة الرسمية المعتمدة لعام 2026/2027</p>

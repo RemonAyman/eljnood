@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { useScout } from '../../context/ScoutContext';
+import { getFaClass } from '../common/Icon';
 
 export const SubscriptionsModule = () => {
   const { currentUser, members, addSubscriptionReceipt, priceList, subscriptions } = useScout();
@@ -17,12 +18,12 @@ export const SubscriptionsModule = () => {
   });
 
   const feesConfig = priceList && priceList.length > 0 ? priceList : [
-    { id: 'annual', title: 'اشتراك سنوي كشفي', desc: 'يشمل التأمين الكشفي وبطاقة الاتحاد', price: 250, icon: 'card_membership' },
-    { id: 'festival', title: 'اشتراك مهرجان الكرازة الكشفي', desc: 'كتيب الأنشطة والمسابقات الكرازية', price: 200, icon: 'military_tech' },
-    { id: 'oathParty', title: 'اشتراك حفلة الوعد الكبرى', desc: 'حضور الحفل + المشروبات وتذكار الوعد', price: 150, icon: 'workspace_premium' },
-    { id: 'scarfReplacement', title: 'بدل فاقد المنديل الكشفي الحريري', desc: 'منديل الطائفة المطرز مع الشارة الرسمية', price: 80, icon: 'dry_cleaning' },
-    { id: 'trousers', title: 'وجلة خشبية محفورة', desc: 'عقدة المنديل الجلدية/الخشبية باسم المجموعة', price: 40, icon: 'interests' },
-    { id: 'badges', title: 'شارات وترقيات القميص الكشفي', desc: 'شارة الهواية والرتبة المتقدمة للعام الجديد', price: 70, icon: 'label' },
+    { id: 'annual', title: 'اشتراك سنوي كشفي', desc: 'يشمل التأمين الكشفي وبطاقة الاتحاد', price: 250, icon: 'fa-solid fa-id-card' },
+    { id: 'festival', title: 'اشتراك مهرجان الكرازة الكشفي', desc: 'كتيب الأنشطة والمسابقات الكرازية', price: 200, icon: 'fa-solid fa-medal' },
+    { id: 'oathParty', title: 'اشتراك حفلة الوعد الكبرى', desc: 'حضور الحفل + المشروبات وتذكار الوعد', price: 150, icon: 'fa-solid fa-award' },
+    { id: 'scarfReplacement', title: 'بدل فاقد المنديل الكشفي الحريري', desc: 'منديل الطائفة المطرز مع الشارة الرسمية', price: 80, icon: 'fa-solid fa-vest' },
+    { id: 'trousers', title: 'وجلة خشبية محفورة', desc: 'عقدة المنديل الجلدية/الخشبية باسم المجموعة', price: 40, icon: 'fa-solid fa-shapes' },
+    { id: 'badges', title: 'شارات وترقيات القميص الكشفي', desc: 'شارة الهواية والرتبة المتقدمة للعام الجديد', price: 70, icon: 'fa-solid fa-tag' },
   ];
 
   const [selectedItems, setSelectedItems] = useState(() => {
@@ -138,7 +139,7 @@ export const SubscriptionsModule = () => {
       <div className="bg-white p-6 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="flex items-center gap-4 z-10">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">account_balance_wallet</span>
+            <i className="fa-solid fa-wallet text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-3 flex-wrap">
@@ -155,7 +156,7 @@ export const SubscriptionsModule = () => {
             title="انقر لتعديل الفترة أو اختيار تاريخ سابق ورؤية التقارير"
           >
             <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px]">payments</span>
+              <i className="fa-solid fa-money-bill-wave text-[18px]"></i>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-[#5a403c] font-bold">
@@ -170,7 +171,7 @@ export const SubscriptionsModule = () => {
                 {filteredTotal.toLocaleString()} ج.م
               </span>
             </div>
-            <span className="material-symbols-outlined text-[18px] text-[#7e5713] group-hover:scale-110 transition">tune</span>
+            <i className="fa-solid fa-sliders text-[18px] text-[#7e5713] group-hover:scale-110 transition"></i>
           </button>
         </div>
       </div>
@@ -179,7 +180,7 @@ export const SubscriptionsModule = () => {
       <div className="bg-white p-6 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-[#f0ede9] pb-3">
           <h3 className="font-black text-sm sm:text-base text-[#610000] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#7e5713]">person_search</span>
+            <i className="fa-solid fa-user-gear text-[#7e5713]"></i>
             <span>بيانات الكشاف والاستعلام المباشر</span>
           </h3>
           <span className="px-3.5 py-1 rounded-full bg-[#ffddb1] text-[#291800] text-xs font-black border border-amber-300">
@@ -197,10 +198,10 @@ export const SubscriptionsModule = () => {
               placeholder="ابحث بالاسم أو كود الكشاف..."
               className="w-full bg-[#f6f3ee] text-[#1c1c19] text-xs font-bold rounded-2xl py-3 pr-4 pl-10 border border-[#e5e2dd] focus:outline-none focus:ring-2 focus:ring-[#8b0000]"
             />
-            <span className="material-symbols-outlined absolute left-3 top-3 text-[#7e5713]">search</span>
+            <i className="fa-solid fa-magnifying-glass absolute left-3 top-3 text-[#7e5713]"></i>
           </div>
           <button className="px-5 py-3 bg-[#8b0000] text-white rounded-2xl flex items-center gap-2 text-xs font-black shadow hover:bg-[#610000] transition cursor-pointer shrink-0 border border-amber-400/30">
-            <span className="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+            <i className="fa-solid fa-qrcode text-[20px]"></i>
             <span className="hidden sm:inline">مسح الكارنيه</span>
           </button>
         </div>
@@ -228,7 +229,7 @@ export const SubscriptionsModule = () => {
       <div className="bg-white p-6 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-[#f0ede9] pb-3">
           <h3 className="font-black text-sm sm:text-base text-[#610000] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#7e5713]">checklist</span>
+            <i className="fa-solid fa-list-check text-[#7e5713]"></i>
             <span>حاسبة البنود والاشتراكات المقررة</span>
           </h3>
           <button
@@ -262,7 +263,7 @@ export const SubscriptionsModule = () => {
                   
                   {/* Beige Rounded Icon Box matching Image 1 */}
                   <div className="w-10 h-10 rounded-2xl bg-[#ffddb1]/80 text-[#7e5713] border border-[#7e5713]/25 flex items-center justify-center font-bold shrink-0 shadow-2xs">
-                    <span className="material-symbols-outlined text-[22px]">{fee.icon || 'sell'}</span>
+                    <i className={`${getFaClass(fee.icon || 'sell')} text-[20px]`}></i>
                   </div>
 
                   <div>
@@ -282,13 +283,13 @@ export const SubscriptionsModule = () => {
       {/* Card 3: نظام الخصومات والمنح الكشفية */}
       <div className="bg-white p-6 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
         <h3 className="font-black text-sm sm:text-base text-[#610000] flex items-center gap-2 border-b border-[#f0ede9] pb-3">
-          <span className="material-symbols-outlined text-[#7e5713]">sell</span>
+          <i className="fa-solid fa-tags text-[#7e5713]"></i>
           <span>نظام الخصومات والمنح الكشفية</span>
         </h3>
 
         <div className="p-4 rounded-2xl bg-[#ffddb1]/40 border border-[#7e5713]/30 flex items-center justify-between shadow-2xs">
           <span className="text-xs font-bold text-[#7e5713]">خصم الإخوة 20% مفعل</span>
-          <span className="material-symbols-outlined text-[#7e5713] text-[20px]">check_circle</span>
+          <i className="fa-solid fa-circle-check text-[#7e5713] text-[20px]"></i>
         </div>
 
         <div className="flex gap-2">
@@ -311,7 +312,7 @@ export const SubscriptionsModule = () => {
         <div className="p-4 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd] flex items-center justify-between flex-wrap gap-3 shadow-2xs">
           <div>
             <h4 className="font-extrabold text-xs sm:text-sm text-[#1c1c19] flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[18px] text-[#8b0000]">vpn_key</span>
+              <i className="fa-solid fa-key text-[18px] text-[#8b0000]"></i>
               <span>صلاحية القائد الكشفي الاستثنائية</span>
             </h4>
             <p className="text-[11px] text-[#5a403c] font-medium mt-0.5">إعفاء جزئي أو كلي للحالات الخاصة (PIN)</p>
@@ -328,7 +329,7 @@ export const SubscriptionsModule = () => {
       {/* Card 4: ملخص الحساب الإجمالي المباشر */}
       <div className="bg-white p-6 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
         <h3 className="font-black text-sm sm:text-base text-[#610000] flex items-center gap-2 border-b border-[#f0ede9] pb-3">
-          <span className="material-symbols-outlined text-[#7e5713]">receipt_long</span>
+          <i className="fa-solid fa-receipt text-[#7e5713]"></i>
           <span>ملخص الحساب الإجمالي المباشر</span>
         </h3>
 
@@ -356,7 +357,7 @@ export const SubscriptionsModule = () => {
           onClick={handleConfirmPayment}
           className="w-full py-4 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-sm shadow-xl transition flex items-center justify-center gap-2 cursor-pointer border border-amber-400/30"
         >
-          <span className="material-symbols-outlined text-[22px]">print</span>
+          <i className="fa-solid fa-print text-[22px]"></i>
           <span>تأكيد السداد وطباعة الإيصال الفوري</span>
         </button>
       </div>
@@ -365,7 +366,7 @@ export const SubscriptionsModule = () => {
       <div className="bg-white p-6 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-[#f0ede9] pb-3">
           <h3 className="font-black text-sm sm:text-base text-[#610000] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#7e5713]">history</span>
+            <i className="fa-solid fa-clock-rotate-left text-[#7e5713]"></i>
             <span>إيصالات التحصيل المسجلة حديثاً</span>
           </h3>
           <span className="px-3 py-1 rounded-full bg-[#f6f3ee] text-[#8e706b] text-xs font-bold border border-[#e5e2dd]">
@@ -378,7 +379,7 @@ export const SubscriptionsModule = () => {
             <div key={i} className="p-4 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] flex items-center justify-between flex-wrap gap-3 shadow-2xs">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#ffddb1] text-[#7e5713] flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px]">receipt</span>
+                  <i className="fa-solid fa-file-invoice-dollar text-[20px]"></i>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -398,7 +399,7 @@ export const SubscriptionsModule = () => {
                   className="p-2 bg-white rounded-xl border border-[#e5e2dd] text-[#7e5713] hover:bg-[#ffddb1] transition cursor-pointer"
                   title="طباعة"
                 >
-                  <span className="material-symbols-outlined text-[18px]">print</span>
+                  <i className="fa-solid fa-print text-[18px]"></i>
                 </button>
               </div>
             </div>
@@ -415,7 +416,7 @@ export const SubscriptionsModule = () => {
             <div className="flex items-center justify-between border-b border-[#e5e2dd] pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-[26px]">query_stats</span>
+                  <i className="fa-solid fa-chart-line text-[26px]"></i>
                 </div>
                 <div>
                   <h3 className="font-black text-base sm:text-lg text-[#610000]">تقرير ومستندات التحصيل المالي</h3>
@@ -461,7 +462,7 @@ export const SubscriptionsModule = () => {
               {collectionFilterMode === 'specific_date' && (
                 <div className="p-3 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd] flex items-center justify-between gap-3">
                   <span className="text-xs font-bold text-[#7e5713] flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+                    <i className="fa-solid fa-calendar-day text-[18px]"></i>
                     حدد تاريخ اليوم المطلوب للاستعلام:
                   </span>
                   <input
@@ -507,7 +508,7 @@ export const SubscriptionsModule = () => {
 
               {filteredReceipts.length === 0 ? (
                 <div className="p-8 text-center bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd] space-y-2">
-                  <span className="material-symbols-outlined text-[36px] text-[#8e706b]">receipt_long</span>
+                  <i className="fa-solid fa-receipt text-[36px] text-[#8e706b]"></i>
                   <p className="text-xs font-bold text-[#5a403c]">لا توجد إيصالات تحصيل مسجلة للفترة المختارة</p>
                 </div>
               ) : (
@@ -535,7 +536,7 @@ export const SubscriptionsModule = () => {
                           onClick={() => alert(`إعادة طباعة إيصال ${rec.memberName} بقيمة ${rec.total} ج.م`)}
                           className="px-3 py-1.5 bg-white border border-[#e5e2dd] rounded-xl text-[11px] text-[#7e5713] hover:bg-[#ffddb1] transition flex items-center gap-1"
                         >
-                          <span className="material-symbols-outlined text-[16px]">print</span>
+                          <i className="fa-solid fa-print text-[16px]"></i>
                           <span>طباعة</span>
                         </button>
                       </div>

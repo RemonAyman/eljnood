@@ -65,7 +65,7 @@ export const LeaderFieldVisitationModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">directions_walk</span>
+            <i className="fa-solid fa-person-walking text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -120,7 +120,7 @@ export const LeaderFieldVisitationModule = () => {
       {/* Task Cards Grid */}
       {myAssignedTasks.length === 0 ? (
         <div className="bg-[#fcf9f4] border border-[#e5e2dd] rounded-3xl p-12 text-center text-gray-500 space-y-3">
-          <span className="material-symbols-outlined text-6xl text-amber-700/40">assignment_turned_in</span>
+          <i className="fa-solid fa-clipboard-check text-6xl text-amber-700/40"></i>
           <h3 className="text-lg font-bold text-gray-700">لا توجد تكليفات افتقاد حالية متطابقة</h3>
           <p className="text-sm text-gray-500">سوف تظهر هنا أسماء المخدومين المكلف بافتقادهم فور توزيعهم من رئيس القطاع.</p>
         </div>
@@ -146,7 +146,7 @@ export const LeaderFieldVisitationModule = () => {
                       <span className="text-xs font-mono font-black text-amber-800">#{task.memberCode}</span>
                       {!isDone && (
                         <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-rose-700 shadow-2xs flex items-center gap-1 animate-pulse">
-                          <span className="material-symbols-outlined text-xs">warning</span>
+                          <i className="fa-solid fa-triangle-exclamation text-xs"></i>
                           🚨 متأخر 30+ يوم
                         </span>
                       )}
@@ -161,9 +161,7 @@ export const LeaderFieldVisitationModule = () => {
                         : 'bg-amber-100 text-amber-900 border border-amber-300'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-sm">
-                      {isDone ? 'check_circle' : 'pending_actions'}
-                    </span>
+                    <i className={`${isDone ? 'fa-solid fa-circle-check text-emerald-600' : 'fa-solid fa-clock text-amber-600'} text-sm`}></i>
                     {isDone ? 'تم الافتقاد ✅' : 'قيد التنفيذ ⏳'}
                   </span>
                 </div>
@@ -171,11 +169,11 @@ export const LeaderFieldVisitationModule = () => {
                 {/* Visitation Details */}
                 <div className="space-y-2 text-xs font-medium text-gray-700">
                   <p className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-amber-800 text-base">near_me</span>
+                    <i className="fa-solid fa-location-arrow text-amber-800 text-base"></i>
                     <span className="font-bold text-gray-900">الوسيلة المطلوبة:</span> {task.visitationType}
                   </p>
                   <p className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-amber-800 text-base">event</span>
+                    <i className="fa-solid fa-calendar text-amber-800 text-base"></i>
                     <span className="font-bold text-gray-900">تاريخ الاستهداف:</span> {task.targetDate || 'خلال هذا الأسبوع'}
                   </p>
                 </div>
@@ -184,7 +182,7 @@ export const LeaderFieldVisitationModule = () => {
                 {isDone && task.feedback && (
                   <div className="bg-white p-3.5 rounded-2xl border border-emerald-200 space-y-1.5 text-xs">
                     <span className="font-extrabold text-emerald-900 block flex items-center gap-1">
-                      <span className="material-symbols-outlined text-base">chat</span>
+                      <i className="fa-solid fa-comment-dots text-base"></i>
                       تقرير وفيدباك الافتقاد المرفوع:
                     </span>
                     <p className="text-gray-700 leading-relaxed font-semibold">{task.feedback}</p>
@@ -206,9 +204,7 @@ export const LeaderFieldVisitationModule = () => {
                         : 'bg-[#8b0000] hover:bg-[#610000] text-white shadow-lg'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-base">
-                      {isDone ? 'edit_note' : 'check_circle'}
-                    </span>
+                    <i className={`${isDone ? 'fa-solid fa-pen-nib text-emerald-800' : 'fa-solid fa-circle-check text-white'} text-base`}></i>
                     <span>{isDone ? 'تعديل الفيدباك والتفاصيل' : 'تسجيل وتأكيد الافتقاد ✅'}</span>
                   </button>
                 </div>
@@ -232,7 +228,7 @@ export const LeaderFieldVisitationModule = () => {
                 </h3>
               </div>
               <button onClick={() => setSelectedTask(null)} className="text-gray-400 hover:text-gray-600">
-                <span className="material-symbols-outlined">close</span>
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
@@ -281,7 +277,7 @@ export const LeaderFieldVisitationModule = () => {
               {/* Contact Information Updates (Phone & Address) */}
               <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200 space-y-2">
                 <span className="font-extrabold text-amber-900 block flex items-center gap-1">
-                  <span className="material-symbols-outlined text-base">contact_phone</span>
+                  <i className="fa-solid fa-phone-volume text-base"></i>
                   تحديث بيانات الاتصال (إذا تغيرت لدى الأهل/العضو):
                 </span>
 

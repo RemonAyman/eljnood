@@ -83,7 +83,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
         <div className="relative z-10 max-w-4xl space-y-6">
           {/* Top Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-200 text-xs font-black backdrop-blur-md shadow-inner">
-            <span className="material-symbols-outlined text-[18px]">verified</span>
+            <i className="fa-solid fa-certificate text-[18px]"></i>
             <span>الموقع الرسمي • مجموعة جنود المسيح الكشفية</span>
           </div>
 
@@ -99,7 +99,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
                 مجموعة جنود المسيح الكشفية
               </h1>
               <p className="text-amber-200 font-extrabold text-xs sm:text-lg mt-1 flex items-center gap-1.5 sm:gap-2">
-                <span className="material-symbols-outlined text-[16px] sm:text-[20px]">church</span>
+                <i className="fa-solid fa-church text-[16px] sm:text-[20px]"></i>
                 <span>جمعية جنود المسيح</span>
               </p>
             </div>
@@ -141,7 +141,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#8b0000]/10 text-[#8b0000] flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-[28px]">domain</span>
+                <i className="fa-solid fa-building text-[28px]"></i>
               </div>
               <div>
                 <h2 className="font-black text-xl text-[#610000]">عن جمعية ومجموعة جنود المسيح</h2>
@@ -156,7 +156,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="p-4 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-1.5">
                 <div className="flex items-center gap-2 text-[#8b0000] font-black text-sm">
-                  <span className="material-symbols-outlined text-[20px]">verified_user</span>
+                  <i className="fa-solid fa-shield-halved text-[20px]"></i>
                   <span>الوعد والقانون الكشفي</span>
                 </div>
                 <p className="text-xs text-[#5a403c] font-bold leading-relaxed">
@@ -166,7 +166,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
 
               <div className="p-4 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-1.5">
                 <div className="flex items-center gap-2 text-[#7e5713] font-black text-sm">
-                  <span className="material-symbols-outlined text-[20px]">history_edu</span>
+                  <i className="fa-solid fa-timeline text-[20px]"></i>
                   <span>بدايات الكشافة بالمجموعة</span>
                 </div>
                 <p className="text-xs text-[#5a403c] font-bold leading-relaxed">
@@ -177,7 +177,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
           </div>
 
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-[#7e5713] font-bold flex items-center gap-3">
-            <span className="material-symbols-outlined text-[#8b0000] text-[24px]">workspace_premium</span>
+            <i className="fa-solid fa-award text-[#8b0000] text-[24px]"></i>
             <span>المجموعة مسجلة ومعتمدة ضمن الكشافة والمرشدات المصرية والخدمات الكنسية المعتمدة.</span>
           </div>
         </div>
@@ -187,7 +187,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#7e5713]/10 text-[#7e5713] flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-[28px]">location_on</span>
+                <i className="fa-solid fa-location-pin text-[28px]"></i>
               </div>
               <div>
                 <h3 className="font-black text-lg text-[#610000]">المقر وأرض التجمع</h3>
@@ -197,7 +197,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
 
             <div className="space-y-3 text-xs sm:text-sm font-bold text-[#1c1c19]">
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#e5e2dd]">
-                <span className="material-symbols-outlined text-[#8b0000] text-[22px] shrink-0 mt-0.5">place</span>
+                <i className="fa-solid fa-map-pin text-[#8b0000] text-[22px] shrink-0 mt-0.5"></i>
                 <div>
                   <span className="block font-black text-[#610000]">العنوان الرئيسي:</span>
                   <span className="text-[#5a403c]">مقر جمعية وكنيسة جنود المسيح - أرض الملعب الكشفي، القاهرة، مصر.</span>
@@ -205,7 +205,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#e5e2dd]">
-                <span className="material-symbols-outlined text-[#7e5713] text-[22px] shrink-0 mt-0.5">schedule</span>
+                <i className="fa-solid fa-clock text-[#7e5713] text-[22px] shrink-0 mt-0.5"></i>
                 <div>
                   <span className="block font-black text-[#610000]">الأيام الكشفية:</span>
                   <span className="text-[#5a403c]">كل يوم ثلاثاء وجمعة من كل أسبوع.</span>
@@ -213,7 +213,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#e5e2dd]">
-                <span className="material-symbols-outlined text-emerald-800 text-[22px] shrink-0 mt-0.5">call</span>
+                <i className="fa-solid fa-phone text-emerald-800 text-[22px] shrink-0 mt-0.5"></i>
                 <div>
                   <span className="block font-black text-[#610000]">للتواصل والتعميمات:</span>
                   <span className="text-[#5a403c]">مكتب قادة الأمانة العامة الكشفية بالجمعية.</span>
@@ -228,7 +228,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
                 onClick={onOpenAuth}
                 className="w-full py-3.5 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[20px]">person_add</span>
+                <i className="fa-solid fa-user-plus text-[20px]"></i>
                 <span>تسجيل عضو جديد أو التواصل مع القادة</span>
               </button>
             </div>
@@ -255,7 +255,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
           {/* Sector 1: Cubs & Blossoms */}
           <div className="bg-white rounded-3xl p-6 border border-[#e5e2dd] shadow-sm hover:shadow-md transition space-y-4 relative overflow-hidden group">
             <div className="w-12 h-12 rounded-2xl bg-amber-100 text-[#7e5713] flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[28px]">child_care</span>
+              <i className="fa-solid fa-child text-[28px]"></i>
             </div>
             <div>
               <span className="text-[11px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
@@ -274,7 +274,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
           {/* Sector 2: Scouts & Guides */}
           <div className="bg-white rounded-3xl p-6 border border-[#e5e2dd] shadow-sm hover:shadow-md transition space-y-4 relative overflow-hidden group">
             <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[28px]">hiking</span>
+              <i className="fa-solid fa-person-hiking text-[28px]"></i>
             </div>
             <div>
               <span className="text-[11px] font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
@@ -293,7 +293,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
           {/* Sector 3: Senior Scouts & Rangers */}
           <div className="bg-white rounded-3xl p-6 border border-[#e5e2dd] shadow-sm hover:shadow-md transition space-y-4 relative overflow-hidden group">
             <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-900 flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[28px]">forest</span>
+              <i className="fa-solid fa-tree text-[28px]"></i>
             </div>
             <div>
               <span className="text-[11px] font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
@@ -314,7 +314,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-red-100 text-[#8b0000] flex items-center justify-center font-bold shrink-0">
-                  <span className="material-symbols-outlined text-[28px]">military_tech</span>
+                  <i className="fa-solid fa-medal text-[28px]"></i>
                 </div>
                 <div>
                   <span className="text-[11px] font-black text-[#8b0000] bg-red-50 px-2 py-0.5 rounded-md border border-red-200">
@@ -350,7 +350,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
           
           <div className="p-5 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-3">
             <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[24px]">cabin</span>
+              <i className="fa-solid fa-campground text-[24px]"></i>
             </div>
             <h4 className="font-black text-base text-[#610000]">مهارات الخلاء والمعسكرات</h4>
             <p className="text-xs text-[#5a403c] font-bold leading-relaxed">
@@ -360,7 +360,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
 
           <div className="p-5 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-3">
             <div className="w-10 h-10 rounded-xl bg-[#7e5713] text-white flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[24px]">menu_book</span>
+              <i className="fa-solid fa-book-open text-[24px]"></i>
             </div>
             <h4 className="font-black text-base text-[#610000]">الدراسات الكتابية والروحية</h4>
             <p className="text-xs text-[#5a403c] font-bold leading-relaxed">
@@ -370,7 +370,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
 
           <div className="p-5 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[24px]">sports_kabaddi</span>
+              <i className="fa-solid fa-handshake-angle text-[24px]"></i>
             </div>
             <h4 className="font-black text-base text-[#610000]">اللياقة البدنية والألعاب</h4>
             <p className="text-xs text-[#5a403c] font-bold leading-relaxed">
@@ -380,7 +380,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
 
           <div className="p-5 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-3">
             <div className="w-10 h-10 rounded-xl bg-purple-900 text-white flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[24px]">music_note</span>
+              <i className="fa-solid fa-music text-[24px]"></i>
             </div>
             <h4 className="font-black text-base text-[#610000]">موسيقى واستعراضات العرض</h4>
             <p className="text-xs text-[#5a403c] font-bold leading-relaxed">
@@ -395,7 +395,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
       <section id="scout-days" className="bg-gradient-to-br from-[#f6f3ee] to-[#ffffff] rounded-3xl p-6 sm:p-10 border border-[#e5e2dd] shadow-sm space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shadow-md">
-            <span className="material-symbols-outlined text-[28px]">event_repeat</span>
+            <i className="fa-solid fa-calendar-check text-[28px]"></i>
           </div>
           <div>
             <h2 className="font-black text-2xl text-[#610000]">جدول اليوم الكشفي الأسبوعي</h2>
@@ -521,7 +521,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
                 onClick={onOpenAuth}
                 className="px-8 py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-[#3a0000] font-black text-sm shadow-2xl hover:scale-[1.03] transition active:scale-95 flex items-center gap-2 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[24px]">key</span>
+                <i className="fa-solid fa-key text-[24px]"></i>
                 <span>تسجيل الدخول</span>
               </button>
             </div>

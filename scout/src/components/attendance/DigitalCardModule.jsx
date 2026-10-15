@@ -211,7 +211,7 @@ export const DigitalCardModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">badge</span>
+            <i className="fa-solid fa-id-badge text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -230,7 +230,7 @@ export const DigitalCardModule = () => {
             {/* Sector Selector */}
             <div className="flex items-center gap-2 w-full md:w-auto">
               <span className="text-xs font-extrabold text-[#7e5713] flex items-center gap-1 shrink-0">
-                <span className="material-symbols-outlined text-[18px]">filter_list</span>
+                <i className="fa-solid fa-filter text-[18px]"></i>
                 <span>القطاع الكشفي:</span>
               </span>
 
@@ -270,9 +270,7 @@ export const DigitalCardModule = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white border border-[#e5e2dd] text-[#1c1c19] text-xs font-bold rounded-2xl pr-9 pl-7 py-2 focus:outline-none focus:ring-2 focus:ring-[#8b0000] shadow-2xs"
                 />
-                <span className="material-symbols-outlined absolute right-2.5 top-2 text-[#8e706b] text-[18px]">
-                  search
-                </span>
+                <i className="fa-solid fa-magnifying-glass absolute right-2.5 top-2 text-[#8e706b] text-[18px]"></i>
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
@@ -354,13 +352,13 @@ export const DigitalCardModule = () => {
                       className="w-full h-full object-cover transition transform group-hover:scale-105"
                     />
                   ) : (
-                    <span className="material-symbols-outlined text-6xl text-slate-600">person</span>
+                    <i className="fa-solid fa-user text-6xl text-slate-600"></i>
                   )}
 
                   {/* Hover Camera Overlay */}
                   {canEditPhoto && (
                     <div className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition duration-200 flex flex-col items-center justify-center gap-1 rounded-xl">
-                      <span className="material-symbols-outlined text-2xl">photo_camera</span>
+                      <i className="fa-solid fa-camera text-2xl"></i>
                       <span className="text-[10px] font-bold">تغيير الصورة</span>
                     </div>
                   )}
@@ -374,7 +372,7 @@ export const DigitalCardModule = () => {
                     className="absolute -top-2 -right-2 bg-amber-500 hover:bg-amber-400 text-[#3d0000] p-1.5 rounded-full border-2 border-white shadow-md transition flex items-center justify-center cursor-pointer"
                     title="رفع صورة جديدة"
                   >
-                    <span className="material-symbols-outlined text-xs font-bold block">photo_camera</span>
+                    <i className="fa-solid fa-camera text-xs font-bold block"></i>
                   </button>
                 )}
 
@@ -400,14 +398,14 @@ export const DigitalCardModule = () => {
                       className="px-3 py-1 bg-[#8b0000] hover:bg-[#610000] text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1 cursor-pointer"
                       title="تعديل بيانات العضو"
                     >
-                      <span className="material-symbols-outlined text-sm">edit</span>
+                      <i className="fa-solid fa-pen-to-square text-sm"></i>
                       <span>تعديل البيانات</span>
                     </button>
                   )}
                 </div>
 
                 <p className="text-xs font-bold text-[#7e5713] flex items-center justify-center sm:justify-start gap-1">
-                  <span className="material-symbols-outlined text-[16px]">military_tech</span>
+                  <i className="fa-solid fa-medal text-[16px]"></i>
                   <span>{getSectorDisplay(currentMember)} • {getMemberClassification(currentMember)} {currentMember.rank ? `(${currentMember.rank})` : ''}</span>
                 </p>
 
@@ -446,7 +444,7 @@ export const DigitalCardModule = () => {
               
               {/* Phone Numbers Block */}
               <div className="flex items-start gap-2.5">
-                <span className="material-symbols-outlined text-[#7e5713] text-[20px] mt-0.5">call</span>
+                <i className="fa-solid fa-phone text-[#7e5713] text-[20px] mt-0.5"></i>
                 <div className="space-y-0.5">
                   <span className="text-[10px] text-[#8e706b] block font-bold">أرقام التليفون والتواصل</span>
                   {(currentMember.childPhone || currentMember.phone) && (
@@ -462,17 +460,17 @@ export const DigitalCardModule = () => {
 
               {/* Annual Subscription Status Block (Replacing Expiry Date) */}
               <div className="flex items-start gap-2.5">
-                <span className="material-symbols-outlined text-[#7e5713] text-[20px] mt-0.5">payments</span>
+                <i className="fa-solid fa-money-bill-wave text-[#7e5713] text-[20px] mt-0.5"></i>
                 <div>
                   <span className="text-[10px] text-[#8e706b] block font-bold">اشتراك السنة الكشفي</span>
                   {currentMember.annualFeePaid !== false && currentMember.annualFeePaid !== 'unpaid' ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-[11px] border border-emerald-300 shadow-2xs mt-0.5">
-                      <span className="material-symbols-outlined text-xs">check_circle</span>
+                      <i className="fa-solid fa-circle-check text-xs"></i>
                       <span>مسدد الاشتراك السنوي ✅</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 font-extrabold text-[11px] border border-rose-300 shadow-2xs mt-0.5">
-                      <span className="material-symbols-outlined text-xs">warning</span>
+                      <i className="fa-solid fa-triangle-exclamation text-xs"></i>
                       <span>غير مسدد اشتراك السنة ⚠️</span>
                     </span>
                   )}
@@ -481,7 +479,7 @@ export const DigitalCardModule = () => {
 
               {/* Detailed Address Block */}
               <div className="sm:col-span-2 flex items-start gap-2.5 border-t border-[#e5e2dd] pt-2.5">
-                <span className="material-symbols-outlined text-[#7e5713] text-[20px] mt-0.5">home_pin</span>
+                <i className="fa-solid fa-location-dot text-[#7e5713] text-[20px] mt-0.5"></i>
                 <div>
                   <span className="text-[10px] text-[#8e706b] block font-bold">العنوان السكني التفصيلي</span>
                   <span className="font-bold text-[#1c1c19] block leading-relaxed">
@@ -495,7 +493,7 @@ export const DigitalCardModule = () => {
             <div className="bg-[#f6f3ee] p-5 rounded-2xl border border-[#e5e2dd] flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 bg-white p-2 rounded-xl border border-[#e5e2dd] shadow-sm flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-6xl text-[#1c1c19]">qr_code_2</span>
+                  <i className="fa-solid fa-qrcode text-6xl text-[#1c1c19]"></i>
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase text-[#8e706b] tracking-wider block">رمز الاستجابة السريعة (QR)</span>
@@ -520,7 +518,7 @@ export const DigitalCardModule = () => {
               <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b pb-3">
                   <span className="font-extrabold text-xs text-[#610000] flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[18px] text-[#8b0000]">print</span>
+                    <i className="fa-solid fa-print text-[18px] text-[#8b0000]"></i>
                     <span>طباعة الكارنيهات الكشفية</span>
                   </span>
                   <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Zebra ZC300</span>
@@ -540,7 +538,7 @@ export const DigitalCardModule = () => {
                   onClick={() => alert(`جاري إرسال أمر طباعة كارت ${currentMember.name} لطابعة Zebra ZC300...`)}
                   className="w-full py-3 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[18px]">print</span>
+                  <i className="fa-solid fa-print text-[18px]"></i>
                   <span>طباعة مباشرة لكارت ({currentMember.name})</span>
                 </button>
               </div>
@@ -556,7 +554,7 @@ export const DigitalCardModule = () => {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-amber-300 animate-in fade-in zoom-in-95 my-auto text-right" dir="rtl">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#8b0000] text-2xl">edit_note</span>
+                <i className="fa-solid fa-pen-nib text-[#8b0000] text-2xl"></i>
                 <h3 className="font-black text-lg text-[#610000]">تعديل بيانات العضو (#{currentMember.code})</h3>
               </div>
               <button
@@ -695,7 +693,7 @@ export const DigitalCardModule = () => {
                   type="submit"
                   className="px-5 py-2 bg-[#8b0000] hover:bg-[#610000] text-white rounded-xl font-extrabold shadow transition cursor-pointer flex items-center gap-1.5"
                 >
-                  <span className="material-symbols-outlined text-base">save</span>
+                  <i className="fa-solid fa-floppy-disk text-base"></i>
                   <span>حفظ التعديلات</span>
                 </button>
               </div>

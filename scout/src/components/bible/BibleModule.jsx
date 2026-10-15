@@ -83,7 +83,7 @@ export const BibleModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">menu_book</span>
+            <i className="fa-solid fa-book-open text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">

@@ -15,7 +15,7 @@ export const INITIAL_PRICE_LIST_ITEMS = [
     price: 350,
     desc: 'يشمل الزي الرسمي والتأمين',
     category: 'اشتراكات رئيسية',
-    icon: 'card_membership',
+    icon: 'fa-solid fa-id-card',
   },
   {
     id: 'item-2',
@@ -23,7 +23,7 @@ export const INITIAL_PRICE_LIST_ITEMS = [
     price: 200,
     desc: 'المطبوعات وورش العمل',
     category: 'مهرجانات وأنشطة',
-    icon: 'military_tech',
+    icon: 'fa-solid fa-medal',
   },
   {
     id: 'item-3',
@@ -31,7 +31,7 @@ export const INITIAL_PRICE_LIST_ITEMS = [
     price: 150,
     desc: 'الشارات والأوسمة والميداليات',
     category: 'مهرجانات وأنشطة',
-    icon: 'workspace_premium',
+    icon: 'fa-solid fa-award',
   },
   {
     id: 'item-4',
@@ -39,7 +39,7 @@ export const INITIAL_PRICE_LIST_ITEMS = [
     price: 80,
     desc: 'حرير مطرز بلون المجموعة',
     category: 'مستلزمات وأدوات',
-    icon: 'dry_cleaning',
+    icon: 'fa-solid fa-vest',
   },
   {
     id: 'item-5',
@@ -47,7 +47,7 @@ export const INITIAL_PRICE_LIST_ITEMS = [
     price: 40,
     desc: 'خشب زان بشعار المجموعة',
     category: 'مستلزمات وأدوات',
-    icon: 'interests',
+    icon: 'fa-solid fa-shapes',
   },
   {
     id: 'item-6',
@@ -55,7 +55,7 @@ export const INITIAL_PRICE_LIST_ITEMS = [
     price: 70,
     desc: 'شارة الهواية والرتبة المتقدمة للعام الجديد',
     category: 'مستلزمات وأدوات',
-    icon: 'label',
+    icon: 'fa-solid fa-tag',
   },
 ];
 

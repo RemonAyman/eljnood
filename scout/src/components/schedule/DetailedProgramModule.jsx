@@ -359,7 +359,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">assignment</span>
+            <i className="fa-solid fa-clipboard-list text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -391,7 +391,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               onClick={() => handleOpenAddModal(null)}
               className="px-4 py-2.5 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">add_circle</span>
+              <i className="fa-solid fa-circle-plus text-[18px]"></i>
               <span>إضافة يوم / معسكر جديد</span>
             </button>
           )}
@@ -401,7 +401,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               onClick={() => setIsFestivalModalOpen(true)}
               className="px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
+              <i className="fa-solid fa-award text-[18px]"></i>
               <span>إضافة مسابقة / تحدي بالمهرجان</span>
             </button>
           )}
@@ -418,7 +418,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               : 'bg-[#f6f3ee] text-[#5a403c] hover:bg-[#ebe8e3]'
           }`}
         >
-          <span className="material-symbols-outlined text-base">format_list_bulleted</span>
+          <i className="fa-solid fa-list-ul text-base"></i>
           <span>جدول القطاعات والأيام الكشفية ({sectorPrograms.length})</span>
         </button>
 
@@ -430,7 +430,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               : 'bg-[#f6f3ee] text-[#5a403c] hover:bg-[#ebe8e3]'
           }`}
         >
-          <span className="material-symbols-outlined text-base">forum</span>
+          <i className="fa-solid fa-comments text-base"></i>
           <span>اجتماعات ومحاور القطاعات الأسبوعية 📋 ({sectorMeetings ? sectorMeetings.length : 0})</span>
         </button>
 
@@ -443,7 +443,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                 : 'bg-[#f6f3ee] text-[#5a403c] hover:bg-[#ebe8e3]'
             }`}
           >
-            <span className="material-symbols-outlined text-base">groups</span>
+            <i className="fa-solid fa-users text-base"></i>
             <span>اجتماع وفاعليات الجوالة (خطة استثنائية)</span>
           </button>
         )}
@@ -457,7 +457,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                 : 'bg-[#f6f3ee] text-[#5a403c] hover:bg-[#ebe8e3]'
             }`}
           >
-            <span className="material-symbols-outlined text-base">emoji_events</span>
+            <i className="fa-solid fa-trophy text-base"></i>
             <span>خطة وتحديات قائد المهرجان 🏆</span>
           </button>
         )}
@@ -471,7 +471,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               {/* Sector Filter */}
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-3 py-1.5 shadow-sm text-sm">
-                <span className="material-symbols-outlined text-amber-700 text-lg">filter_alt</span>
+                <i className="fa-solid fa-filter text-amber-700 text-lg"></i>
                 <span className="text-gray-600 font-bold text-xs">القطاع:</span>
                 {isSectorHead ? (
                   <span className="font-black text-[#8b0000] text-xs">
@@ -493,7 +493,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
               {/* Status Filter */}
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-3 py-1.5 shadow-sm text-sm">
-                <span className="material-symbols-outlined text-amber-700 text-lg">verified</span>
+                <i className="fa-solid fa-certificate text-amber-700 text-lg"></i>
                 <span className="text-gray-600 font-bold text-xs">الحالة:</span>
                 <select
                   value={statusFilter}
@@ -509,7 +509,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
             {/* Search Input */}
             <div className="relative w-full md:w-72">
-              <span className="material-symbols-outlined absolute right-3 top-2.5 text-gray-400 text-lg">search</span>
+              <i className="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-gray-400 text-lg"></i>
               <input
                 type="text"
                 placeholder="بحث بالعنوان، المكان، أو القطاع..."
@@ -523,7 +523,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           {/* Programs Cards Grid */}
           {filteredPrograms.length === 0 ? (
             <div className="bg-[#fcf9f4] border border-[#e5e2dd] rounded-3xl p-12 text-center text-gray-500 space-y-3">
-              <span className="material-symbols-outlined text-6xl text-amber-700/40">event_busy</span>
+              <i className="fa-solid fa-calendar-xmark text-6xl text-amber-700/40"></i>
               <h3 className="text-lg font-bold text-gray-700">لا توجد برامج تفصيلية مطابقة للبحث أو الفلتر</h3>
               <p className="text-sm text-gray-500">قم بإضافة يوم كشفي جديد أو اختبر تحديد قطاع آخر.</p>
             </div>
@@ -551,12 +551,12 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                             </span>
                             {isApproved ? (
                               <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-                                <span className="material-symbols-outlined text-xs">check_circle</span>
+                                <i className="fa-solid fa-circle-check text-xs"></i>
                                 معتمد من المدير العام
                               </span>
                             ) : (
                               <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-                                <span className="material-symbols-outlined text-xs">pending</span>
+                                <i className="fa-solid fa-hourglass-half text-xs"></i>
                                 قيد المراجعة والاعتماد
                               </span>
                             )}
@@ -576,9 +576,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                                 : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-md'
                             }`}
                           >
-                            <span className="material-symbols-outlined text-sm">
-                              {isApproved ? 'undo' : 'verified'}
-                            </span>
+                            <i className={`fa-solid ${isApproved ? 'fa-rotate-left' : 'fa-certificate'} text-sm`}></i>
                             {isApproved ? 'إلغاء الاعتماد' : 'اعتماد وتصديق الخطة'}
                           </button>
                         )}
@@ -590,7 +588,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                               className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-xl text-xs font-bold transition"
                               title="تعديل تفاصيل اليوم والعهدة"
                             >
-                              <span className="material-symbols-outlined text-base">edit</span>
+                              <i className="fa-solid fa-pen-to-square text-base"></i>
                             </button>
                             <button
                               onClick={async () => {
@@ -608,7 +606,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                               className="bg-red-500/20 hover:bg-red-500/40 text-red-200 p-2 rounded-xl text-xs font-bold transition cursor-pointer"
                               title="حذف اليوم"
                             >
-                              <span className="material-symbols-outlined text-base">delete</span>
+                              <i className="fa-solid fa-trash-can text-base"></i>
                             </button>
                           </>
                         )}
@@ -621,7 +619,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white border border-[#e5e2dd] rounded-2xl p-4 shadow-sm text-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-800">
-                            <span className="material-symbols-outlined">location_on</span>
+                            <i className="fa-solid fa-location-pin"></i>
                           </div>
                           <div>
                             <span className="text-gray-500 text-xs block font-bold">مكان التجمع واليوم:</span>
@@ -631,7 +629,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-800">
-                            <span className="material-symbols-outlined">schedule</span>
+                            <i className="fa-solid fa-clock"></i>
                           </div>
                           <div>
                             <span className="text-gray-500 text-xs block font-bold">ساعة التجمع:</span>
@@ -641,7 +639,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-800">
-                            <span className="material-symbols-outlined">flag</span>
+                            <i className="fa-solid fa-flag"></i>
                           </div>
                           <div>
                             <span className="text-gray-500 text-xs block font-bold">ساعة الانصراف والختام:</span>
@@ -655,7 +653,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                         {/* Day Shape / Agenda (2 Cols) */}
                         <div className="lg:col-span-2 space-y-3">
                           <h3 className="font-extrabold text-gray-800 flex items-center gap-2 text-base">
-                            <span className="material-symbols-outlined text-amber-700">view_timeline</span>
+                            <i className="fa-solid fa-timeline text-amber-700"></i>
                             شكل فقرات اليوم والتوقيت التفصيلي:
                           </h3>
 
@@ -686,7 +684,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                         {/* Inventory & Logistics Request (1 Col) */}
                         <div className="space-y-3">
                           <h3 className="font-extrabold text-gray-800 flex items-center gap-2 text-base">
-                            <span className="material-symbols-outlined text-amber-700">inventory_2</span>
+                            <i className="fa-solid fa-boxes-stacked text-amber-700"></i>
                             العهدة والمعدات المطلوبة:
                           </h3>
 
@@ -695,7 +693,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                               <ul className="space-y-2 text-xs font-semibold text-gray-800">
                                 {prog.inventoryRequests.map((inv, idx) => (
                                   <li key={idx} className="flex items-start gap-2 bg-white/80 p-2 rounded-xl border border-amber-200/50">
-                                    <span className="material-symbols-outlined text-amber-700 text-base">check_box</span>
+                                    <i className="fa-solid fa-square-check text-amber-700 text-base"></i>
                                     <span>{inv}</span>
                                   </li>
                                 ))}
@@ -731,7 +729,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           <div className="bg-sky-50 border border-sky-200 rounded-3xl p-6 text-sky-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                <span className="material-symbols-outlined text-2xl">info</span>
+                <i className="fa-solid fa-circle-info text-2xl"></i>
               </div>
               <div>
                 <h3 className="text-lg font-bold text-sky-900">نظام خطة عشيرة الجوالة في فصل الصيف</h3>
@@ -746,7 +744,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                 onClick={() => setIsRoversEditOpen(true)}
                 className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2.5 rounded-2xl shadow transition text-sm flex items-center gap-2 whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-lg">edit</span>
+                <i className="fa-solid fa-pen-to-square text-lg"></i>
                 تعديل ميعاد اجتماع الجوالة الثابت
               </button>
             )}
@@ -756,7 +754,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           <div className="bg-[#fcf9f4] border border-[#e5e2dd] rounded-3xl shadow-sm p-6 space-y-6">
             <div className="border-b border-[#e5e2dd] pb-4 flex justify-between items-center">
               <h2 className="text-xl font-extrabold text-[#3d0000] flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-700">event_repeat</span>
+                <i className="fa-solid fa-calendar-check text-amber-700"></i>
                 الاجتماع الأسبوعي الثابت لعشيرة الجوالة
               </h2>
               <span className="bg-emerald-100 text-emerald-800 font-extrabold text-xs px-3 py-1 rounded-full border border-emerald-300">
@@ -783,7 +781,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
             <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200">
               <h4 className="font-extrabold text-amber-900 text-sm mb-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-base">psychology</span>
+                <i className="fa-solid fa-brain text-base"></i>
                 محاور واهتمامات الاجتماع الأسبوعي:
               </h4>
               <p className="text-sm text-gray-700 leading-relaxed font-medium">
@@ -795,7 +793,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           {/* Occasional Rovers Summer Events */}
           <div className="bg-[#fcf9f4] border border-[#e5e2dd] rounded-3xl shadow-sm p-6 space-y-6">
             <h2 className="text-xl font-extrabold text-[#3d0000] flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-700">hiking</span>
+              <i className="fa-solid fa-person-hiking text-amber-700"></i>
               الأيام والفاعليات الاستثنائية للجوالة خلال الصيف
             </h2>
 
@@ -882,7 +880,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-purple-800 text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-                <span className="material-symbols-outlined text-[32px]">emoji_events</span>
+                <i className="fa-solid fa-trophy text-[32px]"></i>
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -902,7 +900,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                 onClick={() => setIsFestivalModalOpen(true)}
                 className="px-4 py-2.5 bg-purple-800 hover:bg-purple-900 text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer shrink-0"
               >
-                <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                <i className="fa-solid fa-circle-plus text-[18px]"></i>
                 <span>إضافة مسابقة / تحدي جديد</span>
               </button>
             )}
@@ -938,18 +936,18 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                         className="text-red-500 hover:text-red-700 text-xs font-bold p-1 rounded-lg hover:bg-red-50 transition cursor-pointer"
                         title="حذف التحدي"
                       >
-                        <span className="material-symbols-outlined">delete</span>
+                        <i className="fa-solid fa-trash-can"></i>
                       </button>
                     )}
                   </div>
 
                   <div className="space-y-2 text-xs font-medium text-gray-700">
                     <p className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-purple-700 text-base">calendar_month</span>
+                      <i className="fa-solid fa-calendar-days text-purple-700 text-base"></i>
                       <span className="font-bold text-gray-900">التاريخ:</span> {ch.date} | {ch.time}
                     </p>
                     <p className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-purple-700 text-base">location_on</span>
+                      <i className="fa-solid fa-location-pin text-purple-700 text-base"></i>
                       <span className="font-bold text-gray-900">المكان:</span> {ch.location}
                     </p>
                   </div>
@@ -976,7 +974,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           <div className="bg-[#fcf9f4] border border-[#e5e2dd] rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center shrink-0 shadow-md">
-                <span className="material-symbols-outlined text-2xl">forum</span>
+                <i className="fa-solid fa-comments text-2xl"></i>
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[#610000]">جدول ومتابعة اجتماعات القطاعات الأسبوعية</h3>
@@ -991,7 +989,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                 onClick={() => handleOpenMeetingModal(null)}
                 className="bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold px-4 py-2.5 rounded-2xl shadow transition text-xs flex items-center gap-2 cursor-pointer shrink-0"
               >
-                <span className="material-symbols-outlined text-lg">add_circle</span>
+                <i className="fa-solid fa-circle-plus text-lg"></i>
                 <span>إضافة / تحضير اجتماع قطاع جديد</span>
               </button>
             )}
@@ -1000,7 +998,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           {/* Sector Filter Bar */}
           <div className="bg-white border border-[#e5e2dd] rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-700 text-lg">filter_alt</span>
+              <i className="fa-solid fa-filter text-amber-700 text-lg"></i>
               <span className="font-bold text-gray-700">تصفية القطاع:</span>
               {isSectorHead ? (
                 <span className="font-black text-[#8b0000] text-xs bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
@@ -1071,7 +1069,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                       {/* Agenda / Topics */}
                       <div className="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/70 space-y-1">
                         <span className="font-extrabold text-amber-950 text-xs flex items-center gap-1">
-                          <span className="material-symbols-outlined text-base">psychology</span>
+                          <i className="fa-solid fa-brain text-base"></i>
                           محاور وموضوعات اجتماع هذا الأسبوع:
                         </span>
                         <p className="text-xs text-gray-700 leading-relaxed font-medium">
@@ -1083,7 +1081,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                       {meet.prepNotes && (
                         <div className="bg-sky-50/50 p-3.5 rounded-2xl border border-sky-200/70 space-y-1">
                           <span className="font-extrabold text-sky-950 text-xs flex items-center gap-1">
-                            <span className="material-symbols-outlined text-base">construction</span>
+                            <i className="fa-solid fa-helmet-safety text-base"></i>
                             تجهيزات وتحضيرات الخدمة والعهدة:
                           </span>
                           <p className="text-xs text-sky-900 leading-relaxed font-medium">
@@ -1100,7 +1098,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                           onClick={() => handleOpenMeetingModal(meet)}
                           className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition flex items-center gap-1 cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-sm">edit</span>
+                          <i className="fa-solid fa-pen-to-square text-sm"></i>
                           تعديل الاجتماع
                         </button>
                         {currentUser.role === 'admin' && (
@@ -1108,7 +1106,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                             onClick={() => handleDeleteSectorMeeting(meet.id)}
                             className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl transition flex items-center gap-1 cursor-pointer"
                           >
-                            <span className="material-symbols-outlined text-sm">delete</span>
+                            <i className="fa-solid fa-trash-can text-sm"></i>
                             حذف
                           </button>
                         )}
@@ -1119,7 +1117,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               })
             ) : (
               <div className="col-span-full bg-white p-12 rounded-3xl border border-[#e5e2dd] text-center text-gray-500">
-                <span className="material-symbols-outlined text-5xl text-gray-300 mb-2">event_busy</span>
+                <i className="fa-solid fa-calendar-xmark text-5xl text-gray-300 mb-2"></i>
                 <p className="font-bold text-sm">لا توجد اجتماعات مضافة لهذا القطاع حالياً.</p>
               </div>
             )}
@@ -1133,14 +1131,14 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           <div className="bg-white rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl border border-amber-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-gray-200 pb-4">
               <h3 className="text-xl font-extrabold text-[#8b0000] flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-600">edit_calendar</span>
+                <i className="fa-solid fa-calendar-plus text-amber-600"></i>
                 {editingProgram ? 'تعديل تفاصيل اليوم والعهدة' : 'إضافة يوم / معسكر جديد للقطاع'}
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 rounded-full p-1"
               >
-                <span className="material-symbols-outlined">close</span>
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
@@ -1238,7 +1236,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               {/* Agenda Builder (شكل اليوم والفقرات) */}
               <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200 space-y-3">
                 <h4 className="font-extrabold text-amber-900 text-sm flex items-center gap-1">
-                  <span className="material-symbols-outlined text-base">view_timeline</span>
+                  <i className="fa-solid fa-timeline text-base"></i>
                   شكل الفقرات والجدول التفصيلي لليوم:
                 </h4>
 
@@ -1253,7 +1251,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                         onClick={() => handleRemoveAgendaRow(idx)}
                         className="text-red-500 hover:text-red-700"
                       >
-                        <span className="material-symbols-outlined text-base">close</span>
+                        <i className="fa-solid fa-xmark text-base"></i>
                       </button>
                     </div>
                   ))}
@@ -1297,7 +1295,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               {/* Inventory Requests (تحديد العهدة المطلوبة) */}
               <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 space-y-3">
                 <h4 className="font-extrabold text-amber-900 text-sm flex items-center gap-1">
-                  <span className="material-symbols-outlined text-base">inventory_2</span>
+                  <i className="fa-solid fa-boxes-stacked text-base"></i>
                   تحديد العهدة والمعدات المطلوبة:
                 </h4>
 
@@ -1367,7 +1365,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                       onClick={handleAddInvItem}
                       className="w-full bg-amber-700 hover:bg-amber-800 text-white text-xs py-2 px-3 rounded-xl font-extrabold flex items-center justify-center gap-1 shadow transition"
                     >
-                      <span className="material-symbols-outlined text-sm">add_circle</span>
+                      <i className="fa-solid fa-circle-plus text-sm"></i>
                       + إضافة للعهدة
                     </button>
                   </div>
@@ -1414,7 +1412,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
             <div className="flex justify-between items-center border-b border-gray-200 pb-3">
               <h3 className="text-lg font-extrabold text-sky-900">تعديل الترتيبات الثابتة لاجتماع الجوالة</h3>
               <button onClick={() => setIsRoversEditOpen(false)} className="text-gray-400">
-                <span className="material-symbols-outlined">close</span>
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
@@ -1489,7 +1487,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
             <div className="flex justify-between items-center border-b border-gray-200 pb-3">
               <h3 className="text-lg font-extrabold text-purple-950">إضافة مسابقة / تحدي جديد بالمهرجان</h3>
               <button onClick={() => setIsFestivalModalOpen(false)} className="text-gray-400">
-                <span className="material-symbols-outlined">close</span>
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
@@ -1589,11 +1587,11 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto border border-amber-300" dir="rtl">
             <div className="flex justify-between items-center border-b border-gray-200 pb-3">
               <h3 className="font-extrabold text-lg text-[#610000] flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-700">edit_calendar</span>
+                <i className="fa-solid fa-calendar-plus text-amber-700"></i>
                 {editingMeeting ? 'تعديل خطة واجتماع القطاع' : 'إضافة اجتماع قطاع جديد'}
               </h3>
               <button onClick={() => setIsMeetingModalOpen(false)} className="text-gray-400 hover:text-gray-600 rounded-full p-1">
-                <span className="material-symbols-outlined">close</span>
+                <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 

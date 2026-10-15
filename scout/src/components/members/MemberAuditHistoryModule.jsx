@@ -141,7 +141,7 @@ export const MemberAuditHistoryModule = () => {
       <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-            <span className="material-symbols-outlined text-[32px]">manage_search</span>
+            <i className="fa-solid fa-magnifying-glass-chart text-[32px]"></i>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -161,7 +161,7 @@ export const MemberAuditHistoryModule = () => {
           
           {/* Search Input Box */}
           <div className="relative w-full md:w-96">
-            <span className="material-symbols-outlined absolute right-3 top-3 text-amber-800 text-xl">search</span>
+            <i className="fa-solid fa-magnifying-glass absolute right-3 top-3 text-amber-800 text-xl"></i>
             <input
               type="text"
               placeholder="ادخل كود العضو (1001)، الاسم، أو رقم الهاتف..."
@@ -182,7 +182,7 @@ export const MemberAuditHistoryModule = () => {
           {/* Sector Selector Filter */}
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1">
             <span className="text-xs font-bold text-gray-600 shrink-0 flex items-center gap-1">
-              <span className="material-symbols-outlined text-amber-800 text-base">filter_list</span>
+              <i className="fa-solid fa-filter text-amber-800 text-base"></i>
               القطاع:
             </span>
             {isSectorHead ? (
@@ -233,7 +233,7 @@ export const MemberAuditHistoryModule = () => {
                 {activeMember.avatarUrl ? (
                   <img src={activeMember.avatarUrl} alt={activeMember.name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="material-symbols-outlined text-4xl">person</span>
+                  <i className="fa-solid fa-user text-4xl"></i>
                 )}
               </div>
 
@@ -278,7 +278,7 @@ export const MemberAuditHistoryModule = () => {
             <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-xs text-[#5a403c] font-bold">
                 <span>سنوات الخدمة</span>
-                <span className="material-symbols-outlined text-[#8b0000] text-lg">calendar_today</span>
+                <i className="fa-solid fa-calendar-day text-[#8b0000] text-lg"></i>
               </div>
               <span className="text-base font-black text-[#1c1c19] block">انضم منذ {activeMember.yearsActive} سنوات</span>
               <span className="text-xs text-[#7e5713] font-bold block">سنة الانضمام: {activeMember.joinedYear}</span>
@@ -288,7 +288,7 @@ export const MemberAuditHistoryModule = () => {
             <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-xs font-bold text-[#5a403c]">
                 <span>المهرجان 2026</span>
-                <span className="material-symbols-outlined text-amber-700 text-lg">emoji_events</span>
+                <i className="fa-solid fa-trophy text-amber-700 text-lg"></i>
               </div>
               <span className={`text-sm font-black block ${activeMember.isFestivalRegistered ? 'text-emerald-800' : 'text-[#8b0000]'}`}>
                 {activeMember.isFestivalRegistered ? 'مشترك بالمهرجان' : 'غير مشترك حالياً'}
@@ -302,7 +302,7 @@ export const MemberAuditHistoryModule = () => {
             <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-xs font-bold text-[#5a403c]">
                 <span>الموقف المالي</span>
-                <span className="material-symbols-outlined text-blue-700 text-lg">receipt_long</span>
+                <i className="fa-solid fa-receipt text-blue-700 text-lg"></i>
               </div>
               <span className={`text-sm font-black block ${activeMember.totalPaid > 0 ? 'text-emerald-800' : 'text-[#8b0000]'}`}>
                 {activeMember.totalPaid > 0 ? `سداد ${activeMember.totalPaid} ج.م` : 'لم يقم بالسداد'}
@@ -316,7 +316,7 @@ export const MemberAuditHistoryModule = () => {
             <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-xs text-[#5a403c] font-bold">
                 <span>الحضور والإنضباط</span>
-                <span className="material-symbols-outlined text-amber-700 text-lg">verified</span>
+                <i className="fa-solid fa-certificate text-amber-700 text-lg"></i>
               </div>
               <span className="text-base font-black text-[#1c1c19] block">
                 {Math.round(((activeMember.attendanceCount || 12) / (activeMember.totalSessions || 14)) * 100)}% انضباط
@@ -330,7 +330,7 @@ export const MemberAuditHistoryModule = () => {
             <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-xs text-[#5a403c] font-bold">
                 <span>آخر تاريخ افتقاد</span>
-                <span className="material-symbols-outlined text-purple-700 text-lg">home_pin</span>
+                <i className="fa-solid fa-location-dot text-purple-700 text-lg"></i>
               </div>
               <span className="text-sm font-black text-[#1c1c19] block font-mono">
                 {activeMemberLastVisit ? activeMemberLastVisit : 'لم يفتقد بعد'}
@@ -352,7 +352,7 @@ export const MemberAuditHistoryModule = () => {
                     : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
                 }`}
               >
-                <span className="material-symbols-outlined text-base">view_timeline</span>
+                <i className="fa-solid fa-timeline text-base"></i>
                 السجل الأرشيفي التراكمي لكل سنة ({activeMember.yearlyLogs.length} سنوات)
               </button>
 
@@ -364,7 +364,7 @@ export const MemberAuditHistoryModule = () => {
                     : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
                 }`}
               >
-                <span className="material-symbols-outlined text-base">payments</span>
+                <i className="fa-solid fa-money-bill-wave text-base"></i>
                 سجل المدفوعات والإيصالات ({activeMember.memberSubs.length})
               </button>
 
@@ -376,7 +376,7 @@ export const MemberAuditHistoryModule = () => {
                     : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
                 }`}
               >
-                <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                <i className="fa-solid fa-qrcode text-base"></i>
                 سجل الحضور والغياب الذكي ({activeScanLogs.length})
               </button>
 
@@ -388,7 +388,7 @@ export const MemberAuditHistoryModule = () => {
                     : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
                 }`}
               >
-                <span className="material-symbols-outlined text-base">diversity_1</span>
+                <i className="fa-solid fa-users-line text-base"></i>
                 سجل الافتقاد والأعذار ({activeVisitations.length + activeExcuses.length})
               </button>
             </div>
@@ -401,7 +401,7 @@ export const MemberAuditHistoryModule = () => {
             {activeTab === 'yearly_log' && (
               <div className="space-y-4">
                 <h3 className="font-extrabold text-base text-gray-800 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-amber-800">auto_stories</span>
+                  <i className="fa-solid fa-book-bible text-amber-800"></i>
                   السجل التراكمي لكل سنة خدمها العضو بالمجموعة الكشفية:
                 </h3>
 
@@ -438,7 +438,7 @@ export const MemberAuditHistoryModule = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {log.achievements.map((ach, aIdx) => (
                             <div key={aIdx} className="bg-amber-50/60 border border-amber-200/80 p-2.5 rounded-2xl text-xs font-semibold text-gray-800 flex items-center gap-2">
-                              <span className="material-symbols-outlined text-amber-800 text-base">verified</span>
+                              <i className="fa-solid fa-certificate text-amber-800 text-base"></i>
                               <span>{ach}</span>
                             </div>
                           ))}
@@ -454,7 +454,7 @@ export const MemberAuditHistoryModule = () => {
             {activeTab === 'finance_log' && (
               <div className="space-y-4">
                 <h3 className="font-extrabold text-base text-gray-800 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-amber-800">receipt_long</span>
+                  <i className="fa-solid fa-receipt text-amber-800"></i>
                   بيان الإيصالات والمدفوعات الصادرة للعضو:
                 </h3>
 
@@ -503,7 +503,7 @@ export const MemberAuditHistoryModule = () => {
             {activeTab === 'attendance_log' && (
               <div className="space-y-4">
                 <h3 className="font-extrabold text-base text-gray-800 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-amber-800">qr_code_scanner</span>
+                  <i className="fa-solid fa-qrcode text-amber-800"></i>
                   سجل سحب البصمة والحضور الذكي:
                 </h3>
 
@@ -513,7 +513,7 @@ export const MemberAuditHistoryModule = () => {
                       <div key={log.id} className="bg-white border border-gray-200 p-3.5 rounded-2xl flex items-center justify-between gap-2 text-xs">
                         <div className="flex items-center gap-3">
                           <span className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-                            <span className="material-symbols-outlined text-lg">check_circle</span>
+                            <i className="fa-solid fa-circle-check text-lg"></i>
                           </span>
                           <div>
                             <span className="font-bold text-gray-800 block text-sm">{log.dayLabel || log.date}</span>
@@ -538,7 +538,7 @@ export const MemberAuditHistoryModule = () => {
             {activeTab === 'visitations_log' && (
               <div className="space-y-4">
                 <h3 className="font-extrabold text-base text-gray-800 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-amber-800">diversity_1</span>
+                  <i className="fa-solid fa-users-line text-amber-800"></i>
                   سجلات الافتقاد وأعذار الغياب المعتمدة:
                 </h3>
 
@@ -588,7 +588,7 @@ export const MemberAuditHistoryModule = () => {
         </div>
       ) : (
         <div className="bg-[#fcf9f4] border border-[#e5e2dd] rounded-3xl p-12 text-center text-gray-500 space-y-3">
-          <span className="material-symbols-outlined text-6xl text-amber-700/40">search_off</span>
+          <i className="fa-solid fa-magnifying-glass-minus text-6xl text-amber-700/40"></i>
           <h3 className="text-lg font-bold text-gray-700">لم يتم العثور على عضو بهذا الاسم أو الكود</h3>
           <p className="text-sm text-gray-500">تأكد من كتابة الكود الصحيح أو اختبر إلغاء فلتر القطاع.</p>
         </div>
