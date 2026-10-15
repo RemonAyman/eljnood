@@ -4,13 +4,8 @@ import { useScout } from '../../context/ScoutContext';
 export const ParentPortal = () => {
   const { currentUser, members, subscriptions, addExcuse } = useScout();
 
-  const [childCodeInput, setChildCodeInput] = useState(currentUser.childCode || 'JS-2026-448');
-  const [showChildSelectModal, setShowChildSelectModal] = useState(false);
-  const [showExcuseModal, setShowExcuseModal] = useState(false);
-  const [excuseForm, setExcuseForm] = useState({ date: '2026-05-24', reason: 'ظروف امتحان مدرسي حتمي' });
-
-  const [linkedChild, setLinkedChild] = useState(() => {
-    return members.find(m => m.code === (currentUser.childCode || 'JS-2026-448')) || members[0] || {
+  const [childrenList, setChildrenList] = useState(() => [
+    members.find(m => m.code === (currentUser.childCode || 'JS-2026-448')) || members[0] || {
       name: 'كيرلس مينا شنودة',
       code: 'JS-2026-448',
       grade: 'الصف الأول الإعدادي',
@@ -19,19 +14,63 @@ export const ParentPortal = () => {
       addressDetails: 'شارع الكنيسة، عمارة الأمل، بني الجمهورية',
       attendanceCount: 18,
       totalSessions: 19,
-    };
-  });
-
-  const handleLinkChild = (e) => {
-    e.preventDefault();
-    const found = members.find(m => m.code === childCodeInput.trim());
-    if (found) {
-      setLinkedChild(found);
-      setShowChildSelectModal(false);
-      alert(`تم التبديل لمتابعة الابن: ${found.name}`);
-    } else {
-      alert(`كود الابن #${childCodeInput} غير مسجل بالنظام`);
+    },
+    {
+      name: 'مارينا مينا شنودة',
+      code: 'JS-2026-512',
+      grade: 'الصف الخامس الابتدائي',
+      sectorName: 'مرحلة الزهرات',
+      parentPhone: '01229876543',
+      addressDetails: 'شارع الكنيسة، عمارة الأمل، بني الجمهورية',
+      attendanceCount: 16,
+      totalSessions: 19,
     }
+  ]);
+
+  const [activeChildCode, setActiveChildCode] = useState(currentUser.childCode || 'JS-2026-448');
+  const [childCodeInput, setChildCodeInput] = useState('');
+  const [newChildNameInput, setNewChildNameInput] = useState('');
+  const [showChildSelectModal, setShowChildSelectModal] = useState(false);
+  const [showExcuseModal, setShowExcuseModal] = useState(false);
+  const [excuseForm, setExcuseForm] = useState({ date: '2026-05-24', reason: 'ظروف امتحان مدرسي حتمي' });
+
+  const linkedChild = childrenList.find(c => c.code === activeChildCode) || childrenList[0];
+
+  const handleAddOrSwitchChild = (e) => {
+    e.preventDefault();
+    const code = childCodeInput.trim();
+    if (!code) return;
+
+    // Check if already in childrenList
+    const existingInList = childrenList.find(c => c.code === code);
+    if (existingInList) {
+      setActiveChildCode(code);
+      setShowChildSelectModal(false);
+      setChildCodeInput('');
+      setNewChildNameInput('');
+      alert(`تم التبديل لمتابعة الابن: ${existingInList.name}`);
+      return;
+    }
+
+    // Check in global members
+    const foundInMembers = members.find(m => m.code === code);
+    const newChildObj = foundInMembers || {
+      name: newChildNameInput.trim() || `ابن جديد (${code})`,
+      code: code,
+      grade: 'الصف الأول الابتدائي',
+      sectorName: 'قطاع البراعم والأشبال',
+      parentPhone: currentUser.parentPhone || '01229876543',
+      addressDetails: 'عنوان ولي الأمر المسجل',
+      attendanceCount: 12,
+      totalSessions: 14,
+    };
+
+    setChildrenList(prev => [...prev, newChildObj]);
+    setActiveChildCode(code);
+    setShowChildSelectModal(false);
+    setChildCodeInput('');
+    setNewChildNameInput('');
+    alert(`تمت إضافة المخدوم (${newChildObj.name}) بنجاح لرصيد متابعة الأبناء!`);
   };
 
   const handleExcuseSubmit = (e) => {
@@ -62,32 +101,45 @@ export const ParentPortal = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">بوابة ولي الأمر والخدمة العائلية</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              متابعة حضور الأبناء، تقديم أعذار الغياب، واستعراض الاشتراكات والبطاقة الرقمية
-            </p>
           </div>
         </div>
       </div>
 
-      {/* 1. Selected Child Top Selector Strip matching Image 2 */}
-      <div className="bg-[#f6f3ee] p-3.5 sm:p-4 rounded-2xl border border-[#e5e2dd] flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center font-bold shadow">
-            <span className="material-symbols-outlined text-[22px]">family_history</span>
-          </div>
-          <div>
-            <span className="text-[10px] font-bold text-[#7e5713] block">الابن المختار للمتابعة الأسرية:</span>
-            <h2 className="font-black text-sm sm:text-base text-[#610000]">{linkedChild.name} ({linkedChild.code})</h2>
+      {/* 1. Selected Child Top Selector Strip */}
+      <div className="bg-[#f6f3ee] p-4 rounded-2xl border border-[#e5e2dd] space-y-3 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center font-bold shadow">
+              <span className="material-symbols-outlined text-[22px]">family_history</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-[#7e5713] block">الابن الحالي المختار للمتابعة:</span>
+              <h2 className="font-black text-sm sm:text-base text-[#610000]">{linkedChild.name} ({linkedChild.code})</h2>
+            </div>
           </div>
         </div>
 
-        <button
-          onClick={() => setShowChildSelectModal(true)}
-          className="px-4 py-2 rounded-xl bg-white hover:bg-amber-50 text-[#7e5713] font-bold text-xs border border-[#7e5713]/30 shadow-xs transition flex items-center gap-1.5"
-        >
-          <span className="material-symbols-outlined text-[16px]">published_with_changes</span>
-          <span>تبديل الابن ➔</span>
-        </button>
+        {/* Quick Children Switcher Chips */}
+        {childrenList.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-[#e5e2dd]">
+            <span className="text-xs font-bold text-[#5a403c] shrink-0">أبنائي المتابَعين:</span>
+            {childrenList.map((child) => (
+              <button
+                key={child.code}
+                onClick={() => setActiveChildCode(child.code)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  activeChildCode === child.code
+                    ? 'bg-[#8b0000] text-white font-black shadow-sm'
+                    : 'bg-white text-[#5a403c] border border-[#e5e2dd] hover:bg-amber-50'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">child_care</span>
+                <span>{child.name}</span>
+                <span className="font-mono text-[10px] opacity-80">({child.code})</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 2. Scout Profile Card matching Image 2 */}
@@ -133,23 +185,7 @@ export const ParentPortal = () => {
           مؤشر الانضباط والحضور العام
         </h3>
 
-        <div className="p-5 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] flex flex-col md:flex-row items-center justify-between gap-6">
-          {/* Gauge Meter */}
-          <div className="flex items-center gap-4">
-            <div className="relative w-20 h-20 rounded-full border-8 border-amber-400 border-t-[#8b0000] flex items-center justify-center shadow-inner shrink-0">
-              <span className="text-xl font-black text-[#610000]">{attendancePct}%</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-1 text-emerald-800 font-black text-sm">
-                <span className="material-symbols-outlined text-[18px]">verified</span>
-                <span>ممتاز ومؤهل للمعسكر السنوي</span>
-              </div>
-              <p className="text-xs text-[#5a403c] mt-0.5 leading-relaxed">
-                استوفى الكشاف كيرلس جميع شروط الحضور والأنشطة الروحية والكشفية المعتمدة.
-              </p>
-            </div>
-          </div>
-        </div>
+
 
         {/* 4 Metrics Grid matching Image 2 */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -338,24 +374,45 @@ export const ParentPortal = () => {
       {showChildSelectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-[#e5e2dd] shadow-2xl space-y-4">
-            <h3 className="font-extrabold text-base text-[#610000]">مزامنة وتبديل الابن للمتابعة</h3>
-            <form onSubmit={handleLinkChild} className="space-y-3">
+            <div className="flex items-center gap-3 border-b pb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#8b0000] text-white flex items-center justify-center">
+                <span className="material-symbols-outlined text-[24px]">group_add</span>
+              </div>
               <div>
-                <label className="block text-xs font-bold text-[#5a403c] mb-1">أدخل كود الابن الكشفي:</label>
+                <h3 className="font-extrabold text-base text-[#610000]">إضافة / ربط كود ابن أو ابنة جديد</h3>
+                <p className="text-xs text-[#5a403c]">لمتابعة حضور واشتراكات أكثر من ابن من حساب واحد</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddOrSwitchChild} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-[#5a403c] mb-1">كود الابن/الابنة الكشفي (إجباري):</label>
                 <input
                   type="text"
                   required
-                  placeholder="مثال: JS-2026-448"
+                  placeholder="مثال: JS-2026-448 أو JS-2026-512"
                   value={childCodeInput}
                   onChange={(e) => setChildCodeInput(e.target.value)}
-                  className="w-full p-3 bg-[#f6f3ee] rounded-xl border text-xs font-mono font-bold"
+                  className="w-full p-3 bg-[#f6f3ee] rounded-xl border border-[#e5e2dd] text-xs font-mono font-bold text-[#8b0000]"
                 />
               </div>
-              <div className="flex gap-2">
-                <button type="submit" className="flex-1 py-3 rounded-xl bg-[#8b0000] text-white font-bold text-xs">
-                  مزامنة المتابعة
+
+              <div>
+                <label className="block text-xs font-bold text-[#5a403c] mb-1">اسم الابن/الابنة (اختياري للتعريف):</label>
+                <input
+                  type="text"
+                  placeholder="مثال: مارينا مينا"
+                  value={newChildNameInput}
+                  onChange={(e) => setNewChildNameInput(e.target.value)}
+                  className="w-full p-3 bg-[#f6f3ee] rounded-xl border border-[#e5e2dd] text-xs font-bold text-[#1c1c19]"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 py-3 rounded-xl bg-[#8b0000] hover:bg-[#610000] text-white font-bold text-xs shadow transition cursor-pointer">
+                  ربط وتفعيل المتابعة ➔
                 </button>
-                <button type="button" onClick={() => setShowChildSelectModal(false)} className="py-3 px-4 rounded-xl bg-[#f6f3ee] font-bold text-xs">
+                <button type="button" onClick={() => setShowChildSelectModal(false)} className="py-3 px-4 rounded-xl bg-[#f6f3ee] text-[#5a403c] font-bold text-xs cursor-pointer">
                   إلغاء
                 </button>
               </div>

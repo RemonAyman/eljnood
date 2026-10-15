@@ -13,9 +13,6 @@ export const InventoryModule = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">طلب العهد والمهمات الكشفية والمخازن</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              استعراض حصر عهدة المجموعة والمخازن وتقديم طلبات الاستلام للأنشطة والمعسكرات
-            </p>
           </div>
         </div>
 

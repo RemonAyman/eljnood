@@ -99,9 +99,6 @@ export const MemoriesModule = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">صندوق الذكريات والأرشيف المرئي</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              السجل الرقمي الموثق لمسيرة مجموعة جنود المسيح عبر الأجيال
-            </p>
           </div>
         </div>
 

@@ -57,9 +57,6 @@ export const HallsReservationModule = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">تنسيق قاعات ومقرات الخدمة</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              اختر الخدمة والقاعة ثم حدد الساعات المطلوبة لاعتماد الحجز الفوري
-            </p>
           </div>
         </div>
 

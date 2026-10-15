@@ -1,10 +1,37 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useScout } from '../../context/ScoutContext';
 
-export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, activeTabTitle = 'الرئيسية', activeTab, setActiveTab, hideSidebarToggle = false }) => {
-  const { currentUser, switchUserRole, SECTOR_HEAD_USERS } = useScout();
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
+export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, hideSidebarToggle = false }) => {
+  const { currentUser } = useScout();
+  const location = useLocation();
   const [showAnnounceModal, setShowAnnounceModal] = useState(false);
+
+  const getTabTitleByPath = (path) => {
+    switch (path) {
+      case '/':
+      case '/about-group': return 'عن مجموعة جنود المسيح الكشفية';
+      case '/member-audit-history': return 'سجل الاستعلام الشامل للأعضاء والقادة';
+      case '/annual-schedule': return 'خطة الأيام الكشفية والموسم السنوي';
+      case '/detailed-programs': return 'برامج واجتماعات القطاعات والعهد الكشفية والمعسكرات';
+      case '/sector-meetings': return 'اجتماعات القطاعات والفرق الكشفية';
+      case '/digital-card': return 'الكارنيه الكشفي الرقمي';
+      case '/smart-attendance': return 'تسجيل الحضور والغياب الذكي';
+      case '/finances-and-dues': return 'الاشتراكات والماليات';
+      case '/price-list': return 'لائحة الأسعار والتحصيل الرسمية';
+      case '/bible-and-competitions': return 'المسابقات الكتابية ودراسة الإنجيل';
+      case '/care-and-visitation': return 'إدارة وتوزيع افتقاد المخدومين (رؤساء القطاعات)';
+      case '/field-visitations': return 'التكليفات والافتقاد الميداني (القادة والجوالة)';
+      case '/communications-chat': return 'غرف التواصل والإعلانات';
+      case '/halls-reservation': return 'حجز وتنسيق قاعات ومقرات الخدمة';
+      case '/inventory-and-equipment': return 'طلب العهد والمهمات والمخازن الكشفية';
+      case '/memory-box-exhibitions': return 'صندوق الذكريات والأرشيف';
+      case '/parent': return 'بوابة ولي الأمر';
+      default: return 'عن مجموعة جنود المسيح';
+    }
+  };
+
+  const activeTabTitle = getTabTitleByPath(location.pathname);
 
   // Announcements list
   const announcements = [
@@ -82,31 +109,21 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, activeTabTitle = 'ال
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Landing Mode: Show Login Button | System Mode: Show Notifications */}
-          {isLanding ? (
+          {isLanding && (
             <button
               onClick={onOpenAuth}
-              className="px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#3a0000] text-xs font-black shadow transition flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#3a0000] font-black text-xs shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">login</span>
+              <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
               <span>تسجيل الدخول</span>
             </button>
-          ) : (
-            <button
-              onClick={() => setShowAnnounceModal(true)}
-              className="relative p-1.5 rounded-full text-amber-100 hover:bg-white/10 transition"
-            >
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#8b0000]"></span>
-            </button>
           )}
-
-          {/* User Profile Avatar */}
           <button
-            onClick={() => setShowRoleMenu(!showRoleMenu)}
-            className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center text-white hover:bg-white/30 transition"
+            onClick={() => setShowAnnounceModal(true)}
+            className="relative p-1.5 rounded-full text-amber-100 hover:bg-white/10 transition"
           >
-            <span className="material-symbols-outlined text-[20px]">person</span>
+            <span className="material-symbols-outlined text-[22px]">notifications</span>
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#8b0000]"></span>
           </button>
         </div>
       </header>
@@ -148,136 +165,23 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, activeTabTitle = 'ال
 
         {/* Desktop Right Controls */}
         <div className="flex items-center gap-3 shrink-0">
-          
-          {/* Landing Mode Special Login Button */}
           {isLanding && (
             <button
               onClick={onOpenAuth}
-              className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-[#3a0000] px-4 py-1.5 rounded-full text-xs font-black shadow-md transition cursor-pointer border border-amber-500/30"
+              className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#3a0000] font-black text-xs shadow-md hover:scale-105 transition active:scale-95 flex items-center gap-2 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">key</span>
+              <span className="material-symbols-outlined text-[20px]">how_to_reg</span>
               <span>تسجيل الدخول</span>
             </button>
           )}
-
-          {/* Announcements Center Button (Shown only inside system pages) */}
-          {!isLanding && (
-            <button
-              onClick={() => setShowAnnounceModal(true)}
-              className="flex items-center gap-2 bg-[#fcf9f4] hover:bg-[#f6f3ee] border border-[#e5e2dd] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#1c1c19] transition cursor-pointer shadow-2xs group"
-              title="فتح مركز التعميمات والإعلانات"
-            >
-              <div className="relative flex items-center justify-center">
-                <span className="material-symbols-outlined text-[#8b0000] text-[18px] group-hover:scale-110 transition">notifications</span>
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#8b0000] animate-pulse"></span>
-              </div>
-              <span>التعميمات والتنبيهات</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-[#ffddb1] text-[#291800] text-[10px] font-black">
-                {announcements.length}
-              </span>
-            </button>
-          )}
-
-          {/* Quick Role Switcher */}
-          <div className="relative">
-            <button
-              onClick={() => setShowRoleMenu(!showRoleMenu)}
-              className="flex items-center gap-2 bg-[#f6f3ee] hover:bg-[#ebe8e3] border border-[#e5e2dd] px-3 py-1.5 rounded-full text-xs font-bold text-[#1c1c19] transition cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[#7e5713] text-[18px]">manage_accounts</span>
-              <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${badge.bg}`}>
-                {badge.label}
-              </span>
-              <span className="material-symbols-outlined text-[16px] text-[#8e706b]">arrow_drop_down</span>
-            </button>
-
-            {showRoleMenu && (
-              <div className="absolute left-0 mt-2 w-72 rounded-2xl bg-white border border-[#e5e2dd] shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 max-h-[85vh] overflow-y-auto">
-                <div className="px-3 py-1.5 border-b border-[#f0ede9] text-[11px] font-bold text-[#8e706b]">
-                  اختر الحساب للتجربة المباشرة:
-                </div>
-                <div className="space-y-1 mt-1">
-                  <button
-                    onClick={() => {
-                      switchUserRole('guest');
-                      if (setActiveTab) setActiveTab('about-group');
-                      setShowRoleMenu(false);
-                    }}
-                    className={`w-full text-right px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-[#f6f3ee] ${currentUser?.role === 'guest' ? 'bg-amber-100 text-amber-900 font-black' : 'text-[#1c1c19]'}`}
-                  >
-                    <span>👤 زائر غير مسجل (صفحة البداية فقط)</span>
-                  </button>
-                  <button
-                    onClick={() => { switchUserRole('admin'); setShowRoleMenu(false); }}
-                    className={`w-full text-right px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-[#f6f3ee] ${currentUser?.role === 'admin' ? 'bg-[#ffdad6] text-[#8b0000]' : 'text-[#1c1c19]'}`}
-                  >
-                    <span>👑 المدير العام (مجلس القيادة الأعلى)</span>
-                  </button>
-                  <button
-                    onClick={() => { switchUserRole('festival_leader'); setShowRoleMenu(false); }}
-                    className={`w-full text-right px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-[#f6f3ee] ${currentUser?.role === 'festival_leader' ? 'bg-amber-200 text-amber-950 font-black border border-amber-400' : 'text-[#1c1c19]'}`}
-                  >
-                    <span>🏆 قائد المهرجان (غياب جميع القطاعات)</span>
-                  </button>
-                  <button
-                    onClick={() => { switchUserRole('sub_officer'); setShowRoleMenu(false); }}
-                    className={`w-full text-right px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-[#f6f3ee] ${currentUser?.role === 'sub_officer' ? 'bg-emerald-100 text-emerald-800' : 'text-[#1c1c19]'}`}
-                  >
-                    <span>💳 مسؤول الاشتراكات والماليات</span>
-                  </button>
-
-                  {/* Section: Sector Heads per Sector */}
-                  <div className="border-t border-b border-[#f0ede9] py-1.5 my-1 space-y-1">
-                    <div className="px-2 py-1 text-[10px] font-black text-[#7e5713] bg-amber-50 rounded-lg flex items-center justify-between">
-                      <span>⚜️ رؤساء القطاعات ({SECTOR_HEAD_USERS?.length || 9} قطاعات):</span>
-                      <span className="text-[9px] opacity-80">اختر القطاع</span>
-                    </div>
-                    {(SECTOR_HEAD_USERS || []).map((headUser) => {
-                      const isSelected = currentUser?.role === 'sector_head' && currentUser?.sector === headUser.sector;
-                      return (
-                        <button
-                          key={headUser.id}
-                          onClick={() => {
-                            switchUserRole('sector_head', { sector: headUser.sector, id: headUser.id });
-                            setShowRoleMenu(false);
-                          }}
-                          className={`w-full text-right px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between transition ${
-                            isSelected
-                              ? 'bg-[#ffddb1] text-[#291800] font-black shadow-2xs border border-amber-300'
-                              : 'text-[#1c1c19] hover:bg-[#f6f3ee]'
-                          }`}
-                        >
-                          <span className="truncate">{headUser.name}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${isSelected ? 'bg-[#7e5713] text-white' : 'bg-amber-100 text-[#7e5713]'}`}>
-                            {headUser.sectorName}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => { switchUserRole('leader'); setShowRoleMenu(false); }}
-                    className={`w-full text-right px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-[#f6f3ee] ${currentUser?.role === 'leader' ? 'bg-blue-100 text-blue-800' : 'text-[#1c1c19]'}`}
-                  >
-                    <span>⛺ قائد طليعة / جوال</span>
-                  </button>
-                  <button
-                    onClick={() => { switchUserRole('parent'); setShowRoleMenu(false); }}
-                    className={`w-full text-right px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-[#f6f3ee] ${currentUser?.role === 'parent' ? 'bg-purple-100 text-purple-800' : 'text-[#1c1c19]'}`}
-                  >
-                    <span>👨‍👩‍👧 ولي أمر (متابعة الابن)</span>
-                  </button>
-                  <button
-                    onClick={() => { switchUserRole('child'); setShowRoleMenu(false); }}
-                    className={`w-full text-right px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-[#f6f3ee] ${currentUser?.role === 'child' ? 'bg-cyan-100 text-cyan-800' : 'text-[#1c1c19]'}`}
-                  >
-                    <span>⚜️ كشاف / مخدوم (الكارنيه)</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setShowAnnounceModal(true)}
+            className="relative w-10 h-10 rounded-full bg-[#fcf9f4] hover:bg-[#f6f3ee] border border-[#e5e2dd] flex items-center justify-center text-[#8b0000] transition cursor-pointer shadow-2xs group"
+            title="فتح مركز التعميمات والإعلانات"
+          >
+            <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition">notifications</span>
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-[#8b0000] ring-2 ring-white animate-pulse"></span>
+          </button>
         </div>
       </header>
 
@@ -313,13 +217,6 @@ export const Navbar = ({ onOpenAuth, onOpenMobileSidebar, activeTabTitle = 'ال
                 </div>
               ))}
             </div>
-
-            <button
-              onClick={() => setShowAnnounceModal(false)}
-              className="w-full py-3 rounded-xl bg-[#8b0000] text-white font-bold text-xs shadow"
-            >
-              إغلاق النافذة
-            </button>
           </div>
         </div>
       )}

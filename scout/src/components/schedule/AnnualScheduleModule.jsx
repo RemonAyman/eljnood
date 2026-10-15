@@ -36,6 +36,10 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
       time: '04:00 م - 08:00 م',
       category: 'days',
       sector: 'boys',
+      sectorName: 'قطاع الفتيان',
+      bookingStatus: 'مؤكد (أرض الفناء والمبنى الكشفي)',
+      bookingBadgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      systemType: 'نظام ورش عمل مدمجة وتدريب ريادة',
       title: 'يوم كشفي وتدريب العقد والريادة',
       badgeText: '⛺ يوم كشفي مدمج',
       badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
@@ -56,6 +60,10 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
       time: '04:00 م - 07:30 م',
       category: 'badges',
       sector: 'cubs',
+      sectorName: 'قطاع الأشبال والزهرات',
+      bookingStatus: 'مؤكد (الكنيسة الكبرى وقاعات الخدمات)',
+      bookingBadgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      systemType: 'نظام تقييم محطات فردية ولجان تحكيم',
       title: 'اختبارات شارات الهوايات والمرحلة الأولى',
       badgeText: '🎖️ اختبار رسمي',
       badgeColor: 'bg-red-100 text-red-900 border-red-300',
@@ -76,6 +84,10 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
       time: 'إقامة كاملة',
       category: 'camps',
       sector: 'advanced',
+      sectorName: 'قطاع الكشاف المتقدم',
+      bookingStatus: 'تم حجز محمية وادي الريان',
+      bookingBadgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      systemType: 'نظام معسكر مغلق وسير خلوي',
       title: 'معسكر الإعداد القيادي الجماعي لطلائع المجموعة',
       badgeText: '⛺ معسكر تدريبي محترف',
       badgeColor: 'bg-amber-50 text-[#7e5713] border-amber-300',
@@ -96,6 +108,10 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
       time: 'معسكر عام مغلق',
       category: 'camps',
       sector: 'all',
+      sectorName: 'جميع قطاعات المجموعة',
+      bookingStatus: 'حجز مؤكد (أرض المعسكر بالإسكندرية)',
+      bookingBadgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      systemType: 'نظام معسكر عام كامل والتجمع السنوي',
       title: 'المعسكر السنوي العام لمجموعة جنود المسيح',
       badgeText: '🔥 حدث الموسم السنوي',
       badgeColor: 'bg-[#8b0000] text-white border-red-900',
@@ -117,6 +133,10 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
       time: '04:00 م - 09:00 م',
       category: 'promise',
       sector: 'all',
+      sectorName: 'جميع قطاعات المجموعة',
+      bookingStatus: 'محجوز (المسرح الرئيسي والساحة البابوية)',
+      bookingBadgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      systemType: 'نظام طابور عرض رسمي وحفل وعد',
       title: 'حفل الوعد الكشفي السنوي وتوزيع المناديل والأوسمة',
       badgeText: '🔴 حفل الوعد الرسمي',
       badgeColor: 'bg-red-50 text-[#8b0000] border-red-200',
@@ -137,6 +157,10 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
       time: '05:00 م - 09:30 م',
       category: 'days',
       sector: 'all',
+      sectorName: 'جميع قطاعات المجموعة',
+      bookingStatus: 'قيد التنسيق (القاعة الكبرى والساحة)',
+      bookingBadgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
+      systemType: 'نظام مهرجان درامي وتكريم ختامي',
       title: 'مهرجان التفوق الدراسي والدرامي وختام النشاط',
       badgeText: '🏆 أحدث ومهرجان',
       badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
@@ -163,34 +187,19 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
           <div className="w-14 h-14 rounded-2xl bg-[#8b0000] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
             <span className="material-symbols-outlined text-[32px]">calendar_month</span>
           </div>
-          <div>
+          <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">خطة الأيام الكشفية والموسم السنوي</h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-[#8b0000] font-extrabold text-[11px] border border-red-200">
+                خاصة بالآدمن ورؤساء القطاعات
+              </span>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              مواعيد المعسكرات الكشفية، الاختبارات السنوية، وحفلات الوعد الرسمية
+            <p className="text-xs text-[#5a403c] font-medium">
+              لوحة متابعة وتنسيق حجوزات المقر/الأرض، تحديد القطاع المسؤول، ونظام الفعالية الكشفية
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('detailed-programs')}
-              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-[#3d0000] font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer border border-amber-400"
-            >
-              <span className="material-symbols-outlined text-[18px]">assignment</span>
-              <span>برامج الأيام والعهد التفصيلية ➔</span>
-            </button>
-          )}
-          <button
-            onClick={() => setShowPreviewModal(true)}
-            className="px-4 py-2.5 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-            <span>تحميل الخطة الرسمية PDF</span>
-          </button>
-        </div>
       </div>
 
       {/* 2. Category Tabs & Sector Filter Bar matching Image 1 */}
@@ -252,18 +261,28 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
                     <span className="text-[10px] sm:text-xs font-bold opacity-90">{event.monthShort}</span>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${event.badgeColor}`}>
                         {event.badgeText}
                       </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-900 border border-blue-200">
+                        القطاع المسؤول: {event.sectorName}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${event.bookingBadgeColor}`}>
+                        حالة الحجز: {event.bookingStatus}
+                      </span>
                       <span className="text-xs text-[#7e5713] font-bold">⏰ {event.time}</span>
                     </div>
+                    
                     <h4 className="font-extrabold text-base sm:text-lg text-[#1c1c19]">{event.title}</h4>
+                    
                     <div className="flex flex-wrap gap-3 text-xs text-[#5a403c] pt-0.5">
-                      <span>📍 {event.location}</span>
+                      <span>📍 المكان: {event.location}</span>
                       <span>•</span>
-                      <span>👥 {event.target}</span>
+                      <span>⚙️ نظام اليوم: <strong className="text-[#610000]">{event.systemType}</strong></span>
+                      <span>•</span>
+                      <span>👥 الفئة: {event.target}</span>
                     </div>
                   </div>
                 </div>
@@ -293,32 +312,7 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
         ))}
       </div>
 
-      {/* 4. Bottom Annual Achievements Summary Card matching Image 1 */}
-      <div className="bg-white rounded-3xl p-6 border border-[#e5e2dd] shadow-sm space-y-4">
-        <h3 className="font-extrabold text-base text-[#610000] flex items-center gap-2 border-b pb-3">
-          <span className="material-symbols-outlined text-[22px] text-[#8b0000]">analytics</span>
-          إحصائيات الإنجاز السنوي المخطط 2026 - 2027
-        </h3>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div className="p-4 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd]">
-            <span className="text-2xl font-black text-[#8b0000] block">16</span>
-            <span className="text-xs font-bold text-[#5a403c]">يوماً كشفياً</span>
-          </div>
-          <div className="p-4 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd]">
-            <span className="text-2xl font-black text-[#7e5713] block">4</span>
-            <span className="text-xs font-bold text-[#5a403c]">معسكرات سنوية</span>
-          </div>
-          <div className="p-4 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd]">
-            <span className="text-2xl font-black text-amber-700 block">2</span>
-            <span className="text-xs font-bold text-[#5a403c]">حفلات وعد وتكريم</span>
-          </div>
-          <div className="p-4 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd]">
-            <span className="text-2xl font-black text-emerald-800 block">100%</span>
-            <span className="text-xs font-bold text-[#5a403c]">نسبة تنفيذ الخطة</span>
-          </div>
-        </div>
-      </div>
 
       {/* Document Preview Modal */}
       {showPreviewModal && (
@@ -333,18 +327,18 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-[32px] text-[#8b0000]">picture_as_pdf</span>
               <div>
-                <h3 className="font-extrabold text-lg text-[#610000]">معاينة وثيقة الخطة السنوية</h3>
+                <h3 className="font-extrabold text-lg text-[#610000]">معاينة وثيقة الخطة السنوية والتنسيق</h3>
                 <p className="text-xs text-[#5a403c]">المسودة الرسمية المعتمدة لعام 2026/2027</p>
               </div>
             </div>
 
             <div className="p-5 bg-[#f6f3ee] rounded-2xl border border-[#e5e2dd] space-y-3 text-xs leading-relaxed text-[#1c1c19] max-h-[60vh] overflow-y-auto">
-              <h4 className="font-black text-sm text-[#8b0000]">جدول الأنشطة والمعسكرات المعتمدة:</h4>
-              <p>• مايو 2026: بدء اختبارات المستوى والتحضير لطابور العرض الكشفي.</p>
-              <p>• يونيو 2026: معسكر الإعداد القيادي في وادي الريان وتدريب الخيام.</p>
+              <h4 className="font-black text-sm text-[#8b0000]">جدول الأنشطة والحجوزات المعتمدة بين القطاعات:</h4>
+              <p>• مايو 2026: يوم كشفي (قطاع الفتيان - أرض الفناء) واختبارات الشارات (الأشبال - الكنيسة الكبرى).</p>
+              <p>• يونيو 2026: معسكر الإعداد القيادي (قطاع المتقدم - وادي الريان).</p>
               <p>• يوليو 2026: المعسكر السنوي العام لجميع قطاعات المجموعة بالإسكندرية.</p>
-              <p>• أغسطس 2026: حفل الوعد الكشفي الرسمي وتوزيع الشارات المناديل.</p>
-              <p>• سبتمبر 2026: ختام الموسم الكشفي والاحتفال بالتفوق العلمي والدرامي.</p>
+              <p>• أغسطس 2026: حفل الوعد الكشفي الرسمي (جميع القطاعات - المسرح الرئيسي).</p>
+              <p>• سبتمبر 2026: ختام الموسم الكشفي والاحتفال بالتفوق (القاعة الكبرى والساحة).</p>
             </div>
 
             <div className="flex gap-2">
@@ -365,21 +359,40 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
           <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-[#e5e2dd] shadow-2xl relative space-y-4 my-auto">
             <button
               onClick={() => setActiveDetailsModal(null)}
-              className="absolute top-4 left-4 w-9 h-9 rounded-full bg-red-50 text-[#8b0000] font-black flex items-center justify-center border border-red-200"
+              className="absolute top-4 left-4 w-9 h-9 rounded-full bg-red-50 text-[#8b0000] font-black flex items-center justify-center border border-red-200 cursor-pointer"
             >
               ✕
             </button>
-            <div className="space-y-1">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-[#7e5713] text-[10px] font-bold">
-                {activeDetailsModal.badgeText}
-              </span>
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-[#7e5713] text-[10px] font-bold">
+                  {activeDetailsModal.badgeText}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900 text-[10px] font-extrabold border border-blue-200">
+                  {activeDetailsModal.sectorName}
+                </span>
+              </div>
               <h3 className="font-extrabold text-lg text-[#610000]">{activeDetailsModal.title}</h3>
               <p className="text-xs text-[#5a403c]">{activeDetailsModal.monthLabel} • {activeDetailsModal.time}</p>
             </div>
 
             <div className="p-4 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd] space-y-3 text-xs">
               <div>
-                <span className="font-bold text-[#7e5713] block">المكان المستهدف:</span>
+                <span className="font-bold text-[#7e5713] block">القطاع المسؤول:</span>
+                <span className="text-[#1c1c19] font-bold">{activeDetailsModal.sectorName}</span>
+              </div>
+              <div>
+                <span className="font-bold text-[#7e5713] block">حالة حجز المقر / الأرض:</span>
+                <span className="text-emerald-800 font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5">
+                  {activeDetailsModal.bookingStatus}
+                </span>
+              </div>
+              <div>
+                <span className="font-bold text-[#7e5713] block">نظام الفعالية / اليوم:</span>
+                <span className="text-[#610000] font-bold">{activeDetailsModal.systemType}</span>
+              </div>
+              <div>
+                <span className="font-bold text-[#7e5713] block">المكان التفصيلي:</span>
                 <span className="text-[#1c1c19]">{activeDetailsModal.location}</span>
               </div>
               <div>
@@ -394,12 +407,20 @@ export const AnnualScheduleModule = ({ onNavigate }) => {
               )}
             </div>
 
-            <button
-              onClick={() => { alert('تم تسجيل اهتمامك بالفعالية ومزاجنة جدولك الكشفي!'); setActiveDetailsModal(null); }}
-              className="w-full py-3 rounded-xl bg-[#8b0000] text-white font-bold text-xs shadow"
-            >
-              تأكيد المشاركة وتنزيل التذكير
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { alert('تم تسجيل وتأكيد تنسيق الحجز مع رئيس القطاع والآدمن'); setActiveDetailsModal(null); }}
+                className="flex-1 py-3 rounded-xl bg-[#8b0000] hover:bg-[#610000] text-white font-bold text-xs shadow cursor-pointer"
+              >
+                تأكيد التنسيق والحجز
+              </button>
+              <button
+                onClick={() => { alert('تم إرسال طلب تعديل الموعد/المكان للآدمن ورؤساء القطاعات'); setActiveDetailsModal(null); }}
+                className="px-4 py-3 rounded-xl bg-[#f6f3ee] hover:bg-[#ebe8e3] text-[#5a403c] font-bold text-xs border border-[#e5e2dd] cursor-pointer"
+              >
+                طلب تعديل الحجز
+              </button>
+            </div>
           </div>
         </div>
       )}

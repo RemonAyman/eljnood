@@ -57,13 +57,10 @@ export const CurriculumModule = () => {
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">المناهج والمسابقات الكشفية</h1>
               {isSectorHead && (
                 <span className="px-3 py-1 rounded-full bg-[#ffddb1] text-[#291800] text-xs font-black border border-amber-300">
-                  خاص بـ: {sectorName} ⚜️
+                  خاص بـ: {sectorName}
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              تسلح بالمعرفة الكشفية والروحية، تابع قراءة الإنجيل اليومية، واجمع شارات التميز لزيادة مرتبتك!
-            </p>
           </div>
         </div>
 

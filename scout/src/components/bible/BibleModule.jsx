@@ -89,9 +89,6 @@ export const BibleModule = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">المكتبة الروحية والتأملات والمسابقات</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              تسجيلات صوتية، ملفات PDF، فيديوهات شرح، ومسابقات تفاعلية
-            </p>
           </div>
         </div>
 

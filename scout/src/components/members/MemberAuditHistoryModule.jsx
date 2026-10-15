@@ -149,21 +149,10 @@ export const MemberAuditHistoryModule = () => {
                 سجل الاستعلام الشامل للأعضاء والقادة والجوالة
               </h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              ابحث بالكود أو الاسم للوصول لتقرير شامل عن أي عضو: عدد سنوات الخدمة، الاشتراك بمهرجان الكرازة، الموقف المالي، وسجل الإنجازات لكل سنة على حدة.
-            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2.5 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">print</span>
-            <span>طباعة تقرير السجل السنوي</span>
-          </button>
-        </div>
+
       </div>
 
       {/* 2. Instant Search & Sector Selection Bar */}
@@ -256,14 +245,14 @@ export const MemberAuditHistoryModule = () => {
                   </span>
                 </div>
                 <p className="text-[#5a403c] text-xs font-bold mt-1 flex items-center gap-2 flex-wrap">
-                  <span>⚜️ {activeMember.sectorName}</span>
+                  <span>{activeMember.sectorName}</span>
                   <span>•</span>
                   <span>{activeMember.rank || 'عضو معتمد'}</span>
                   <span>•</span>
                   <span>{activeMember.grade || 'المرحلة الكشفية'}</span>
                   <span>•</span>
-                  <span className="bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full font-black border border-purple-300">
-                    🏠 آخر افتقاد: {activeMemberLastVisit ? activeMemberLastVisit : 'لم يفتقد بعد'}
+                  <span className="bg-[#f6f3ee] text-[#7e5713] px-2.5 py-0.5 rounded-full font-bold border border-[#e5e2dd]">
+                    آخر افتقاد: {activeMemberLastVisit ? activeMemberLastVisit : 'لم يفتقد بعد'}
                   </span>
                 </p>
               </div>
@@ -286,72 +275,68 @@ export const MemberAuditHistoryModule = () => {
           <div className="px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             
             {/* Metric 1: Joined Year & Service */}
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-xs text-gray-500 font-bold">
-                <span>📅 سنوات الخدمة</span>
-                <span className="material-symbols-outlined text-amber-800 text-lg">calendar_today</span>
+            <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#5a403c] font-bold">
+                <span>سنوات الخدمة</span>
+                <span className="material-symbols-outlined text-[#8b0000] text-lg">calendar_today</span>
               </div>
-              <span className="text-base font-black text-gray-800 block">انضم منذ {activeMember.yearsActive} سنوات</span>
-              <span className="text-xs text-amber-800 font-bold block">سنة الانضمام: {activeMember.joinedYear}</span>
+              <span className="text-base font-black text-[#1c1c19] block">انضم منذ {activeMember.yearsActive} سنوات</span>
+              <span className="text-xs text-[#7e5713] font-bold block">سنة الانضمام: {activeMember.joinedYear}</span>
             </div>
 
             {/* Metric 2: Festival Registration Status */}
-            <div className={`p-4 rounded-2xl border shadow-2xs space-y-1 ${
-              activeMember.isFestivalRegistered ? 'bg-emerald-50/80 border-emerald-200' : 'bg-amber-50/80 border-amber-200'
-            }`}>
-              <div className="flex items-center justify-between text-xs font-bold text-gray-600">
-                <span>🏆 المهرجان 2026</span>
-                <span className="material-symbols-outlined text-amber-800 text-lg">emoji_events</span>
+            <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs font-bold text-[#5a403c]">
+                <span>المهرجان 2026</span>
+                <span className="material-symbols-outlined text-amber-700 text-lg">emoji_events</span>
               </div>
-              <span className={`text-sm font-black block ${activeMember.isFestivalRegistered ? 'text-emerald-900' : 'text-amber-900'}`}>
-                {activeMember.isFestivalRegistered ? 'مشترك بالمهرجان 🏆' : 'غير مشترك حالياً'}
+              <span className={`text-sm font-black block ${activeMember.isFestivalRegistered ? 'text-emerald-800' : 'text-[#8b0000]'}`}>
+                {activeMember.isFestivalRegistered ? 'مشترك بالمهرجان' : 'غير مشترك حالياً'}
               </span>
-              <span className="text-xs text-gray-600 font-bold block">
+              <span className="text-xs text-[#5a403c] font-bold block">
                 {activeMember.isFestivalRegistered ? 'مسابقات الكرازة' : 'يمكن التسديد'}
               </span>
             </div>
 
             {/* Metric 3: Financial Status & Payments */}
-            <div className={`p-4 rounded-2xl border shadow-2xs space-y-1 ${
-              activeMember.totalPaid > 0 ? 'bg-sky-50/80 border-sky-200' : 'bg-red-50/80 border-red-200'
-            }`}>
-              <div className="flex items-center justify-between text-xs font-bold text-gray-600">
-                <span>💳 الموقف المالي</span>
-                <span className="material-symbols-outlined text-sky-800 text-lg">receipt_long</span>
+            <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs font-bold text-[#5a403c]">
+                <span>الموقف المالي</span>
+                <span className="material-symbols-outlined text-blue-700 text-lg">receipt_long</span>
               </div>
-              <span className={`text-sm font-black block ${activeMember.totalPaid > 0 ? 'text-sky-900' : 'text-red-900'}`}>
+              <span className={`text-sm font-black block ${activeMember.totalPaid > 0 ? 'text-emerald-800' : 'text-[#8b0000]'}`}>
                 {activeMember.totalPaid > 0 ? `سداد ${activeMember.totalPaid} ج.م` : 'لم يقم بالسداد'}
               </span>
-              <span className="text-xs text-gray-600 font-bold block">
+              <span className="text-xs text-[#5a403c] font-bold block">
                 الإيصالات: {activeMember.memberSubs.length} إيصال
               </span>
             </div>
 
             {/* Metric 4: Attendance & Discipline */}
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-xs text-gray-500 font-bold">
-                <span>📊 الحضور والإنضباط</span>
-                <span className="material-symbols-outlined text-amber-800 text-lg">verified</span>
+            <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#5a403c] font-bold">
+                <span>الحضور والإنضباط</span>
+                <span className="material-symbols-outlined text-amber-700 text-lg">verified</span>
               </div>
-              <span className="text-base font-black text-gray-800 block">
+              <span className="text-base font-black text-[#1c1c19] block">
                 {Math.round(((activeMember.attendanceCount || 12) / (activeMember.totalSessions || 14)) * 100)}% انضباط
               </span>
-              <span className="text-xs text-emerald-700 font-bold block">
+              <span className="text-xs text-emerald-800 font-bold block">
                 {activeMember.attendanceCount || 12} من {activeMember.totalSessions || 14} يوم
               </span>
             </div>
 
             {/* Metric 5: Last Visitation Date */}
-            <div className="bg-purple-50/80 p-4 rounded-2xl border border-purple-200 shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-xs text-purple-900 font-bold">
-                <span>🏠 آخر تاريخ افتقاد</span>
-                <span className="material-symbols-outlined text-purple-800 text-lg">home_pin</span>
+            <div className="bg-white p-4 rounded-2xl border border-[#e5e2dd] shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#5a403c] font-bold">
+                <span>آخر تاريخ افتقاد</span>
+                <span className="material-symbols-outlined text-purple-700 text-lg">home_pin</span>
               </div>
-              <span className="text-sm font-black text-purple-950 block font-mono">
+              <span className="text-sm font-black text-[#1c1c19] block font-mono">
                 {activeMemberLastVisit ? activeMemberLastVisit : 'لم يفتقد بعد'}
               </span>
-              <span className="text-xs text-purple-800 font-bold block">
-                {activeMemberLastVisit ? 'تم الافتقاد والتقرير ✅' : 'في انتظار الافتقاد ⏳'}
+              <span className="text-xs text-[#7e5713] font-bold block">
+                {activeMemberLastVisit ? 'تم الافتقاد والتقرير' : 'في انتظار الافتقاد'}
               </span>
             </div>
           </div>

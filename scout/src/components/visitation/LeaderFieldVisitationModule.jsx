@@ -79,9 +79,6 @@ export const LeaderFieldVisitationModule = () => {
                 حساب: {currentUser.name} ⚜️
               </span>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              استعراض الأعضاء والمخدومين الموزعين عليك، تنفيذ المكالمات والزيارات المنزلية وتوثيق ملاحظات الافتقاد وهدايا المناسبات.
-            </p>
           </div>
         </div>
       </div>

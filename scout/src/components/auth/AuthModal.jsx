@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { useScout } from '../../context/ScoutContext';
 
 export const AuthModal = ({ isOpen, onClose }) => {
-  const { addMember, switchUserRole, logActivity, scoutYear } = useScout();
+  const { addMember, switchUserRole, logActivity, scoutYear, loginWithCredentials, userAccounts } = useScout();
 
   // Navigation views: 'login', 'account_type', 'register_form', 'reset_password'
   const [viewMode, setViewMode] = useState('login');
   const [selectedRole, setSelectedRole] = useState('child'); // 'child', 'leader', 'sector_head', 'parent'
+  const [loginError, setLoginError] = useState('');
 
   // Login credentials state matching Image 1
   const [loginForm, setLoginForm] = useState({
-    codeOrEmail: 'JS-2026-448',
-    password: '',
+    codeOrEmail: 'admin@scout.org',
+    password: '12345',
     showPassword: false,
     pinCode: '',
   });
@@ -47,6 +48,21 @@ export const AuthModal = ({ isOpen, onClose }) => {
     linkedChildCode: '',
   });
 
+  // Support multiple children for parent registration
+  const [additionalChildren, setAdditionalChildren] = useState([]);
+
+  const handleAddChildField = () => {
+    setAdditionalChildren(prev => [...prev, { id: Date.now(), name: '', code: '' }]);
+  };
+
+  const handleRemoveChildField = (id) => {
+    setAdditionalChildren(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleUpdateChildField = (id, field, value) => {
+    setAdditionalChildren(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
   const calculateScoutSector = (gender, grade) => {
     const isFemale = gender === 'أنثى';
 
@@ -70,44 +86,16 @@ export const AuthModal = ({ isOpen, onClose }) => {
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    const val = loginForm.codeOrEmail.toLowerCase().trim();
+    setLoginError('');
 
-    if (val === 'admin' || val.includes('admin')) {
-      switchUserRole('admin');
-    } else if (val.includes('festival') || val.includes('مهرجان')) {
-      switchUserRole('festival_leader');
-    } else if (val === 'sub' || val.includes('sub')) {
-      switchUserRole('sub_officer');
-    } else if (val.includes('sprouts')) {
-      switchUserRole('sector_head', { sector: 'sprouts' });
-    } else if (val.includes('cubs')) {
-      switchUserRole('sector_head', { sector: 'cubs' });
-    } else if (val.includes('blossom')) {
-      switchUserRole('sector_head', { sector: 'blossoms' });
-    } else if (val.includes('scout') && !val.includes('senior')) {
-      switchUserRole('sector_head', { sector: 'scouts' });
-    } else if (val.includes('guide')) {
-      switchUserRole('sector_head', { sector: 'guides' });
-    } else if (val.includes('senior')) {
-      switchUserRole('sector_head', { sector: 'senior_scouts' });
-    } else if (val.includes('ranger')) {
-      switchUserRole('sector_head', { sector: 'rangers' });
-    } else if (val.includes('rover')) {
-      switchUserRole('sector_head', { sector: 'rovers' });
-    } else if (val.includes('leader_head')) {
-      switchUserRole('sector_head', { sector: 'leaders' });
-    } else if (val.includes('head')) {
-      switchUserRole('sector_head', { sector: 'cubs' });
-    } else if (val.includes('parent') || val.includes('0122')) {
-      switchUserRole('parent');
-    } else if (val === '1001' || val.includes('448') || val.includes('child')) {
-      switchUserRole('child');
+    const pass = loginForm.password || '12345';
+    const result = loginWithCredentials(loginForm.codeOrEmail, pass);
+
+    if (result.success) {
+      onClose();
     } else {
-      switchUserRole('leader');
+      setLoginError(result.error);
     }
-
-    logActivity(`تسجيل دخول بالحساب: ${loginForm.codeOrEmail}`);
-    onClose();
   };
 
   const handleRegisterSubmit = (e) => {
@@ -256,24 +244,69 @@ export const AuthModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
+                {loginError && (
+                  <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-[#8b0000] text-xs font-bold flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">error</span>
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full py-3 sm:py-3.5 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs shadow-lg transition flex items-center justify-center gap-2"
+                  className="w-full py-3 sm:py-3.5 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>تسجيل الدخول إلى حسابك</span>
                   <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                 </button>
               </form>
 
+              {/* Quick Accounts Selector Box */}
+              <div className="p-3 rounded-2xl bg-amber-50/90 border border-amber-300 text-xs text-[#7e5713] space-y-2 shadow-2xs">
+                <div className="flex justify-between items-center font-black">
+                  <span className="flex items-center gap-1">
+                    <span>🔑 الباسورد الموحد لجميع الحسابات:</span>
+                    <code className="px-1.5 py-0.5 rounded bg-amber-200 text-[#610000] font-mono font-black">12345</code>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-200 text-[#3a0000] text-[10px] font-black">
+                    {userAccounts.length} حساب للتجربة
+                  </span>
+                </div>
 
+                <p className="text-[11px] text-[#5a403c] leading-tight">
+                  اختر أي حساب للدخول المباشر والتنقل بين الصفحات:
+                </p>
+
+                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 text-[11px]">
+                  {userAccounts.map(acc => (
+                    <button
+                      key={acc.id}
+                      type="button"
+                      onClick={() => {
+                        setLoginForm({ ...loginForm, codeOrEmail: acc.email, password: '12345' });
+                        loginWithCredentials(acc.email, '12345');
+                        onClose();
+                      }}
+                      className="w-full text-right p-2 rounded-xl bg-white hover:bg-amber-100 border border-amber-200 flex items-center justify-between transition cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-xs">{acc.roleLabel?.split(' ')[0] || '👤'}</span>
+                        <span className="font-bold text-[#1c1c19] truncate group-hover:text-[#610000]">{acc.name}</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-[#8b0000] font-black shrink-0 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                        {acc.email}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Account type registration link */}
-              <div className="text-center pt-2 text-xs">
+              <div className="text-center pt-1 text-xs">
                 <span className="text-[#5a403c]">ليس لديك حساب كشفي؟ </span>
                 <button
                   type="button"
                   onClick={() => setViewMode('register_form')}
-                  className="font-black text-[#8b0000] hover:underline"
+                  className="font-black text-[#8b0000] hover:underline cursor-pointer"
                 >
                   سجل الآن وانضم للفرقة ➔
                 </button>
@@ -554,30 +587,17 @@ export const AuthModal = ({ isOpen, onClose }) => {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#5a403c] mb-1">صلة القرابة (إجباري):</label>
-                        <select
-                          value={childForm.relationToChild}
-                          onChange={(e) => setChildForm({ ...childForm, relationToChild: e.target.value })}
-                          className="w-full p-2.5 bg-white rounded-xl border border-[#e5e2dd] text-xs font-bold text-[#1c1c19]"
-                        >
-                          <option value="أب">أب</option>
-                          <option value="أم">أم</option>
-                          <option value="وصي شرعي">وصي شرعي / ولي أمر</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#5a403c] mb-1">كود ولي الأمر (إجباري):</label>
-                        <input
-                          type="text"
-                          required
-                          value={childForm.code}
-                          onChange={(e) => setChildForm({ ...childForm, code: e.target.value })}
-                          className="w-full p-2.5 bg-amber-50 rounded-xl border border-amber-300 text-xs font-mono font-black text-[#8b0000]"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#5a403c] mb-1">صلة القرابة (إجباري):</label>
+                      <select
+                        value={childForm.relationToChild}
+                        onChange={(e) => setChildForm({ ...childForm, relationToChild: e.target.value })}
+                        className="w-full p-2.5 bg-white rounded-xl border border-[#e5e2dd] text-xs font-bold text-[#1c1c19]"
+                      >
+                        <option value="أب">أب</option>
+                        <option value="أم">أم</option>
+                        <option value="وصي شرعي">وصي شرعي / ولي أمر</option>
+                      </select>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -604,6 +624,60 @@ export const AuthModal = ({ isOpen, onClose }) => {
                           className="w-full p-2.5 bg-white rounded-xl border border-[#e5e2dd] text-xs font-mono font-bold text-[#1c1c19]"
                         />
                       </div>
+                    </div>
+
+                    {/* Multi-Child Addition Section */}
+                    {additionalChildren.map((childItem, index) => (
+                      <div key={childItem.id} className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/80 space-y-2 relative">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-black text-[#8b0000]">بيانات الابن/الابنة الإضافي #{index + 2}:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveChildField(childItem.id)}
+                            className="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-0.5"
+                          >
+                            <span>حذف</span>
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-[#5a403c] mb-0.5">اسم الابن/الابنة:</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="اسم الابن/الابنة الكشاف"
+                              value={childItem.name}
+                              onChange={(e) => handleUpdateChildField(childItem.id, 'name', e.target.value)}
+                              className="w-full p-2 bg-white rounded-lg border border-[#e5e2dd] text-xs font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-[#5a403c] mb-0.5">كود الابن/الابنة الكشفي:</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="مثال: JS-2026-512"
+                              value={childItem.code}
+                              onChange={(e) => handleUpdateChildField(childItem.id, 'code', e.target.value)}
+                              className="w-full p-2 bg-white rounded-lg border border-[#e5e2dd] text-xs font-mono font-bold text-[#8b0000]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={handleAddChildField}
+                        className="w-full py-2.5 px-3 rounded-xl bg-[#f6f3ee] hover:bg-amber-100 text-[#7e5713] border border-[#7e5713]/30 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">group_add</span>
+                        <span>➕ إضافة كود ابن/ابنة آخر لمتابعة أكثر من ابن</span>
+                      </button>
                     </div>
                   </>
                 )}

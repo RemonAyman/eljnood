@@ -161,9 +161,6 @@ export const PriceListModule = () => {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="font-black text-xl sm:text-2xl text-[#610000]">لائحة الأسعار والتحصيل الرسمية</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              إدارة الخزينة المركزية، رسوم العضوية، الاشتراكات السنوية والمستلزمات الكشفية المعتمدة
-            </p>
           </div>
         </div>
 
@@ -179,18 +176,7 @@ export const PriceListModule = () => {
         )}
       </div>
 
-      {/* Permission Notice Banner for non-authorized users */}
-      {!canEdit && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-[#7e5713] font-bold">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[20px] text-amber-600">info</span>
-            <span>وضع القراءة للعرض فقط. تعديل الأسعار، إضافة بنود، أو الحذف مخصص فقط للمدير العام ومسؤول الاشتراكات والماليات.</span>
-          </div>
-          <span className="bg-white px-2.5 py-1 rounded-xl border border-amber-300 font-mono text-[11px]">
-            الحساب الحالي: {currentUser?.name}
-          </span>
-        </div>
-      )}
+
 
       {/* Stats Quick Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -555,15 +541,16 @@ export const PriceListModule = () => {
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => { setShowDeleteModal(false); setDeletingItem(null); }}
-                className="flex-1 py-2.5 rounded-xl border border-[#e5e2dd] text-xs font-bold text-[#5a403c] hover:bg-[#f6f3ee] transition cursor-pointer"
+                className="flex-1 py-3 rounded-2xl border border-[#e5e2dd] text-xs font-bold text-[#5a403c] bg-[#f6f3ee] hover:bg-[#ebe8e3] transition cursor-pointer shadow-sm"
               >
-                إلغاء
+                إلغاء (Cancel)
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow transition cursor-pointer"
+                className="flex-1 py-3 rounded-2xl bg-[#8b0000] hover:bg-[#610000] text-white text-xs font-extrabold shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                تأكيد الحذف
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                <span>تأكيد الحذف (OK)</span>
               </button>
             </div>
           </div>

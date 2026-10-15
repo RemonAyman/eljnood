@@ -110,18 +110,7 @@ export const GroupLanding = ({ onOpenAuth }) => {
             مرحبا بكم في الصفحة الرسمية لمجموعة جنود المسيح الكشفية. نسعى لإعداد جيل مؤمن، متميز انضباطاً وروحاً، متسلح بالمهارات الكشفية والقيم المسيحية السامية لخدمة الكنيسة والوطن والمجتمع.
           </p>
 
-          {/* Action CTAs */}
-          {isGuest && (
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <button
-                onClick={onOpenAuth}
-                className="px-6 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-[#3a0000] font-black text-sm shadow-xl hover:shadow-amber-400/30 hover:scale-[1.02] transition active:scale-95 flex items-center gap-2.5 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[22px]">how_to_reg</span>
-                <span>تسجيل الدخول</span>
-              </button>
-            </div>
-          )}
+
 
           {/* Fast Stats Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/10 text-center">
@@ -218,8 +207,8 @@ export const GroupLanding = ({ onOpenAuth }) => {
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[#e5e2dd]">
                 <span className="material-symbols-outlined text-[#7e5713] text-[22px] shrink-0 mt-0.5">schedule</span>
                 <div>
-                  <span className="block font-black text-[#610000]">مواعيد التجمع الكشفي:</span>
-                  <span className="text-[#5a403c]">كل يوم جمعة من الساعة 02:30 عصراً حتى 07:00 مساءً.</span>
+                  <span className="block font-black text-[#610000]">الأيام الكشفية:</span>
+                  <span className="text-[#5a403c]">كل يوم ثلاثاء وجمعة من كل أسبوع.</span>
                 </div>
               </div>
 
@@ -277,9 +266,8 @@ export const GroupLanding = ({ onOpenAuth }) => {
                 غرس القيم الأولى، التعاون والتآخي، مهارات البقاء البسيطة والقصص الهادفة مع العائلة الكشفية.
               </p>
             </div>
-            <div className="pt-2 border-t border-[#f0ede9] text-[11px] font-bold text-[#7e5713] flex justify-between items-center">
+            <div className="pt-2 border-t border-[#f0ede9] text-[11px] font-bold text-[#7e5713]">
               <span>فرقة البراعم • الأشبال • الزهرات</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </div>
           </div>
 
@@ -297,9 +285,8 @@ export const GroupLanding = ({ onOpenAuth }) => {
                 تعلم مهارات الخلاء، بناء المواقد والعقد والتربيطات، البوصلة والرحلات الخلوية والانضباط في الطليعة.
               </p>
             </div>
-            <div className="pt-2 border-t border-[#f0ede9] text-[11px] font-bold text-blue-900 flex justify-between items-center">
+            <div className="pt-2 border-t border-[#f0ede9] text-[11px] font-bold text-blue-900">
               <span>فرقة الفتيان • المرشدات</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </div>
           </div>
 
@@ -317,9 +304,8 @@ export const GroupLanding = ({ onOpenAuth }) => {
                 اختراعات الخلاء الكبيرة، المعسكرات التدريبية المتقدمة، الإسعافات الأولية والتخطيط للمشاريع.
               </p>
             </div>
-            <div className="pt-2 border-t border-[#f0ede9] text-[11px] font-bold text-purple-900 flex justify-between items-center">
+            <div className="pt-2 border-t border-[#f0ede9] text-[11px] font-bold text-purple-900">
               <span>فرقة المتقدم • الرائدات</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </div>
           </div>
 
@@ -340,14 +326,6 @@ export const GroupLanding = ({ onOpenAuth }) => {
                   </p>
                 </div>
               </div>
-              {isGuest && (
-                <button
-                  onClick={onOpenAuth}
-                  className="px-5 py-2.5 rounded-xl bg-[#8b0000] text-white text-xs font-black hover:bg-[#610000] transition shrink-0"
-                >
-                  تسجيل الدخول للقادة
-                </button>
-              )}
             </div>
           </div>
 

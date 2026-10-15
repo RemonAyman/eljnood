@@ -33,23 +33,27 @@ html {
   }
 }
 
-/* Custom scrollbar */
+/* Hide scrollbars globally while maintaining full scroll functionality */
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
-::-webkit-scrollbar-track {
-  background: #f6f3ee;
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #8e706b;
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #8b0000;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Helper utility classes matching scout design screens */

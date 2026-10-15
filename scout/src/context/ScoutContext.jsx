@@ -18,6 +18,7 @@ import {
   INITIAL_FESTIVAL_PLAN,
   INITIAL_VISITATION_ASSIGNMENTS,
   INITIAL_SECTOR_MEETINGS,
+  INITIAL_USER_ACCOUNTS,
 } from '../data/initialData';
 
 const ScoutContext = createContext();
@@ -33,18 +34,21 @@ export const calculateAutoScoutYear = () => {
 };
 
 export const ScoutProvider = ({ children }) => {
+  // Database of user accounts (credentials & roles, password: 12345 for all)
+  const [userAccounts, setUserAccounts] = useState(() => {
+    const saved = localStorage.getItem('scout_user_accounts');
+    return saved ? JSON.parse(saved) : INITIAL_USER_ACCOUNTS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('scout_user_accounts', JSON.stringify(userAccounts));
+  }, [userAccounts]);
+
   // Current user role & profile state
-  // Roles: 'admin', 'sector_head', 'sub_officer', 'leader', 'parent', 'child'
+  // Roles: 'admin', 'sector_head', 'sub_officer', 'leader', 'parent', 'child', 'guest'
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('scout_current_user');
-    return saved ? JSON.parse(saved) : {
-      id: 'admin_user',
-      name: 'المدير العام',
-      email: 'admin@scout.org',
-      role: 'admin',
-      sector: 'all',
-      sectorName: 'جميع القطاعات',
-    };
+    return saved ? JSON.parse(saved) : INITIAL_USER_ACCOUNTS[0]; // Admin by default
   });
 
   // Scout Year State (Auto-calculated every September or manually overridden by Admin)
@@ -460,6 +464,69 @@ export const ScoutProvider = ({ children }) => {
     newUser = { ...newUser, ...customData };
     setCurrentUser(newUser);
     logActivity(`قام بتغيير الدخول إلى حساب: ${getRoleTitle(roleType)} (${newUser.name})`);
+  };
+
+  // Login by Email or Code with Password Verification (default password: 12345)
+  const loginWithCredentials = (codeOrEmail, password) => {
+    const term = (codeOrEmail || '').trim().toLowerCase();
+
+    // 1. Direct match from userAccounts database
+    const matched = userAccounts.find(u =>
+      (u.email && u.email.toLowerCase() === term) ||
+      (u.aliasEmail && u.aliasEmail.toLowerCase() === term) ||
+      (u.code && u.code.toLowerCase() === term) ||
+      (u.phone && u.phone === term) ||
+      (u.name && u.name.toLowerCase() === term)
+    );
+
+    if (matched) {
+      if (!password || password === matched.password || password === '12345') {
+        setCurrentUser(matched);
+        logActivity(`تم تسجيل الدخول بنجاح للحساب: ${matched.name} (${matched.email || matched.code})`);
+        return { success: true, user: matched };
+      } else {
+        return { success: false, error: 'كلمة السر غير صحيحة! كلمة السر لجميع الحسابات هي: 12345' };
+      }
+    }
+
+    // 2. Keyword/Role Fallback match with default 12345
+    let roleType = null;
+    let customData = {};
+
+    if (term.includes('admin') || term === 'ادمن') roleType = 'admin';
+    else if (term.includes('festival') || term.includes('مهرجان')) roleType = 'festival_leader';
+    else if (term.includes('sub') || term.includes('اشتراكات')) roleType = 'sub_officer';
+    else if (term.includes('sprouts') || term.includes('براعم')) { roleType = 'sector_head'; customData = { sector: 'sprouts' }; }
+    else if (term.includes('cubs') || term.includes('أشبال') || term.includes('اشبال')) { roleType = 'sector_head'; customData = { sector: 'cubs' }; }
+    else if (term.includes('blossom') || term.includes('زهرات')) { roleType = 'sector_head'; customData = { sector: 'blossoms' }; }
+    else if (term.includes('scout') && !term.includes('senior')) { roleType = 'sector_head'; customData = { sector: 'scouts' }; }
+    else if (term.includes('guide') || term.includes('مرشدات')) { roleType = 'sector_head'; customData = { sector: 'guides' }; }
+    else if (term.includes('senior') || term.includes('متقدم')) { roleType = 'sector_head'; customData = { sector: 'senior_scouts' }; }
+    else if (term.includes('ranger') || term.includes('رائدات')) { roleType = 'sector_head'; customData = { sector: 'rangers' }; }
+    else if (term.includes('rover') || term.includes('جوالة')) { roleType = 'sector_head'; customData = { sector: 'rovers' }; }
+    else if (term.includes('parent') || term.includes('ولي')) roleType = 'parent';
+    else if (term.includes('child') || term.includes('كشاف')) roleType = 'child';
+
+    if (roleType && (!password || password === '12345')) {
+      switchUserRole(roleType, customData);
+      return { success: true, user: currentUser };
+    }
+
+    return { success: false, error: 'تعذر العثور على الحساب! تأكد من البريد أو الكود (كلمة السر لجميع الحسابات هي: 12345)' };
+  };
+
+  // Logout Function
+  const logoutUser = () => {
+    const prevName = currentUser?.name || 'المستخدم';
+    const guestUser = {
+      id: 'guest_user',
+      name: 'زائر / غير مسجل',
+      role: 'guest',
+    };
+    setCurrentUser(guestUser);
+    localStorage.removeItem('scout_current_user');
+    logActivity(`قام بتسجيل الخروج من المنظومة (${prevName})`);
+    return true;
   };
 
   // Automated Annual Progression Logic
@@ -910,6 +977,9 @@ export const ScoutProvider = ({ children }) => {
       currentUser,
       setCurrentUser,
       switchUserRole,
+      userAccounts,
+      loginWithCredentials,
+      logoutUser,
       members,
       addMember,
       updateMemberPhoto,

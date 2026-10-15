@@ -37,9 +37,6 @@ export const ChatModule = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">مركز غرف المراسلات الكشفية المتخصصة</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              منظومة الربط اللحظي بين قيادة الكشافة، قادة القطاعات، ومجموعات الجوالة والفتيان
-            </p>
           </div>
         </div>
 

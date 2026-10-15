@@ -84,12 +84,32 @@ export const DigitalCardModule = () => {
   }, [members, role, selectedSector, currentUser]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredMembers = useMemo(() => {
+    if (!searchQuery.trim()) return allowedMembers;
+    const q = searchQuery.trim().toLowerCase();
+    return allowedMembers.filter(m =>
+      m.code?.toLowerCase().includes(q) ||
+      m.name?.toLowerCase().includes(q) ||
+      m.id?.toString().includes(q)
+    );
+  }, [allowedMembers, searchQuery]);
 
   useEffect(() => {
     if (currentIndex >= allowedMembers.length) {
       setCurrentIndex(0);
     }
   }, [allowedMembers, currentIndex]);
+
+  useEffect(() => {
+    if (searchQuery.trim() && filteredMembers.length > 0) {
+      const isCurrentInFiltered = filteredMembers.some(m => allowedMembers.indexOf(m) === currentIndex);
+      if (!isCurrentInFiltered) {
+        setCurrentIndex(allowedMembers.indexOf(filteredMembers[0]));
+      }
+    }
+  }, [searchQuery, filteredMembers, allowedMembers, currentIndex]);
 
   const currentMember = allowedMembers[currentIndex] || allowedMembers[0] || members[0];
 
@@ -109,6 +129,7 @@ export const DigitalCardModule = () => {
   const canEditPhoto = isSelf || isPrivilegedRole;
   const canEditMemberData = isPrivilegedRole;
   const canBrowse = role === 'admin' || role === 'sector_head' || role === 'sub_officer' || role === 'leader' || role === 'rovers';
+  const canPrintCards = role === 'admin' || role === 'sub_officer';
 
   const handlePhotoUploadClick = (e) => {
     if (e) e.stopPropagation();
@@ -196,29 +217,17 @@ export const DigitalCardModule = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">الكارنيه الكشفي الرقمي</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              إصدار وقراءة الكروت الرقمية المشفرة وصلاحيات العضوية والطباعة المباشرة
-            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => alert(`جاري إرسال أمر طباعة كارنيه: ${currentMember.name} إلى طابعة الكروت Zebra ZC300...`)}
-            className="px-4 py-2.5 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center gap-2 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">print</span>
-            <span>طباعة كارت العضو</span>
-          </button>
-        </div>
       </div>
 
-      {/* 2. Admin & Sector Head Browsing & Card Flipping Toolbar */}
+      {/* 2. Admin & Sector Head Search Toolbar */}
       {canBrowse && (
         <div className="bg-[#fcf9f4] p-4 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 flex-wrap">
             
-            {/* Sector Selector (Admin gets all, Sector Head locked to assigned sector) */}
+            {/* Sector Selector */}
             <div className="flex items-center gap-2 w-full md:w-auto">
               <span className="text-xs font-extrabold text-[#7e5713] flex items-center gap-1 shrink-0">
                 <span className="material-symbols-outlined text-[18px]">filter_list</span>
@@ -230,6 +239,7 @@ export const DigitalCardModule = () => {
                   value={selectedSector}
                   onChange={(e) => {
                     setSelectedSector(e.target.value);
+                    setSearchQuery('');
                     setCurrentIndex(0);
                   }}
                   className="bg-white border border-[#e5e2dd] text-[#1c1c19] text-xs font-bold rounded-2xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8b0000] w-full md:w-56 shadow-2xs cursor-pointer"
@@ -248,46 +258,47 @@ export const DigitalCardModule = () => {
               )}
             </div>
 
-            {/* Member Selector Dropdown & Flip Buttons */}
-            <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+            {/* Search Input Bar & Member Selector Dropdown */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto flex-1 md:flex-initial">
               
+              {/* Search Bar Input */}
+              <div className="relative w-full sm:w-64">
+                <input
+                  type="text"
+                  placeholder="بحث بالـ ID أو اسم العضو..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white border border-[#e5e2dd] text-[#1c1c19] text-xs font-bold rounded-2xl pr-9 pl-7 py-2 focus:outline-none focus:ring-2 focus:ring-[#8b0000] shadow-2xs"
+                />
+                <span className="material-symbols-outlined absolute right-2.5 top-2 text-[#8e706b] text-[18px]">
+                  search
+                </span>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute left-2.5 top-2 text-xs font-bold text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
               {/* Dropdown Member Selector */}
               <select
                 value={currentIndex}
                 onChange={(e) => setCurrentIndex(Number(e.target.value))}
-                className="bg-white border border-[#e5e2dd] text-[#1c1c19] text-xs font-extrabold rounded-2xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8b0000] flex-1 md:flex-initial shadow-2xs cursor-pointer"
+                className="bg-white border border-[#e5e2dd] text-[#1c1c19] text-xs font-extrabold rounded-2xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8b0000] w-full sm:w-auto shadow-2xs cursor-pointer"
               >
-                {allowedMembers.map((m, idx) => (
-                  <option key={m.id} value={idx}>
+                {filteredMembers.map((m) => (
+                  <option key={m.id} value={allowedMembers.indexOf(m)}>
                     #{m.code} - {m.name} ({m.sectorName})
                   </option>
                 ))}
+                {filteredMembers.length === 0 && (
+                  <option value="" disabled>لا توجد نتائج بحث</option>
+                )}
               </select>
 
-              {/* Navigation Flip Buttons */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={handlePrev}
-                  className="px-3 py-2 rounded-2xl bg-white hover:bg-[#f6f3ee] text-[#8b0000] border border-[#e5e2dd] text-xs font-extrabold flex items-center gap-1 shadow-2xs transition cursor-pointer"
-                  title="الكارت السابق"
-                >
-                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-                  <span className="hidden sm:inline">السابق</span>
-                </button>
-
-                <span className="px-3 py-1.5 rounded-2xl bg-[#8b0000] text-white font-mono font-black text-xs shadow-2xs">
-                  {currentIndex + 1} / {allowedMembers.length}
-                </span>
-
-                <button
-                  onClick={handleNext}
-                  className="px-3 py-2 rounded-2xl bg-white hover:bg-[#f6f3ee] text-[#8b0000] border border-[#e5e2dd] text-xs font-extrabold flex items-center gap-1 shadow-2xs transition cursor-pointer"
-                  title="الكارت التالي"
-                >
-                  <span className="hidden sm:inline">التالي</span>
-                  <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-                </button>
-              </div>
             </div>
 
           </div>
@@ -296,10 +307,10 @@ export const DigitalCardModule = () => {
 
       {/* 3. Digital Scout Pass Widescreen View */}
       <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className={`grid grid-cols-1 ${canPrintCards ? 'lg:grid-cols-12' : 'max-w-4xl mx-auto'} gap-6 items-start`}>
           
-          {/* Right Column: Main Scout Pass Card (7 Cols) */}
-          <div className="lg:col-span-7 bg-white p-6 sm:p-7 rounded-3xl border border-[#e5e2dd] shadow-lg space-y-6 relative overflow-hidden">
+          {/* Right Column: Main Scout Pass Card */}
+          <div className={`${canPrintCards ? 'lg:col-span-7' : 'w-full'} bg-white p-6 sm:p-7 rounded-3xl border border-[#e5e2dd] shadow-lg space-y-6 relative overflow-hidden`}>
             
             {/* Church & Badge Title Header */}
             <div className="flex items-center justify-between border-b border-[#f0ede9] pb-4">
@@ -501,75 +512,41 @@ export const DigitalCardModule = () => {
 
           </div>
 
-          {/* Left Column: Printer, Privileges & Actions (5 Cols) */}
-          <div className="lg:col-span-5 space-y-5">
-            
-            {/* Direct Printer Connection Status */}
-            <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
-              <div className="flex justify-between items-center border-b pb-3">
-                <span className="font-extrabold text-xs text-[#610000] flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[18px] text-[#8b0000]">print</span>
-                  <span>طباعة الكارنيهات الكشفية</span>
-                </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Zebra ZC300</span>
-              </div>
+          {/* Left Column: Printer (5 Cols) - Only visible to Admin and Subscriptions/Finance Officer */}
+          {canPrintCards && (
+            <div className="lg:col-span-5 space-y-5">
+              
+              {/* Direct Printer Connection Status */}
+              <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm space-y-4">
+                <div className="flex justify-between items-center border-b pb-3">
+                  <span className="font-extrabold text-xs text-[#610000] flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[18px] text-[#8b0000]">print</span>
+                    <span>طباعة الكارنيهات الكشفية</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Zebra ZC300</span>
+                </div>
 
-              <div className="p-3 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full bg-emerald-600 animate-pulse"></span>
-                  <div>
-                    <h4 className="font-extrabold text-xs text-[#1c1c19]">طابعة الكروت متصلة ومستعدة</h4>
-                    <p className="text-[10px] text-[#5a403c]">Zebra ZC300 Card Studio (Wi-Fi)</p>
+                <div className="p-3 bg-[#fcf9f4] rounded-2xl border border-[#e5e2dd] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full bg-emerald-600 animate-pulse"></span>
+                    <div>
+                      <h4 className="font-extrabold text-xs text-[#1c1c19]">طابعة الكروت متصلة ومستعدة</h4>
+                      <p className="text-[10px] text-[#5a403c]">Zebra ZC300 Card Studio (Wi-Fi)</p>
+                    </div>
                   </div>
                 </div>
+
+                <button
+                  onClick={() => alert(`جاري إرسال أمر طباعة كارت ${currentMember.name} لطابعة Zebra ZC300...`)}
+                  className="w-full py-3 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">print</span>
+                  <span>طباعة مباشرة لكارت ({currentMember.name})</span>
+                </button>
               </div>
 
-              <button
-                onClick={() => alert(`جاري إرسال أمر طباعة كارت ${currentMember.name} لطابعة Zebra ZC300...`)}
-                className="w-full py-3 bg-[#8b0000] hover:bg-[#610000] text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">print</span>
-                <span>طباعة مباشرة لكارت ({currentMember.name})</span>
-              </button>
             </div>
-
-            {/* Actions: Save to Wallet & Export PDF */}
-            <div className="space-y-3">
-              <button
-                onClick={() => alert(`تمت إضافة كارنيه (${currentMember.name}) إلى محفظة الهاتف الذكي (Apple / Google Wallet)!`)}
-                className="w-full py-3.5 bg-white hover:bg-[#f6f3ee] text-[#1c1c19] font-extrabold text-xs rounded-2xl border border-[#e5e2dd] shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px] text-[#7e5713]">wallet</span>
-                <span>حفظ في المحفظة الذكية (Wallet)</span>
-              </button>
-
-              <button
-                onClick={() => alert(`جاري تصدير كارنيه (${currentMember.name}) بصيغة PDF عالي الجودة (300DPI)...`)}
-                className="w-full py-3.5 bg-white hover:bg-[#f6f3ee] text-[#1c1c19] font-extrabold text-xs rounded-2xl border border-[#e5e2dd] shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px] text-[#7e5713]">download</span>
-                <span>تصدير PDF عالي الجودة</span>
-              </button>
-            </div>
-
-            {/* Discipline Score Progress Card */}
-            <div className="bg-white p-5 rounded-3xl border border-[#e5e2dd] shadow-sm flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full border-4 border-[#8b0000] flex items-center justify-center text-lg font-black text-[#8b0000] font-mono shrink-0 shadow-inner">
-                {Math.round(((currentMember.attendanceCount || 12) / (currentMember.totalSessions || 14)) * 100)}%
-              </div>
-              <div>
-                <h4 className="font-extrabold text-xs text-[#1c1c19] flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px] text-[#7e5713]">verified</span>
-                  <span>نسبة الانضباط الكشفي</span>
-                </h4>
-                <p className="text-xs text-[#5a403c] mt-0.5 leading-relaxed">
-                  مستوفِ للشروط ومؤهل لحضور المخيمات والمعسكرات الكشفية.
-                </p>
-              </div>
-            </div>
-
-
-          </div>
+          )}
         </div>
       </div>
 

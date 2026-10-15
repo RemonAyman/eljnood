@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useScout } from '../../context/ScoutContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const PRESET_INVENTORY_ITEMS = [
   { id: 'shoum', label: 'عصا كشفية / شوم (زوان)', defaultQty: '20' },
@@ -17,6 +18,7 @@ const PRESET_INVENTORY_ITEMS = [
 ];
 
 export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
+  const { showConfirm } = useConfirm();
   const {
     currentUser,
     sectorPrograms,
@@ -38,8 +40,12 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
     SECTORS
   } = useScout();
 
+  const isSectorHead = currentUser?.role === 'sector_head';
+  const userSector = currentUser?.sector && currentUser.sector !== 'all' ? currentUser.sector : 'scouts';
+  const userSectorName = currentUser?.sectorName || 'قطاع الكشاف (فتيان إعدادي)';
+
   const [activeTab, setActiveTab] = useState(defaultTab); // 'all_programs', 'sector_meetings', 'rovers', 'festival'
-  const [selectedSector, setSelectedSector] = useState('all');
+  const [selectedSector, setSelectedSector] = useState(isSectorHead ? userSector : 'all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -120,7 +126,8 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
   // Filter Logic
   const filteredPrograms = sectorPrograms.filter(prog => {
-    if (selectedSector !== 'all' && prog.sector !== selectedSector) return false;
+    const effectiveSector = isSectorHead ? userSector : selectedSector;
+    if (effectiveSector !== 'all' && prog.sector !== effectiveSector) return false;
     if (statusFilter !== 'all' && prog.status !== statusFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -133,7 +140,8 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
   });
 
   const filteredSectorMeetings = (sectorMeetings || []).filter(meet => {
-    if (selectedSector !== 'all' && meet.sector !== selectedSector) return false;
+    const effectiveSector = isSectorHead ? userSector : selectedSector;
+    if (effectiveSector !== 'all' && meet.sector !== effectiveSector) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchSector = (meet.sectorName || '').toLowerCase().includes(q);
@@ -160,14 +168,14 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
       });
     } else {
       setEditingMeeting(null);
-      const matchedSec = SECTORS.find(s => s.id === (currentUser.sector !== 'all' ? currentUser.sector : 'scouts'));
+      const matchedSec = SECTORS.find(s => s.id === (isSectorHead ? userSector : (currentUser.sector !== 'all' ? currentUser.sector : 'scouts')));
       setMeetingFormData({
-        sector: currentUser.sector !== 'all' ? currentUser.sector : 'scouts',
-        sectorName: matchedSec ? matchedSec.name : 'قطاع الكشاف (فتيان)',
+        sector: isSectorHead ? userSector : (currentUser.sector !== 'all' ? currentUser.sector : 'scouts'),
+        sectorName: isSectorHead ? userSectorName : (matchedSec ? matchedSec.name : 'قطاع الكشاف (فتيان)'),
         dayOfWeek: 'كل يوم جمعة أسبوعياً',
         time: '04:00 م - 07:30 م',
         location: 'المبنى الكشفي الرئيسي',
-        leaderInCharge: '',
+        leaderInCharge: currentUser.name || '',
         topics: '',
         prepNotes: '',
         status: 'ready'
@@ -178,11 +186,13 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
   const handleSaveSectorMeeting = (e) => {
     e.preventDefault();
-    const matchedSec = SECTORS.find(s => s.id === meetingFormData.sector);
-    const secName = matchedSec ? matchedSec.name : meetingFormData.sector;
+    const finalSector = isSectorHead ? userSector : meetingFormData.sector;
+    const matchedSec = SECTORS.find(s => s.id === finalSector);
+    const secName = isSectorHead ? userSectorName : (matchedSec ? matchedSec.name : finalSector);
 
     const payload = {
       ...meetingFormData,
+      sector: finalSector,
       sectorName: secName,
     };
 
@@ -195,8 +205,15 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
     setIsMeetingModalOpen(false);
   };
 
-  const handleDeleteSectorMeeting = (id) => {
-    if (window.confirm('هل أنت تأكد من حذف خطة وتفاصيل هذا الاجتماع؟')) {
+  const handleDeleteSectorMeeting = async (id) => {
+    const confirmed = await showConfirm({
+      title: 'حذف خطة الاجتماع',
+      message: 'هل أنت تأكد من رغبتك في حذف خطة وتفاصيل هذا الاجتماع الكشفي؟ لا يمكن التراجع بعد الحذف.',
+      confirmText: 'تأكيد الحذف (OK)',
+      cancelText: 'إلغاء (Cancel)',
+      type: 'danger',
+    });
+    if (confirmed) {
       deleteSectorMeeting(id);
     }
   };
@@ -221,7 +238,7 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
     } else {
       setEditingProgram(null);
       setFormData({
-        sector: currentUser.sector !== 'all' ? currentUser.sector : 'scouts',
+        sector: isSectorHead ? userSector : (currentUser.sector !== 'all' ? currentUser.sector : 'scouts'),
         title: '',
         date: new Date().toISOString().substring(0, 10),
         assemblyTime: '04:00 م',
@@ -246,11 +263,13 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
   const handleSaveProgram = (e) => {
     e.preventDefault();
-    const matchedSec = SECTORS.find(s => s.id === formData.sector);
-    const secName = matchedSec ? matchedSec.name : formData.sector;
+    const finalSector = isSectorHead ? userSector : formData.sector;
+    const matchedSec = SECTORS.find(s => s.id === finalSector);
+    const secName = isSectorHead ? userSectorName : (matchedSec ? matchedSec.name : finalSector);
 
     const programPayload = {
       ...formData,
+      sector: finalSector,
       sectorName: secName,
     };
 
@@ -363,9 +382,6 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              إدخال ومتابعة خطط الأيام الكشفية لكل قطاع، توقيتات التجمع والانصراف، توزيع الفقرات التفصيلية قبل اليوم، وحصر طلبات العهدة والمعدات المطلوبة.
-            </p>
           </div>
         </div>
 
@@ -457,16 +473,22 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-3 py-1.5 shadow-sm text-sm">
                 <span className="material-symbols-outlined text-amber-700 text-lg">filter_alt</span>
                 <span className="text-gray-600 font-bold text-xs">القطاع:</span>
-                <select
-                  value={selectedSector}
-                  onChange={(e) => setSelectedSector(e.target.value)}
-                  className="bg-transparent font-bold text-gray-800 outline-none cursor-pointer"
-                >
-                  <option value="all">جميع القطاعات الكشفية</option>
-                  {SECTORS.map(sec => (
-                    <option key={sec.id} value={sec.id}>{sec.name}</option>
-                  ))}
-                </select>
+                {isSectorHead ? (
+                  <span className="font-black text-[#8b0000] text-xs">
+                    {userSectorName} (قطاعك الخاص)
+                  </span>
+                ) : (
+                  <select
+                    value={selectedSector}
+                    onChange={(e) => setSelectedSector(e.target.value)}
+                    className="bg-transparent font-bold text-gray-800 outline-none cursor-pointer text-xs"
+                  >
+                    <option value="all">جميع القطاعات الكشفية</option>
+                    {SECTORS.map(sec => (
+                      <option key={sec.id} value={sec.id}>{sec.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Status Filter */}
@@ -571,12 +593,19 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                               <span className="material-symbols-outlined text-base">edit</span>
                             </button>
                             <button
-                              onClick={() => {
-                                if (window.confirm('هل أنت تأكد من حذف خطة هذا اليوم الكشفي؟')) {
+                              onClick={async () => {
+                                const confirmed = await showConfirm({
+                                  title: 'حذف خطة اليوم الكشفي',
+                                  message: 'هل أنت تأكد من رغبتك في حذف خطة هذا اليوم الكشفي وحسابات العهدة؟',
+                                  confirmText: 'تأكيد الحذف (OK)',
+                                  cancelText: 'إلغاء (Cancel)',
+                                  type: 'danger',
+                                });
+                                if (confirmed) {
                                   deleteSectorProgram(prog.id);
                                 }
                               }}
-                              className="bg-red-500/20 hover:bg-red-500/40 text-red-200 p-2 rounded-xl text-xs font-bold transition"
+                              className="bg-red-500/20 hover:bg-red-500/40 text-red-200 p-2 rounded-xl text-xs font-bold transition cursor-pointer"
                               title="حذف اليوم"
                             >
                               <span className="material-symbols-outlined text-base">delete</span>
@@ -894,8 +923,19 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
 
                     {(currentUser.role === 'admin' || currentUser.role === 'festival_leader') && (
                       <button
-                        onClick={() => deleteFestivalChallenge(ch.id)}
-                        className="text-red-500 hover:text-red-700 text-xs font-bold"
+                        onClick={async () => {
+                          const confirmed = await showConfirm({
+                            title: 'حذف تحدي المهرجان',
+                            message: `هل أنت تأكد من رغبتك في حذف التحدي الكشفي "${ch.title}"؟`,
+                            confirmText: 'تأكيد الحذف (OK)',
+                            cancelText: 'إلغاء (Cancel)',
+                            type: 'danger',
+                          });
+                          if (confirmed) {
+                            deleteFestivalChallenge(ch.id);
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 text-xs font-bold p-1 rounded-lg hover:bg-red-50 transition cursor-pointer"
                         title="حذف التحدي"
                       >
                         <span className="material-symbols-outlined">delete</span>
@@ -962,20 +1002,26 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-amber-700 text-lg">filter_alt</span>
               <span className="font-bold text-gray-700">تصفية القطاع:</span>
-              <select
-                value={selectedSector}
-                onChange={(e) => setSelectedSector(e.target.value)}
-                className="bg-[#fcf9f4] border border-gray-300 rounded-xl px-3 py-1.5 font-bold text-gray-800 outline-none cursor-pointer"
-              >
-                <option value="all">جميع قطاعات الخدمة ({sectorMeetings ? sectorMeetings.length : 0})</option>
-                {SECTORS.map(sec => (
-                  <option key={sec.id} value={sec.id}>{sec.name}</option>
-                ))}
-              </select>
+              {isSectorHead ? (
+                <span className="font-black text-[#8b0000] text-xs bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
+                  {userSectorName} (قطاعك الخاص)
+                </span>
+              ) : (
+                <select
+                  value={selectedSector}
+                  onChange={(e) => setSelectedSector(e.target.value)}
+                  className="bg-[#fcf9f4] border border-gray-300 rounded-xl px-3 py-1.5 font-bold text-gray-800 outline-none cursor-pointer"
+                >
+                  <option value="all">جميع قطاعات الخدمة ({sectorMeetings ? sectorMeetings.length : 0})</option>
+                  {SECTORS.map(sec => (
+                    <option key={sec.id} value={sec.id}>{sec.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="text-gray-500 font-medium">
-              يظهر للأدمن المتابعة الشاملة ولرؤساء القطاعات إمكانية تعديل وتحضير الاجتماعات.
+              {isSectorHead ? 'يتم عرض وتعديل اجتماعات ومحاور قطاعك فقط.' : 'يظهر للأدمن المتابعة الشاملة ولرؤساء القطاعات إمكانية تعديل وتحضير الاجتماعات.'}
             </div>
           </div>
 
@@ -1103,16 +1149,25 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
                 {/* Sector */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">القطاع الكشفي المسؤول:</label>
-                  <select
-                    value={formData.sector}
-                    onChange={(e) => setFormData(prev => ({ ...prev, sector: e.target.value }))}
-                    className="w-full p-2.5 border border-gray-300 rounded-2xl text-sm font-bold bg-gray-50"
-                    required
-                  >
-                    {SECTORS.map(sec => (
-                      <option key={sec.id} value={sec.id}>{sec.name}</option>
-                    ))}
-                  </select>
+                  {isSectorHead ? (
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${userSectorName} (قطاعك الخاص)`}
+                      className="w-full p-2.5 border border-amber-300 rounded-2xl text-sm font-black bg-amber-50 text-[#8b0000] shadow-xs cursor-not-allowed"
+                    />
+                  ) : (
+                    <select
+                      value={formData.sector}
+                      onChange={(e) => setFormData(prev => ({ ...prev, sector: e.target.value }))}
+                      className="w-full p-2.5 border border-gray-300 rounded-2xl text-sm font-bold bg-gray-50"
+                      required
+                    >
+                      {SECTORS.map(sec => (
+                        <option key={sec.id} value={sec.id}>{sec.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Date */}
@@ -1545,23 +1600,32 @@ export const DetailedProgramModule = ({ defaultTab = 'all_programs' }) => {
             <form onSubmit={handleSaveSectorMeeting} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">القطاع الكشفي:</label>
-                <select
-                  value={meetingFormData.sector}
-                  onChange={(e) => {
-                    const secId = e.target.value;
-                    const found = SECTORS.find(s => s.id === secId);
-                    setMeetingFormData(prev => ({
-                      ...prev,
-                      sector: secId,
-                      sectorName: found ? found.name : secId
-                    }));
-                  }}
-                  className="w-full p-2.5 border border-gray-300 rounded-2xl text-sm font-bold bg-white"
-                >
-                  {SECTORS.map(sec => (
-                    <option key={sec.id} value={sec.id}>{sec.name}</option>
-                  ))}
-                </select>
+                {isSectorHead ? (
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${userSectorName} (قطاعك الخاص)`}
+                    className="w-full p-2.5 border border-amber-300 rounded-2xl text-sm font-black bg-amber-50 text-[#8b0000] shadow-xs cursor-not-allowed"
+                  />
+                ) : (
+                  <select
+                    value={meetingFormData.sector}
+                    onChange={(e) => {
+                      const secId = e.target.value;
+                      const found = SECTORS.find(s => s.id === secId);
+                      setMeetingFormData(prev => ({
+                        ...prev,
+                        sector: secId,
+                        sectorName: found ? found.name : secId
+                      }));
+                    }}
+                    className="w-full p-2.5 border border-gray-300 rounded-2xl text-sm font-bold bg-white"
+                  >
+                    {SECTORS.map(sec => (
+                      <option key={sec.id} value={sec.id}>{sec.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

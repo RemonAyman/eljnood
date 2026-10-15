@@ -1,140 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { ScoutProvider, useScout } from './context/ScoutContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { AuthModal } from './components/auth/AuthModal';
 
-import { GroupLanding } from './components/landing/GroupLanding';
-import { Dashboard } from './components/dashboard/Dashboard';
-import { DigitalCardModule } from './components/attendance/DigitalCardModule';
-import { AttendanceModule } from './components/attendance/AttendanceModule';
-import { SubscriptionsModule } from './components/subscriptions/SubscriptionsModule';
-import { PriceListModule } from './components/subscriptions/PriceListModule';
+// Lazy load page modules for optimized performance & code splitting
+const GroupLanding = lazy(() => import('./components/landing/GroupLanding').then(m => ({ default: m.GroupLanding })));
+const DigitalCardModule = lazy(() => import('./components/attendance/DigitalCardModule').then(m => ({ default: m.DigitalCardModule })));
+const AttendanceModule = lazy(() => import('./components/attendance/AttendanceModule').then(m => ({ default: m.AttendanceModule })));
+const SubscriptionsModule = lazy(() => import('./components/subscriptions/SubscriptionsModule').then(m => ({ default: m.SubscriptionsModule })));
+const PriceListModule = lazy(() => import('./components/subscriptions/PriceListModule').then(m => ({ default: m.PriceListModule })));
+const BibleModule = lazy(() => import('./components/bible/BibleModule').then(m => ({ default: m.BibleModule })));
+const VisitationModule = lazy(() => import('./components/visitation/VisitationModule').then(m => ({ default: m.VisitationModule })));
+const ChatModule = lazy(() => import('./components/chat/ChatModule').then(m => ({ default: m.ChatModule })));
+const HallsReservationModule = lazy(() => import('./components/logistics/HallsReservationModule').then(m => ({ default: m.HallsReservationModule })));
+const InventoryModule = lazy(() => import('./components/logistics/InventoryModule').then(m => ({ default: m.InventoryModule })));
+const MemoriesModule = lazy(() => import('./components/memories/MemoriesModule').then(m => ({ default: m.MemoriesModule })));
+const ParentPortal = lazy(() => import('./components/parent/ParentPortal').then(m => ({ default: m.ParentPortal })));
+const AnnualScheduleModule = lazy(() => import('./components/schedule/AnnualScheduleModule').then(m => ({ default: m.AnnualScheduleModule })));
+const DetailedProgramModule = lazy(() => import('./components/schedule/DetailedProgramModule').then(m => ({ default: m.DetailedProgramModule })));
+const MemberAuditHistoryModule = lazy(() => import('./components/members/MemberAuditHistoryModule').then(m => ({ default: m.MemberAuditHistoryModule })));
+const LeaderFieldVisitationModule = lazy(() => import('./components/visitation/LeaderFieldVisitationModule').then(m => ({ default: m.LeaderFieldVisitationModule })));
 
-import { BibleModule } from './components/bible/BibleModule';
-import { VisitationModule } from './components/visitation/VisitationModule';
-import { ChatModule } from './components/chat/ChatModule';
-import { HallsReservationModule } from './components/logistics/HallsReservationModule';
-import { InventoryModule } from './components/logistics/InventoryModule';
-import { MemoriesModule } from './components/memories/MemoriesModule';
-import { ParentPortal } from './components/parent/ParentPortal';
-import { AnnualScheduleModule } from './components/schedule/AnnualScheduleModule';
-import { DetailedProgramModule } from './components/schedule/DetailedProgramModule';
-import { MemberAuditHistoryModule } from './components/members/MemberAuditHistoryModule';
-import { LeaderFieldVisitationModule } from './components/visitation/LeaderFieldVisitationModule';
+function PageLoader() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
+      <div className="w-10 h-10 rounded-full border-4 border-[#8b0000] border-t-transparent animate-spin"></div>
+      <p className="text-xs font-black text-[#610000]">جاري تحميل الصفحة الكشفية...</p>
+    </div>
+  );
+}
 
 function AppContent() {
   const { currentUser } = useScout();
   const role = currentUser?.role || 'admin';
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Default initial page is the Group Landing Page ('about-group')
-  const [activeTab, setActiveTab] = useState('about-group');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Redirect unauthorized users away from restricted pages
   useEffect(() => {
-    if (role === 'guest' && activeTab !== 'about-group') {
-      setActiveTab('about-group');
-    }
+    const path = location.pathname;
 
-    if (role !== 'guest' && role !== 'admin' && activeTab === 'dashboard') {
-      if (role === 'parent') setActiveTab('parent');
-      else if (role === 'sub_officer') setActiveTab('price-list');
-      else setActiveTab('annual-schedule');
+    if (role === 'guest' && path !== '/' && path !== '/about-group') {
+      navigate('/', { replace: true });
+    } else if (path === '/annual-schedule' && role !== 'admin' && role !== 'sector_head') {
+      navigate('/', { replace: true });
+    } else if (path === '/smart-attendance' && role !== 'admin' && role !== 'sector_head' && role !== 'festival_leader') {
+      navigate('/digital-card', { replace: true });
     }
+  }, [role, location.pathname, navigate]);
 
-    if (activeTab === 'smart-attendance' && role !== 'admin' && role !== 'sector_head' && role !== 'festival_leader') {
-      setActiveTab('digital-card');
-    }
-  }, [role, activeTab]);
-
-  // Smooth scroll to top on tab change
+  // Smooth scroll to top on route change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTab]);
+  }, [location.pathname]);
 
   const hideSidebar = role === 'guest';
 
-  const getTabTitle = (tab) => {
-    switch (tab) {
-      case 'about-group': return 'عن مجموعة جنود المسيح الكشفية';
-      case 'dashboard': return 'الرئيسية / لوحة القيادة';
-      case 'member-audit-history': return 'سجل الاستعلام الشامل للأعضاء والقادة';
-      case 'annual-schedule': return 'خطة الأيام الكشفية والموسم السنوي';
-      case 'detailed-programs': return 'برامج واجتماعات القطاعات والعهد الكشفية والمعسكرات';
-      case 'digital-card': return 'الكارنيه الكشفي الرقمي';
-      case 'smart-attendance': return 'تسجيل الحضور والغياب الذكي';
-      case 'finances-and-dues': return 'الاشتراكات والماليات';
-      case 'price-list': return 'لائحة الأسعار والتحصيل الرسمية';
-
-      case 'bible-and-competitions': return 'المسابقات الكتابية ودراسة الإنجيل';
-      case 'care-and-visitation': return 'إدارة وتوزيع افتقاد المخدومين (رؤساء القطاعات)';
-      case 'field-visitations': return 'التكليفات والافتقاد الميداني (القادة والجوالة)';
-      case 'communications-chat': return 'غرف التواصل والإعلانات';
-      case 'halls-reservation': return 'حجز وتنسيق قاعات ومقرات الخدمة';
-      case 'inventory-and-equipment': return 'طلب العهد والمهمات والمخازن الكشفية';
-      case 'logistics-and-inventory': return 'تنسيق قاعات ومقرات الخدمة والعهد';
-      case 'memory-box-exhibitions': return 'صندوق الذكريات والأرشيف';
-      case 'parent': return 'بوابة ولي الأمر';
-      default: return 'عن مجموعة جنود المسيح';
-    }
-  };
-
-  const renderActiveModule = () => {
-    switch (activeTab) {
-      case 'about-group':
-        return (
-          <GroupLanding
-            onOpenAuth={() => setIsAuthOpen(true)}
-            onEnterDashboard={() => setActiveTab('dashboard')}
-          />
-        );
-      case 'dashboard':
-        return <Dashboard onNavigate={(tab) => setActiveTab(tab)} />;
-      case 'member-audit-history':
-        return <MemberAuditHistoryModule />;
-      case 'annual-schedule':
-        return <AnnualScheduleModule onNavigate={(tab) => setActiveTab(tab)} />;
-      case 'detailed-programs':
-        return <DetailedProgramModule defaultTab="all_programs" />;
-      case 'sector-meetings':
-        return <DetailedProgramModule defaultTab="sector_meetings" />;
-      case 'digital-card':
-        return <DigitalCardModule />;
-      case 'smart-attendance':
-        return <AttendanceModule />;
-      case 'finances-and-dues':
-        return <SubscriptionsModule />;
-      case 'price-list':
-        return <PriceListModule />;
-
-      case 'bible-and-competitions':
-        return <BibleModule />;
-      case 'care-and-visitation':
-        return <VisitationModule />;
-      case 'field-visitations':
-        return <LeaderFieldVisitationModule />;
-      case 'communications-chat':
-        return <ChatModule />;
-      case 'halls-reservation':
-        return <HallsReservationModule />;
-      case 'inventory-and-equipment':
-        return <InventoryModule />;
-      case 'logistics-and-inventory':
-        return <HallsReservationModule />;
-      case 'memory-box-exhibitions':
-        return <MemoriesModule />;
-      case 'parent':
-        return <ParentPortal />;
-      default:
-        return (
-          <GroupLanding
-            onOpenAuth={() => setIsAuthOpen(true)}
-            onEnterDashboard={() => setActiveTab('dashboard')}
-          />
-        );
-    }
+  const handleNavigate = (targetPath) => {
+    const cleanPath = targetPath.startsWith('/') ? targetPath : '/' + targetPath;
+    navigate(cleanPath);
   };
 
   return (
@@ -142,8 +71,6 @@ function AppContent() {
       {/* Sidebar rendered for all authenticated members */}
       {!hideSidebar && (
         <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
           onOpenAuth={() => setIsAuthOpen(true)}
@@ -153,16 +80,36 @@ function AppContent() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          activeTabTitle={getTabTitle(activeTab)}
           onOpenAuth={() => setIsAuthOpen(true)}
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           hideSidebarToggle={hideSidebar}
         />
 
         <main className={`flex-1 bg-[#fcf9f4] overflow-x-hidden ${hideSidebar ? 'p-4 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full' : 'p-3 sm:p-6 lg:p-8'}`}>
-          {renderActiveModule()}
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<GroupLanding onOpenAuth={() => setIsAuthOpen(true)} />} />
+              <Route path="/about-group" element={<GroupLanding onOpenAuth={() => setIsAuthOpen(true)} />} />
+              <Route path="/member-audit-history" element={<MemberAuditHistoryModule />} />
+              <Route path="/annual-schedule" element={<AnnualScheduleModule onNavigate={handleNavigate} />} />
+              <Route path="/detailed-programs" element={<DetailedProgramModule defaultTab="all_programs" />} />
+              <Route path="/sector-meetings" element={<DetailedProgramModule defaultTab="sector_meetings" />} />
+              <Route path="/digital-card" element={<DigitalCardModule />} />
+              <Route path="/smart-attendance" element={<AttendanceModule />} />
+              <Route path="/finances-and-dues" element={<SubscriptionsModule />} />
+              <Route path="/price-list" element={<PriceListModule />} />
+              <Route path="/bible-and-competitions" element={<BibleModule />} />
+              <Route path="/care-and-visitation" element={<VisitationModule />} />
+              <Route path="/field-visitations" element={<LeaderFieldVisitationModule />} />
+              <Route path="/communications-chat" element={<ChatModule />} />
+              <Route path="/halls-reservation" element={<HallsReservationModule />} />
+              <Route path="/inventory-and-equipment" element={<InventoryModule />} />
+              <Route path="/logistics-and-inventory" element={<HallsReservationModule />} />
+              <Route path="/memory-box-exhibitions" element={<MemoriesModule />} />
+              <Route path="/parent" element={<ParentPortal />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </main>
 
         <footer className="py-6 text-center text-xs text-[#8e706b] bg-[#f6f3ee] border-t border-[#e5e2dd]">
@@ -182,10 +129,16 @@ function AppContent() {
   );
 }
 
+import { ConfirmProvider } from './context/ConfirmContext';
+
 export default function App() {
   return (
     <ScoutProvider>
-      <AppContent />
+      <ConfirmProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </ConfirmProvider>
     </ScoutProvider>
   );
 }

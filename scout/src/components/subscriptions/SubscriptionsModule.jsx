@@ -144,9 +144,6 @@ export const SubscriptionsModule = () => {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="font-black text-xl sm:text-2xl text-[#610000]">الماليات وحساب الاشتراكات</h1>
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              تسجيل الدفعات، الحسابات الدورية وإصدار الإيصالات الحرارية المباشرة
-            </p>
           </div>
         </div>
 

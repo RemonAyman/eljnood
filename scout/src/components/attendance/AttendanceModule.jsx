@@ -169,14 +169,14 @@ export const AttendanceModule = () => {
 
   const availableNavTabs = useMemo(() => {
     const list = [
-      { id: 'stream', label: '⚡ البث المباشر والكود السريع', icon: 'bolt' },
-      { id: 'by_date', label: '📅 كشوف الغياب اليومية', icon: 'calendar_month', badge: groupedLogsByDate.length },
+      { id: 'stream', label: 'البث المباشر والكود السريع', icon: 'bolt' },
+      { id: 'by_date', label: 'كشوف الغياب اليومية', icon: 'calendar_month', badge: groupedLogsByDate.length },
     ];
 
     if (canViewFestivalTab) {
       list.push({
         id: 'festival',
-        label: '🏆 غياب أيام المهرجان العام',
+        label: 'غياب أيام المهرجان العام',
         icon: 'emoji_events',
         badge: festivalLogs.length,
         highlight: isFestivalLeader,
@@ -185,7 +185,7 @@ export const AttendanceModule = () => {
 
     list.push({
       id: 'by_sector',
-      label: '🏢 كشوف غياب القطاعات والفرق',
+      label: 'كشوف غياب القطاعات والفرق',
       icon: 'corporate_fare',
       badge: SECTORS.length,
     });
@@ -207,20 +207,7 @@ export const AttendanceModule = () => {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-black text-lg sm:text-xl text-[#610000]">تسجيل الحضور والغياب الذكي</h1>
-              
-              {isFestivalLeader ? (
-                <span className="px-3.5 py-1 rounded-full bg-amber-200 text-amber-950 font-black text-xs border border-amber-400 flex items-center gap-1 shadow-2xs">
-                  <span>🏆 قائد المهرجان (غياب مفتوح لجميع القطاعات معاً)</span>
-                </span>
-              ) : isSectorHead ? (
-                <span className="px-3.5 py-1 rounded-full bg-[#ffddb1] text-[#291800] text-xs font-black border border-amber-300 flex items-center gap-1">
-                  <span>⚜️ رئيس قطاع {sectorName}</span>
-                </span>
-              ) : null}
             </div>
-            <p className="text-xs text-[#5a403c] mt-1 font-bold">
-              مسح الباركود، رصد الكروت الرقمية بالساعة والدقيقة، وكشوف غياب القطاعات وأيام المهرجان
-            </p>
           </div>
         </div>
       </div>
@@ -251,6 +238,56 @@ export const AttendanceModule = () => {
           </button>
         ))}
       </div>
+
+      {/* Admin Sector Selection Filter Toolbar */}
+      {isAdmin && (
+        <div className="bg-white p-4 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#8b0000]">filter_alt</span>
+            <span className="text-xs font-black text-[#610000]">تحديد قطاع العرض والغياب:</span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1">
+            <button
+              onClick={() => setAdminSelectedSector('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition shrink-0 cursor-pointer ${
+                adminSelectedSector === 'all'
+                  ? 'bg-[#8b0000] text-white shadow-sm'
+                  : 'bg-[#f6f3ee] text-[#5a403c] border border-[#e5e2dd] hover:bg-[#ebe8e3]'
+              }`}
+            >
+              جميع القطاعات ⚜️
+            </button>
+
+            {SECTORS.map(sec => (
+              <button
+                key={sec.id}
+                onClick={() => setAdminSelectedSector(sec.id)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition shrink-0 cursor-pointer ${
+                  adminSelectedSector === sec.id
+                    ? 'bg-[#8b0000] text-white shadow-sm'
+                    : 'bg-[#f6f3ee] text-[#5a403c] border border-[#e5e2dd] hover:bg-[#ebe8e3]'
+                }`}
+              >
+                {sec.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sector Head Info Banner */}
+      {isSectorHead && (
+        <div className="bg-white p-3.5 px-5 rounded-3xl border border-[#e5e2dd] shadow-2xs flex items-center justify-between gap-2 text-xs font-bold text-[#610000]">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#8b0000]">shield_person</span>
+            <span>حساب رئيس القطاع: ({sectorName}) — يتم عرض أعضاء وكروت غياب قطاعك فقط تلقائياً.</span>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-[#ffddb1] text-[#291800] text-[11px] font-black">
+            {filteredScanLogs.length} سجل ممسوح بالقطاع
+          </span>
+        </div>
+      )}
 
       {/* ------------------------------------------------------------------- */}
       {/* TAB 1: LIVE SCANNER & RECENT CARDS FEED                             */}
@@ -384,12 +421,12 @@ export const AttendanceModule = () => {
                 <span>سجل الكروت الممسوحة مباشرة اليوم (الساعة والدقيقة)</span>
               </h3>
               <span className="text-xs font-bold text-[#7e5713]">
-                {attendanceScanLogs.length} كارت ممسوح
+                {filteredScanLogs.length} كارت ممسوح
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {(attendanceScanLogs || []).map(log => (
+              {(filteredScanLogs || []).map(log => (
                 <div key={log.id} className="p-4 rounded-2xl bg-[#fcf9f4] border border-[#e5e2dd] space-y-2.5 relative hover:border-[#8b0000] transition">
                   <div className="flex items-center justify-between border-b border-[#e5e2dd] pb-2">
                     <span className="font-mono font-black text-xs text-[#8b0000]">#{log.memberCode}</span>
@@ -573,42 +610,7 @@ export const AttendanceModule = () => {
         </div>
       )}
 
-      {/* Admin Sector Selection Filter Toolbar */}
-      {isAdmin && (
-        <div className="bg-[#fcf9f4] p-4 rounded-3xl border border-[#e5e2dd] shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#8b0000]">filter_alt</span>
-            <span className="text-xs font-black text-[#610000]">عرض وسجلات غياب قطاع:</span>
-          </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1">
-            <button
-              onClick={() => setAdminSelectedSector('all')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition shrink-0 cursor-pointer ${
-                adminSelectedSector === 'all'
-                  ? 'bg-[#8b0000] text-white shadow-sm'
-                  : 'bg-white text-[#5a403c] border border-[#e5e2dd] hover:bg-[#f6f3ee]'
-              }`}
-            >
-              جميع القطاعات ⚜️
-            </button>
-
-            {SECTORS.map(sec => (
-              <button
-                key={sec.id}
-                onClick={() => setAdminSelectedSector(sec.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition shrink-0 cursor-pointer ${
-                  adminSelectedSector === sec.id
-                    ? 'bg-[#8b0000] text-white shadow-sm'
-                    : 'bg-white text-[#5a403c] border border-[#e5e2dd] hover:bg-[#f6f3ee]'
-                }`}
-              >
-                {sec.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ------------------------------------------------------------------- */}
       {/* TAB 4: SECTOR MEMBERS & CATEGORIZED OVERVIEW                        */}
