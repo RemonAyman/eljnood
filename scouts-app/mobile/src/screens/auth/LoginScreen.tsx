@@ -16,7 +16,6 @@ export interface OfficialAccount {
   id: string;
   email: string;
   aliases: string[];
-  pass: string;
   role: 'ADMIN' | 'SECTION_LEADER' | 'LEADER' | 'PARENT' | 'CHILD' | 'JOWALAH';
   name: string;
   screen: string;
@@ -33,7 +32,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'admin',
     email: 'admin@jnood-scouts.com',
     aliases: ['admin', 'admin@scouts.org', 'general_admin'],
-    pass: 'Jnood@Admin2024!',
     role: 'ADMIN',
     name: 'القائد العام / لوحة الإدارة العامة',
     screen: 'AdminDashboard',
@@ -48,7 +46,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'subscriptions',
     email: 'subscriptions@jnood-scouts.com',
     aliases: ['subs', 'subscription', 'cashier', 'cashier@scouts.org'],
-    pass: 'Jnood@Subs2024!',
     role: 'SECTION_LEADER',
     name: 'مسؤول الاشتراكات والمعمل',
     screen: 'Subscriptions',
@@ -63,7 +60,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'ashbal',
     email: 'ashbal@jnood-scouts.com',
     aliases: ['ashbal', 'shbal'],
-    pass: 'Jnood@Ashbal2024!',
     role: 'SECTION_LEADER',
     name: 'رئيس قطاع الأشبال (بنين)',
     screen: 'Attendance',
@@ -77,7 +73,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'zahrat',
     email: 'zahrat@jnood-scouts.com',
     aliases: ['zahrat', 'zahra'],
-    pass: 'Jnood@Zahrat2024!',
     role: 'SECTION_LEADER',
     name: 'رئيسة قطاع الزهرات (بنات)',
     screen: 'Attendance',
@@ -91,7 +86,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'kushaf',
     email: 'kushaf@jnood-scouts.com',
     aliases: ['kushaf', 'kashaf', 'scout'],
-    pass: 'Jnood@Kushaf2024!',
     role: 'SECTION_LEADER',
     name: 'رئيس قطاع الكشاف (بنين)',
     screen: 'Attendance',
@@ -105,7 +99,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'murshidat',
     email: 'murshidat@jnood-scouts.com',
     aliases: ['murshidat', 'morshidat', 'guide'],
-    pass: 'Jnood@Mursh2024!',
     role: 'SECTION_LEADER',
     name: 'رئيسة قطاع المرشدات (بنات)',
     screen: 'Attendance',
@@ -119,7 +112,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'mutaqd',
     email: 'mutaqd@jnood-scouts.com',
     aliases: ['mutaqd', 'motakad', 'advanced'],
-    pass: 'Jnood@Mutaqd2024!',
     role: 'SECTION_LEADER',
     name: 'رئيس قطاع المتقدمين (بنين)',
     screen: 'Attendance',
@@ -133,7 +125,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'raidat',
     email: 'raidat@jnood-scouts.com',
     aliases: ['raidat', 'raedat'],
-    pass: 'Jnood@Raidat2024!',
     role: 'SECTION_LEADER',
     name: 'رئيسة قطاع الرائدات (بنات)',
     screen: 'Attendance',
@@ -147,7 +138,6 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'jowalah',
     email: 'jowalah@jnood-scouts.com',
     aliases: ['jowalah', 'jawala', 'rover'],
-    pass: 'Jnood@Jowalah2024!',
     role: 'SECTION_LEADER',
     name: 'رئيس قطاع الجوالة (جامعيين)',
     screen: 'Attendance',
@@ -195,28 +185,6 @@ export const LoginScreen = ({ navigation }: any) => {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
 
-  // Perform Direct Login for Official Account
-  const loginDirectlyWithAccount = useCallback((acc: OfficialAccount) => {
-    setFailedAttempts(0);
-    setLockoutSeconds(0);
-    setUser({
-      id: `official_${acc.id}`,
-      name: acc.name,
-      email: acc.email,
-      code: `OFFICIAL-${acc.id.toUpperCase()}`,
-      role: acc.role,
-      sectionName: acc.section || 'الكل',
-      phone: '01000000000',
-      guardianPhone: '01000000000',
-    });
-    setPinUnlocked(true);
-    if (navigation?.reset) {
-      navigation.reset({ index: 0, routes: [{ name: acc.screen }] });
-    } else {
-      navigation?.navigate(acc.screen);
-    }
-  }, [setUser, setPinUnlocked, navigation]);
-
   const handleFailedLogin = useCallback((msg: string) => {
     setLoading(false);
     const newCount = failedAttempts + 1;
@@ -253,65 +221,67 @@ export const LoginScreen = ({ navigation }: any) => {
     const cleanId = identifier.trim().toLowerCase();
     const cleanPass = password.trim();
 
-    // 1. Check if identifier matches any official account (email or alias)
+    // 1. Resolve email target from official accounts or direct input
     const matchedAccount = OFFICIAL_SCOUT_ACCOUNTS.find(
-      (a) => a.email.toLowerCase() === cleanId || a.aliases.includes(cleanId)
+      (a) => a.email.toLowerCase() === cleanId || a.aliases.some((alias) => alias.toLowerCase() === cleanId)
     );
 
-    if (matchedAccount) {
-      // Check password (case-insensitive fallback or master passwords)
-      const passMatches =
-        cleanPass === matchedAccount.pass ||
-        cleanPass.toLowerCase() === matchedAccount.pass.toLowerCase() ||
-        cleanPass === '123456' ||
-        cleanPass === 'admin123' ||
-        cleanPass === 'Jnood2024!' ||
-        cleanPass === 'Jnood@2024!' ||
-        cleanPass.length >= 4; // Allow any 4+ char password for registered official dev emails
+    let targetEmail = matchedAccount ? matchedAccount.email.toLowerCase() : '';
+    if (!targetEmail && cleanId.includes('@')) {
+      targetEmail = cleanId;
+    }
 
-      if (passMatches) {
-        setFailedAttempts(0);
-        setLockoutSeconds(0);
-        loginDirectlyWithAccount(matchedAccount);
-        setLoading(false);
-        return;
-      } else {
-        handleFailedLogin(`كلمة المرور غير صحيحة للحساب الرسمي: ${matchedAccount.name}.`);
-        return;
+    // 2. If user entered a Scout Code / Phone, look up their registered email
+    let memberData: any = null;
+    if (!targetEmail) {
+      memberData = await findUserOrMemberInFirestore(cleanId);
+      if (memberData && memberData.email) {
+        targetEmail = memberData.email.toLowerCase();
       }
     }
 
-    // 2. Try Firebase Auth (if user entered email)
-    let authUid = '';
-    if (cleanId.includes('@')) {
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, cleanId, cleanPass);
-        authUid = userCredential.user.uid;
-      } catch (authErr: any) {
-        console.warn('Firebase auth attempt note:', authErr.message);
-      }
+    if (!targetEmail) {
+      handleFailedLogin('البريد الإلكتروني أو كود الكشاف غير مسجل في قاعدة البيانات.');
+      return;
     }
 
-    // 3. Search Firestore for real user or member record
-    const realUserDoc = await findUserOrMemberInFirestore(cleanId);
+    // 3. Strictly Authenticate with Firebase Auth
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, targetEmail, cleanPass);
+      const authUid = userCredential.user.uid;
 
-    if (realUserDoc) {
+      // Reset lockout on successful credentials
       setFailedAttempts(0);
       setLockoutSeconds(0);
-      const userRole = realUserDoc.role || 'CHILD';
-      const realProfile = {
-        id: realUserDoc.id || realUserDoc.uid || authUid || `u_${Date.now()}`,
-        name: realUserDoc.name || 'عضو مسجل',
-        email: realUserDoc.email || (cleanId.includes('@') ? cleanId : ''),
-        code: realUserDoc.code || realUserDoc.sonCode || cleanId,
+
+      // Determine profile data
+      let userRole = matchedAccount ? matchedAccount.role : (memberData?.role || 'CHILD');
+      let userName = matchedAccount ? matchedAccount.name : (memberData?.name || 'عضو كشفي');
+      let userCode = memberData?.code || cleanId;
+      let sectionName = matchedAccount?.section || memberData?.sectionName || 'كشاف';
+
+      // Check Firestore user record for up-to-date metadata
+      const firestoreUser = await findUserOrMemberInFirestore(authUid);
+      if (firestoreUser) {
+        if (firestoreUser.role) userRole = firestoreUser.role;
+        if (firestoreUser.name) userName = firestoreUser.name;
+        if (firestoreUser.code) userCode = firestoreUser.code;
+        if (firestoreUser.sectionName) sectionName = firestoreUser.sectionName;
+      }
+
+      const profile = {
+        id: authUid,
+        name: userName,
+        email: targetEmail,
+        code: userCode,
         role: userRole,
-        sectionName: realUserDoc.sectionName || realUserDoc.squadName || realUserDoc.section || 'كشاف',
-        phone: realUserDoc.phone || '',
-        guardianPhone: realUserDoc.guardianPhone || '',
-        avatarBase64: realUserDoc.avatarBase64 || '',
+        sectionName,
+        phone: memberData?.phone || firestoreUser?.phone || '',
+        guardianPhone: memberData?.guardianPhone || firestoreUser?.guardianPhone || '',
+        avatarBase64: memberData?.avatarBase64 || firestoreUser?.avatarBase64 || '',
       };
 
-      setUser(realProfile);
+      setUser(profile);
       setLoading(false);
 
       const targetScreen =
@@ -328,26 +298,27 @@ export const LoginScreen = ({ navigation }: any) => {
       } else {
         navigation?.navigate(targetScreen);
       }
-      return;
+    } catch (authError: any) {
+      console.warn('Firebase login authentication failed:', authError.code);
+      handleFailedLogin('كلمة المرور غير صحيحة، يرجى التأكد من البيانات والمحاولة مجدداً.');
     }
-
-    // 4. If neither admin nor found in Firestore -> Reject login & increment failed attempts
-    handleFailedLogin('البريد الإلكتروني أو كود الكشاف غير مسجل في قاعدة البيانات.');
-  }, [identifier, password, setUser, navigation, loginDirectlyWithAccount, lockoutSeconds, handleFailedLogin]);
+  }, [identifier, password, setUser, navigation, lockoutSeconds, handleFailedLogin]);
 
   const handleVerifyPin = useCallback(() => {
     if (!isValidOTP(pinInput, 4)) {
       setPinError(ValidationMessages.invalidOTP);
       return;
     }
-    if (pinInput === '1234' || pinInput === '0000') {
+    const currentUser = useAuthStore.getState().user;
+    // Allow cashier PIN activation only for verified ADMIN or SECTION_LEADER accounts
+    if (currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SECTION_LEADER')) {
       setPinUnlocked(true);
       setShowPinModal(false);
       setPinInput('');
       setPinError('');
       Alert.alert('نجاح ✅', 'تم تفعيل صلاحيات أمين الصندوق والخصومات بنجاح! 🔑');
     } else {
-      setPinError(ValidationMessages.pinIncorrect);
+      setPinError('هذا الحساب غير مصرح له بتفعيل صلاحيات الخزينة.');
     }
   }, [pinInput, setPinUnlocked]);
 

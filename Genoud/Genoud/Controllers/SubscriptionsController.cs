@@ -1,4 +1,4 @@
-﻿using Genoud.Dtos.Subscriptions;
+using Genoud.Dtos.Subscriptions;
 using Genoud.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -7,12 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 
 namespace Genoud.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class SubscriptionsController : ControllerBase
     {
         private readonly DbContext _context;

@@ -1,16 +1,18 @@
-﻿using Genoud.DTOs.Attendance;
+using Genoud.DTOs.Attendance;
 using Genoud.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 
 namespace Genoud.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AttendanceController : ControllerBase
     {
         private readonly DbContext _context;

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../../config/firebase.config';
 import { useAuthStore } from '../../store/authStore';
 import { Role } from '../../types';
 import { OFFICIAL_SCOUT_ACCOUNTS } from '../../screens/auth/LoginScreen';
-import { findUserOrMemberInFirestore } from '../../services/firebaseService';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -26,175 +28,129 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   const isRoleAllowed = React.useMemo(() => {
     if (!allowedRoles || allowedRoles.length === 0) return true;
     if (!user || !user.role) return false;
-    
-    // Normalize role string comparison
-    const userRole = user.role;
-    return allowedRoles.includes(userRole);
+    return allowedRoles.includes(user.role);
   }, [user, allowedRoles]);
 
   const handleVerifyLogin = async () => {
     if (!emailInput.trim() || !passwordInput.trim()) {
-      Alert.alert('تنبيه ⚠️', 'من فضلك أدخل الجيميل/اسم المستخدم وكلمة السر المصرح بهما');
+      Alert.alert('تنبيه ⚠️', 'من فضلك أدخل البريد الإلكتروني وكلمة المرور المصرح بهما');
       return;
     }
 
     setLoading(true);
-    const cleanEmail = emailInput.trim().toLowerCase();
+    let cleanEmail = emailInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
 
-    // 1. Check against OFFICIAL_SCOUT_ACCOUNTS
-    const matchedAccount = OFFICIAL_SCOUT_ACCOUNTS.find((acc) => {
-      const emailMatches = acc.email.toLowerCase() === cleanEmail || 
-                           acc.aliases.some((a) => a.toLowerCase() === cleanEmail) ||
-                           acc.id.toLowerCase() === cleanEmail;
-      return emailMatches && (acc.pass === cleanPass || cleanPass === '123456' || cleanPass.includes('Jnood'));
-    });
-
+    // Resolve alias if an official account identifier was entered
+    const matchedAccount = OFFICIAL_SCOUT_ACCOUNTS.find(
+      (acc) =>
+        acc.email.toLowerCase() === cleanEmail ||
+        acc.aliases.some((a) => a.toLowerCase() === cleanEmail) ||
+        acc.id.toLowerCase() === cleanEmail
+    );
     if (matchedAccount) {
-      setUser({
-        id: `official_${matchedAccount.id}`,
-        name: matchedAccount.name,
-        email: matchedAccount.email,
-        role: matchedAccount.role,
-        sectionName: matchedAccount.section || 'الكل',
-      });
-      setLoading(false);
-      Alert.alert('تم التحقق بنجاح 🎉', `أهلاً بك يا قائد (${matchedAccount.name}). تم تأكيد الصلاحية بنجاح.`);
-      return;
+      cleanEmail = matchedAccount.email.toLowerCase();
     }
 
-    // 2. Check Firestore
     try {
-      const foundInDb = await findUserOrMemberInFirestore(cleanEmail);
-      if (foundInDb && (foundInDb.role === 'ADMIN' || foundInDb.role === 'LEADER' || foundInDb.role === 'SECTION_LEADER' || foundInDb.role === 'JOWALAH')) {
-        setUser({
-          id: foundInDb.id || 'db_user',
-          name: foundInDb.name || 'قائد معتمد',
-          email: foundInDb.email || cleanEmail,
-          role: foundInDb.role,
-          sectionName: foundInDb.sectionName || foundInDb.squadName || 'الكشافة',
-        });
+      // 1. Authenticate securely with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
+      const uid = userCredential.user.uid;
+
+      // 2. Fetch authenticated user data from Firestore
+      const userDocSnap = await getDoc(doc(db, 'users', uid));
+      let role: Role = matchedAccount ? matchedAccount.role : 'CHILD';
+      let name = matchedAccount ? matchedAccount.name : 'مستخدم مصرح';
+      let sectionName = matchedAccount?.section || 'الكل';
+
+      if (userDocSnap.exists()) {
+        const uData = userDocSnap.data();
+        if (uData.role) role = uData.role as Role;
+        if (uData.name) name = uData.name;
+        if (uData.sectionName) sectionName = uData.sectionName;
+      }
+
+      // 3. Verify that role meets requirements
+      if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
         setLoading(false);
-        Alert.alert('تم التحقق بنجاح 🎉', `أهلاً بك (${foundInDb.name}). تم تأكيد الصلاحيات من قاعدة البيانات.`);
+        Alert.alert('صلاحية غير كافية ⛔', 'هذا الحساب لا يملك الصلاحيات المطلوبة للوصول لهذا القسم.');
         return;
       }
-    } catch (e) {
-      console.warn('AuthGuard Firestore check warning:', e);
-    }
 
-    // 3. General Fallback for leaders / admins / jowalah keywords
-    if (cleanEmail.includes('admin') || cleanEmail.includes('jnood') || cleanPass === '123456' || cleanPass.includes('Jnood')) {
       setUser({
-        id: 'u_authorized',
-        name: cleanEmail.includes('admin') ? 'القائد العام' : 'قائد فرقة كشفية',
+        id: uid,
+        name,
         email: cleanEmail,
-        role: cleanEmail.includes('admin') ? 'ADMIN' : 'LEADER',
+        role,
+        sectionName,
       });
+
       setLoading(false);
-      Alert.alert('تم التحقق بنجاح 🎉', 'تم تسجيل الدخول وتأكيد الصلاحية بنجاح.');
-    } else if (cleanEmail.includes('jowalah') || cleanEmail.includes('jawala')) {
-      setUser({
-        id: 'u_jowalah',
-        name: 'قائد عشيرة الجوالة',
-        email: cleanEmail,
-        role: 'JOWALAH',
-      });
+      Alert.alert('تم التحقق بنجاح 🎉', `أهلاً بك (${name}). تم تأكيد الصلاحيات بنجاح.`);
+    } catch (authError: any) {
       setLoading(false);
-      Alert.alert('تم التحقق بنجاح 🎉', 'تم تسجيل الدخول كمسؤول جوالة بنجاح.');
-    } else {
-      setLoading(false);
-      Alert.alert('خطأ في البيانات ❌', 'بيانات الدخول غير صحيحة أو غير مصرح بها لهذا القسم');
+      console.warn('AuthGuard authentication error:', authError.message);
+      Alert.alert('بيانات غير صحيحة ❌', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
     }
   };
 
-  const handleQuickLeaderLogin = async () => {
-    setLoading(true);
-    setUser({
-      id: 'leader_verified',
-      name: 'القائد الكشفي المعتمد',
-      email: 'leader@scout.com',
-      role: 'LEADER',
-    });
-    setLoading(false);
-    Alert.alert('تم الدخول كقائد ⚜️', 'تم تفعيل حساب القائد والوصول للقسم.');
-  };
-
-  // 1. If Auth is required and user is not logged in
+  // 1. If screen requires auth and user is not authenticated
   if (requireAuth && !isAuthenticated) {
     return (
       <View style={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.icon}>🔑</Text>
-          <Text style={styles.title}>تأكيد الهوية وتسجيل الدخول</Text>
+          <Text style={styles.icon}>🔒</Text>
+          <Text style={styles.title}>تسجيل الدخول مطلوب</Text>
           <Text style={styles.sub}>
-            هذا القسم محمي، يرجى إدخال الجيميل وكلمة السر المصرح بهما للوصول.
+            هذا القسم مخصص للفرق الكشفية والقادة فقط. يرجى تسجيل الدخول بحسابك أولاً.
           </Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="📧 أدخل الجيميل أو اسم المستخدم المعتمد..."
-            placeholderTextColor="#888"
-            value={emailInput}
-            onChangeText={setEmailInput}
-            autoCapitalize="none"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="🔑 أدخل كلمة السر..."
-            placeholderTextColor="#888"
-            secureTextEntry
-            value={passwordInput}
-            onChangeText={setPasswordInput}
-          />
-
-          <TouchableOpacity style={styles.btn} onPress={handleVerifyLogin} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.btnText}>التحقق والدخول للقسم 🔓</Text>
-            )}
+          <TouchableOpacity
+            style={styles.btn}
+            onPress={() => navigation?.navigate('Login')}
+          >
+            <Text style={styles.btnText}>الذهاب لصفحة تسجيل الدخول ➔</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.quickLeaderBtn} onPress={handleQuickLeaderLogin}>
-            <Text style={styles.quickLeaderText}>⚡ الدخول السريع بحساب القائد المعتمد (leader@scout.com)</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation?.goBack()}>
-            <Text style={styles.backBtnText}>رجوع للخلف ↩️</Text>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation?.navigate('PublicHome')}
+          >
+            <Text style={styles.backBtnText}>العودة للرئيسية</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  // 2. If Auth is verified but role is not allowed (e.g., CHILD or PARENT trying to access LEADER/ADMIN/JOWALAH sections)
-  if (requireAuth && isAuthenticated && allowedRoles && !isRoleAllowed) {
+  // 2. If user is logged in but doesn't have required role
+  if (allowedRoles && allowedRoles.length > 0 && !isRoleAllowed) {
     return (
       <View style={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.icon}>🔒</Text>
-          <Text style={styles.title}>تأكيد صلاحية القادة والجوالة والإدارة</Text>
+          <Text style={styles.icon}>🛡️</Text>
+          <Text style={styles.title}>الوصول مقتصر على القادة والمشرفين</Text>
           <Text style={styles.sub}>
-            عذراً، هذا القسم مخصص **للقادة والجوالة والإدارة** فقط. حسابك الحالي بصفة ({user?.role === 'CHILD' ? 'عضو كشاف' : user?.role === 'PARENT' ? 'ولي أمر' : user?.role}).
+            رتبتك الحالية ({user?.role || 'غير محدد'}) لا تملك صلاحية الوصول المباشر لهذه الشاشة.
           </Text>
           <Text style={styles.subHint}>
-            أدخل الجيميل وكلمة السر الخاصة بالقائد أو مسؤول الجوالة للدخول:
+            قم بتسجيل الدخول ببريدك القيادي المعتمد لتأكيد صلاحيتك:
           </Text>
 
           <TextInput
             style={styles.input}
-            placeholder="📧 الجيميل المعتمد (Leader / Admin Email)..."
-            placeholderTextColor="#888"
+            placeholder="البريد الإلكتروني أو اسم المستخدم"
+            placeholderTextColor="#9CA3AF"
+            autoCapitalize="none"
+            keyboardType="email-address"
             value={emailInput}
             onChangeText={setEmailInput}
-            autoCapitalize="none"
           />
 
           <TextInput
             style={styles.input}
-            placeholder="🔑 كلمة السر..."
-            placeholderTextColor="#888"
+            placeholder="كلمة المرور الخاصة بالقائد"
+            placeholderTextColor="#9CA3AF"
             secureTextEntry
             value={passwordInput}
             onChangeText={setPasswordInput}
@@ -206,10 +162,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
             ) : (
               <Text style={styles.btnText}>تأكيد الحساب والفتح 🔓</Text>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.quickLeaderBtn} onPress={handleQuickLeaderLogin}>
-            <Text style={styles.quickLeaderText}>⚡ الدخول السريع بحساب القائد (leader@scout.com)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -298,16 +250,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 14,
-  },
-  quickLeaderBtn: {
-    marginTop: 10,
-    paddingVertical: 8,
-  },
-  quickLeaderText: {
-    color: '#D4A359',
-    fontSize: 11,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
   backBtn: {
     marginTop: 12,

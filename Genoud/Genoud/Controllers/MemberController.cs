@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using Genoud.Constants;
 using Genoud.DTOs.Members;
 using Genoud.Models;
@@ -17,6 +17,7 @@ namespace Genoud.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class MembersController : ControllerBase
     {
         private readonly DbContext _context;
@@ -31,6 +32,7 @@ namespace Genoud.Controllers
         }
 
         [HttpPost("import")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> ImportMembers(IFormFile file)
         {
             // Check file
@@ -328,6 +330,7 @@ namespace Genoud.Controllers
         // Get Email Password Members From Code
         //-------------------------------------------------------------------------//
         [HttpGet("credentials/{code}")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> GetMemberCredentials(string code)
         {
             var member = await _context.Members
@@ -380,6 +383,7 @@ namespace Genoud.Controllers
         //-------------------------------------------------------------------------//
 
         [HttpPut("{id}")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> UpdateMember(Guid id, UpdateMemberDto model)
         {
             if (!ModelState.IsValid)
@@ -455,6 +459,7 @@ namespace Genoud.Controllers
         // Delete Members From IdMember
         //-------------------------------------------------------------------------//
         [HttpDelete("{id}")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> DeleteMember(Guid id)
         {
             var member = await _context.Members
