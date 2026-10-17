@@ -40,6 +40,12 @@
           "icon": "./assets/icon.png",
           "color": "#1E3A8A"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "يستخدم التطبيق الكاميرا لمسح كود QR لتسجيل حضور وغياب أفراد الكشافة."
+        }
       ]
     ],
     "owner": "remonaymananes"
