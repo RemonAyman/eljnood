@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Modal,
+  TextInput,
+  Image,
 } from 'react-native';
 import { IconCardSelector } from '../../components/ui/IconCardSelector';
-import { fetchScoutingPlansFromFirestore } from '../../services/firebaseService';
+import { fetchScoutingPlansFromFirestore, sendNotificationToFirestore } from '../../services/firebaseService';
+import { useAuthStore } from '../../store/authStore';
+import { pickImageFromGallery, takePhotoWithCamera } from '../../utils/imagePickerHelper';
 
 interface PlanEvent {
   id: string;
@@ -130,11 +135,26 @@ const SCOUTING_PLAN_DATA: PlanEvent[] = [
 ];
 
 export const ScoutingPlanScreen = () => {
+  const user = useAuthStore((s) => s.user);
+
   const [selectedQuarter, setSelectedQuarter] = useState<string>('Q3');
   const [eventsList, setEventsList] = useState<PlanEvent[]>(SCOUTING_PLAN_DATA);
   const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
+  // Suggestions Modal
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
+  const [suggestionName, setSuggestionName] = useState(user?.name || '');
+  const [suggestionPhone, setSuggestionPhone] = useState(user?.phone || '');
+  const [suggestionText, setSuggestionText] = useState('');
+
+  // Donations Modal
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const [donorName, setDonorName] = useState(user?.name || '');
+  const [donorPhone, setDonorPhone] = useState(user?.phone || '');
+  const [donationAmount, setDonationAmount] = useState('');
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+
+  useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
@@ -166,9 +186,81 @@ export const ScoutingPlanScreen = () => {
 
   const handleDownloadPDF = () => {
     Alert.alert(
-      'تحميل الخطة السنوية PDF',
-      'جاري استخراج وثيقة الخطة السنوية العامة لمجموعة جنود المسيح الكشفية لعام 2026/2027 المعتمدة من مجلس الإدارة...',
-      [{ text: 'فتح المستند 📄', style: 'default' }]
+      'تحميل خطة الأيام الكشفية PDF 📄',
+      'جاري استخراج وتحميل وثيقة الخطة السنوية والجدول الزمني المعتمد لعام ٢٠٢٦ - ٢٠٢٧ لمجموعة جنود المسيح الكشفية.',
+      [{ text: 'تنزيل وحفظ في الهاتف 📥', style: 'default' }]
+    );
+  };
+
+  const handleSubmitSuggestion = async () => {
+    if (!suggestionText.trim()) {
+      Alert.alert('تنبيه', 'من فضلك اكتب نص الاقتراح أو الفكرة أولاً.');
+      return;
+    }
+
+    try {
+      await sendNotificationToFirestore({
+        title: '💡 اقتراح جديد من أحد الأعضاء',
+        body: `المرسل: ${suggestionName.trim() || 'عضو'}\n${suggestionText.trim()}`,
+        type: 'SCOUTING_PLAN',
+        targetRole: 'ADMIN',
+      });
+    } catch (e) {
+      console.warn('Suggestion note:', e);
+    }
+
+    setShowSuggestionModal(false);
+    setSuggestionText('');
+    Alert.alert('شكراً لك! 🌟', 'تم إرسال اقتراحك بنجاح إلى قيادة المجموعة ومجلس الإدارة لدراسته.');
+  };
+
+  const handlePickReceipt = async () => {
+    Alert.alert('تحميل صورة التحويل', 'اختر طريقة رفع صورة إيصال التحويل البنكي أو المحفظة:', [
+      {
+        text: '📷 تصوير بالكاميرا',
+        onPress: async () => {
+          const img = await takePhotoWithCamera();
+          if (img) setReceiptImage(img);
+        },
+      },
+      {
+        text: '🖼️ اختيار من المعرض',
+        onPress: async () => {
+          const img = await pickImageFromGallery();
+          if (img) setReceiptImage(img);
+        },
+      },
+      { text: 'إلغاء', style: 'cancel' },
+    ]);
+  };
+
+  const handleSubmitDonation = async () => {
+    if (!donationAmount.trim()) {
+      Alert.alert('تنبيه', 'يرجى إدخال مبلغ التبرع.');
+      return;
+    }
+    if (!receiptImage) {
+      Alert.alert('تنبيه', 'يرجى تحميل صورة إيصال التحويل لتأكيد التبرع.');
+      return;
+    }
+
+    try {
+      await sendNotificationToFirestore({
+        title: '💖 إشعار بتبرع جديد للكشافة',
+        body: `المتبرع: ${donorName.trim() || 'فاعل خير'}\nالمبلغ: ${donationAmount.trim()} ج.م\nتم إرفاق صورة إيصال التحويل.`,
+        type: 'SCOUTING_PLAN',
+        targetRole: 'ADMIN',
+      });
+    } catch (e) {
+      console.warn('Donation notification note:', e);
+    }
+
+    setShowDonationModal(false);
+    setDonationAmount('');
+    setReceiptImage(null);
+    Alert.alert(
+      'الرب يعوض تعب محبتكم! ✝️',
+      'تم إرسال بيانات التحويل بنجاح، وسوف يتم إرسال صورة إيصال التبرع المعتمد رسمياً إلى هاتفك فور تأكيد الاستلام من الإدارة المالية.'
     );
   };
 
@@ -177,7 +269,7 @@ export const ScoutingPlanScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.headerTitle}>الخطة السنوية والجدول الزمني ⚜️</Text>
+        <Text style={styles.headerTitle}>تحميل خطة الأيام الكشفية والجدول السنوي ⚜️</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -185,10 +277,29 @@ export const ScoutingPlanScreen = () => {
         <View style={styles.bannerCard}>
           <View style={styles.bannerTextContainer}>
             <Text style={styles.bannerTitle}>وثيقة الخطة السنوية المعتمدة 📜</Text>
-            <Text style={styles.bannerSubtitle}>خطة الأنشطة والمعسكرات لعام ٢٠٢٦ - ٢٠٢٧</Text>
+            <Text style={styles.bannerSubtitle}>خطة الأنشطة، الأيام الكشفية، والمعسكرات لعام ٢٠٢٦ - ٢٠٢٧</Text>
           </View>
           <TouchableOpacity style={styles.pdfBtn} onPress={handleDownloadPDF}>
             <Text style={styles.pdfBtnText}>📥 تنزيل PDF</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Action Buttons Row: اقتراحات & تبرعات (مطابقة للرسمة) */}
+        <View style={styles.sketchActionRow}>
+          <TouchableOpacity
+            style={[styles.sketchBtn, { backgroundColor: '#1E3A8A' }]}
+            onPress={() => setShowSuggestionModal(true)}
+          >
+            <Text style={styles.sketchBtnText}>💡 اقتراحات</Text>
+            <Text style={styles.sketchBtnSub}>شاركنا أفكارك لتطوير الكشافة</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sketchBtn, { backgroundColor: '#8B0000' }]}
+            onPress={() => setShowDonationModal(true)}
+          >
+            <Text style={styles.sketchBtnText}>💖 تبرعات</Text>
+            <Text style={styles.sketchBtnSub}>تحميل صورة التحويل والإيصال</Text>
           </TouchableOpacity>
         </View>
 
@@ -229,6 +340,134 @@ export const ScoutingPlanScreen = () => {
           })}
         </View>
       </ScrollView>
+
+      {/* Suggestions Modal */}
+      <Modal visible={showSuggestionModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>💡 صندوق الاقتراحات والتطوير</Text>
+            <Text style={styles.modalSubtitle}>صوتك مسموع! شاركنا بأفكارك أو ملاحظاتك لتطوير أنشطة الكشافة</Text>
+
+            <Text style={styles.inputLabel}>الاسم [اختياري]:</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={suggestionName}
+              onChangeText={setSuggestionName}
+              placeholder="اسمك أو اتركه فارغاً للسرية"
+              textAlign="right"
+            />
+
+            <Text style={styles.inputLabel}>رقم الموبايل للتواصل [اختياري]:</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={suggestionPhone}
+              keyboardType="phone-pad"
+              onChangeText={setSuggestionPhone}
+              placeholder="01XXXXXXXXX"
+              textAlign="right"
+            />
+
+            <Text style={styles.inputLabel}>نص الاقتراح أو الفكرة *:</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 120, textAlignVertical: 'top' }]}
+              value={suggestionText}
+              onChangeText={setSuggestionText}
+              placeholder="اكتب فكرتك أو مقترحك بالتفصيل هنا..."
+              multiline
+              textAlign="right"
+            />
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSubmitSuggestion}>
+                <Text style={styles.modalConfirmBtnText}>إرسال الاقتراح 📤</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowSuggestionModal(false)}>
+                <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Donations Modal (تحميل صورة التحويل) */}
+      <Modal visible={showDonationModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>💖 دعم وتبرعات الأنشطة الكشفية</Text>
+            <Text style={styles.modalSubtitle}>
+              «كُلُّ وَاحِدٍ كَمَا يَنْوِي بِقَلْبِهِ، لَيْسَ عَنْ حُزْنٍ أَوِ اضْطِرَارٍ. لأَنَّ الْمُعْطِيَ الْمَسْرُورَ يُحِبُّهُ اللهُ»
+            </Text>
+
+            <ScrollView style={{ maxHeight: 380 }}>
+              <View style={styles.bankInfoBox}>
+                <Text style={styles.bankTitle}>طرق التحويل والتبرع المتاحة:</Text>
+                <Text style={styles.bankLine}>💳 إنستاباي (InstaPay): <Text style={styles.boldText}>jnood.scouts@instapay</Text></Text>
+                <Text style={styles.bankLine}>📱 فودافون كاش: <Text style={styles.boldText}>010XXXXXXXX</Text></Text>
+                <Text style={styles.bankLine}>⛪ الخزينة الكنسية: تسليم يدوي لقائد المجموعة</Text>
+              </View>
+
+              <Text style={styles.inputLabel}>اسم المتبرع:</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={donorName}
+                onChangeText={setDonorName}
+                placeholder="اسم المتبرع أو فاعل خير"
+                textAlign="right"
+              />
+
+              <Text style={styles.inputLabel}>رقم الهاتف لإرسال الإيصال الرسمي عليه:</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={donorPhone}
+                keyboardType="phone-pad"
+                onChangeText={setDonorPhone}
+                placeholder="01XXXXXXXXX"
+                textAlign="right"
+              />
+
+              <Text style={styles.inputLabel}>قيمة التبرع (بالجنيه المصري):</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={donationAmount}
+                keyboardType="number-pad"
+                onChangeText={setDonationAmount}
+                placeholder="مثال: 500"
+                textAlign="right"
+              />
+
+              {/* Receipt Upload Box */}
+              <Text style={styles.inputLabel}>صورة إيصال التحويل البنكي أو المحفظة *:</Text>
+              <TouchableOpacity style={styles.uploadBtn} onPress={handlePickReceipt}>
+                <Text style={styles.uploadBtnText}>
+                  {receiptImage ? '🔄 تغيير صورة الإيصال' : '📸 تحميل صورة التحويل (سكرين شوت)'}
+                </Text>
+              </TouchableOpacity>
+
+              {receiptImage && (
+                <View style={styles.previewContainer}>
+                  <Image source={{ uri: receiptImage }} style={styles.receiptPreview} />
+                  <Text style={styles.receiptAttachedText}>تم إرفاق صورة إيصال التحويل بنجاح ✅</Text>
+                </View>
+              )}
+
+              <View style={styles.noticeBox}>
+                <Text style={styles.noticeText}>
+                  📌 ملاحظة: سوف يتم إرسال صورة إيصال التبرع المعتمد رسمياً فور تأكيد استلام التحويل.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSubmitDonation}>
+                <Text style={styles.modalConfirmBtnText}>تأكيد وإرسال الإيصال 📤</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowDonationModal(false)}>
+                <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -245,13 +484,13 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 24,
   },
   headerSubtitle: { color: '#D4A359', fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { color: '#FFF', fontSize: 17, fontWeight: 'bold', textAlign: 'center' },
   content: { padding: 16, paddingBottom: 40 },
   bannerCard: {
     backgroundColor: '#1E1B4B',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -261,6 +500,21 @@ const styles = StyleSheet.create({
   bannerSubtitle: { color: '#E0E7FF', fontSize: 11, textAlign: 'right' },
   pdfBtn: { backgroundColor: '#D4A359', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   pdfBtnText: { color: '#1E1B4B', fontWeight: 'bold', fontSize: 12 },
+  sketchActionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  sketchBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    elevation: 3,
+  },
+  sketchBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold', marginBottom: 4 },
+  sketchBtnSub: { color: '#F3F4F6', fontSize: 10, textAlign: 'center' },
   sectionCard: {
     backgroundColor: '#FFF',
     borderRadius: 16,
@@ -289,4 +543,75 @@ const styles = StyleSheet.create({
   eventDates: { fontSize: 12, color: '#8B0000', fontWeight: 'bold', textAlign: 'right', marginBottom: 4 },
   eventSquads: { fontSize: 12, color: '#4B5563', textAlign: 'right', marginBottom: 8 },
   eventDesc: { fontSize: 13, color: '#6B7280', textAlign: 'right', lineHeight: 20 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: { width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 20 },
+  modalTitle: { fontSize: 16, fontWeight: 'bold', color: '#8B0000', textAlign: 'center', marginBottom: 4 },
+  modalSubtitle: { fontSize: 12, color: '#666', textAlign: 'center', marginBottom: 14, lineHeight: 18 },
+  inputLabel: { fontSize: 12, fontWeight: 'bold', color: '#374151', textAlign: 'right', marginBottom: 4, marginTop: 8 },
+  modalInput: {
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#D4A359',
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 13,
+    color: '#333',
+    textAlign: 'right',
+  },
+  bankInfoBox: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  bankTitle: { fontSize: 12, fontWeight: 'bold', color: '#92400E', textAlign: 'right', marginBottom: 6 },
+  bankLine: { fontSize: 11, color: '#78350F', textAlign: 'right', marginBottom: 4 },
+  boldText: { fontWeight: 'bold' },
+  uploadBtn: {
+    backgroundColor: '#0D9488',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  uploadBtnText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  previewContainer: { alignItems: 'center', marginVertical: 10 },
+  receiptPreview: { width: 140, height: 140, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB' },
+  receiptAttachedText: { color: '#059669', fontSize: 11, fontWeight: 'bold', marginTop: 4 },
+  noticeBox: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  noticeText: { color: '#1E40AF', fontSize: 11, textAlign: 'center', fontWeight: '600' },
+  modalBtnRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
+  modalConfirmBtn: {
+    flex: 1,
+    backgroundColor: '#8B0000',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginLeft: 6,
+  },
+  modalConfirmBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  modalCancelBtn: {
+    flex: 1,
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  modalCancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 14 },
 });

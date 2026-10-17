@@ -30,7 +30,23 @@ service cloud.firestore {
       );
     }
 
-    // 🛡️ 5. التحقق من ملكية الحساب الشخصي
+    // 🛡️ 5. التحقق من صلاحيات مسؤول العهدة والمخزن
+    function isInventoryManager() {
+      return isAuthenticated() && (
+        (request.auth.token != null && request.auth.token.role in ['ADMIN', 'GROUP_MANAGER', 'INVENTORY_MANAGER']) ||
+        (getUserData().role in ['ADMIN', 'GROUP_MANAGER', 'INVENTORY_MANAGER'])
+      );
+    }
+
+    // 🛡️ 6. التحقق من صلاحيات مسؤول الاشتراكات والماليات
+    function isSubscriptionOfficer() {
+      return isAuthenticated() && (
+        (request.auth.token != null && request.auth.token.role in ['ADMIN', 'GROUP_MANAGER', 'SUBSCRIPTION_OFFICER']) ||
+        (getUserData().role in ['ADMIN', 'GROUP_MANAGER', 'SUBSCRIPTION_OFFICER'])
+      );
+    }
+
+    // 🛡️ 7. التحقق من ملكية الحساب الشخصي
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -52,7 +68,7 @@ service cloud.firestore {
     // ─── 3. Financial Subscriptions (الاشتراكات المالية والإيصالات والخزينة) ───
     match /subscriptions/{subId} {
       allow read: if isAuthenticated();
-      allow create, update: if isLeaderOrAdmin();
+      allow create, update: if isLeaderOrAdmin() || isSubscriptionOfficer();
       allow delete: if isAdmin();
     }
 
@@ -75,17 +91,27 @@ service cloud.firestore {
       allow write: if isLeaderOrAdmin();
     }
 
-    // ─── 6. Memories & Photo Gallery (معرض الصور وأرشيف المعسكرات) ───
+    // ─── 6. Bible Study & Daily Chapters (الكتاب المقدس والتأملات والمسابقات) ───
+    match /bible_readings/{readingId} {
+      allow read: if isAuthenticated();
+      allow write: if isLeaderOrAdmin();
+    }
+    match /bible_quiz_results/{resultId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isLeaderOrAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
+    // ─── 7. Memories & Photo Gallery (معرض الصور وأرشيف المعسكرات والرحلات) ───
     match /memories/{memoryId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if isLeaderOrAdmin();
     }
 
-    // ─── 7. Users Collection (حسابات المستخدمين والقادة وأولياء الأمور) ───
+    // ─── 8. Users Collection (حسابات المستخدمين والقادة وأولياء الأمور) ───
     match /users/{userId} {
       allow read: if isAuthenticated();
-      // السماح للمستخدم بتحديث ملفه الشخصي بشرط عدم تعديل رتبته (role) ما لم يكن أدمن
       allow create: if isAuthenticated() && (
         request.auth.uid == userId || isAdmin()
       );
@@ -96,7 +122,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ─── 8. Chat Rooms & Messages (غرف الدردشة والمراسلات الفورية) ───
+    // ─── 9. Chat Rooms & Messages (غرف الدردشة والمراسلات الفورية) ───
     match /chat_rooms/{roomId} {
       allow read, write: if isAuthenticated();
       
@@ -110,7 +136,7 @@ service cloud.firestore {
       allow update, delete: if isLeaderOrAdmin() || (isAuthenticated() && resource.data.senderId == request.auth.uid);
     }
 
-    // ─── 9. Scouting Events (الفعاليات والحفلات والمعسكرات) ───
+    // ─── 10. Scouting Events & Parties (الفعاليات والحفلات والمعسكرات) ───
     match /events/{eventId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
@@ -120,62 +146,80 @@ service cloud.firestore {
       allow write: if isLeaderOrAdmin();
     }
 
-    // ─── 10. Scouting Plans (الخطط السنوية الكشفية) ───
+    // ─── 11. Scouting Plans (الخطط السنوية الكشفية) ───
     match /scouting_plans/{planId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // ─── 11. Room Reservations & Inventory (قاعات الكنيسة والمهمات) ───
+    // ─── 12. Suggestions & Donations (صندوق الاقتراحات وإيصالات التبرعات) ───
+    match /suggestions/{suggId} {
+      allow read: if isLeaderOrAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+    match /donations/{donationId} {
+      allow read: if isLeaderOrAdmin() || isSubscriptionOfficer();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ─── 13. Room Reservations (حجوزات قاعات وغرف الكنيسة) ───
     match /room_reservations/{resId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if isLeaderOrAdmin() || (isAuthenticated() && resource.data.requesterId == request.auth.uid);
     }
+
+    // ─── 14. Inventory Catalog & Requests (أصناف ومهمات العهدة وطلبات الاستعارة) ───
+    match /inventory_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isInventoryManager();
+    }
     match /inventory_requests/{reqId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update, delete: if isLeaderOrAdmin() || (isAuthenticated() && resource.data.requesterId == request.auth.uid);
+      allow update, delete: if isInventoryManager() || isLeaderOrAdmin() || (isAuthenticated() && resource.data.requesterId == request.auth.uid);
     }
 
-    // ─── 12. Discount Codes (أكواد وخصومات الاشتراكات المالية) ───
+    // ─── 15. Discount Codes (أكواد وخصومات الاشتراكات المالية) ───
     match /discount_codes/{codeId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // ─── 13. OTP Verification Logs (سجلات التحقق والأمان من الهاتف) ───
+    // ─── 16. OTP Verification Logs (سجلات التحقق والأمان من الهاتف) ───
     match /otp_verifications/{otpId} {
       allow read, write: if isAuthenticated() || isLeaderOrAdmin();
     }
 
-    // ─── 14. Urgent Notifications (التنبيهات والإشعارات العامة) ───
+    // ─── 17. Urgent Notifications (التنبيهات والإشعارات العامة) ───
     match /notifications/{notifId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isLeaderOrAdmin();
     }
 
-    // ─── 15. Push Notification Device Tokens (توكن إشعارات النظام للأجهزة والمستخدمين) ───
+    // ─── 18. Push Notification Device Tokens (توكن إشعارات النظام للأجهزة والمستخدمين) ───
     match /push_tokens/{tokenId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated();
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ─── 16. System Logs & Audits (سجلات النظام والأمان) ───
+    // ─── 19. System Logs & Audits (سجلات النظام والأمان) ───
     match /system_logs/{logId} {
       allow read: if isAdmin();
       allow create: if isAuthenticated();
       allow update, delete: if false; // السجلات غير قابلة للتعديل أو الحذف لضمان نزاهتها
     }
 
-    // ─── 17. Subscription Settings (أسعار واشتراكات القطاعات والمراحل) ───
+    // ─── 20. Subscription Settings (أسعار واشتراكات القطاعات والمراحل) ───
     match /subscription_settings/{settingId} {
       allow read: if isAuthenticated();
       allow write: if isLeaderOrAdmin();
     }
 
-    // ─── 18. Default Deny Fallback (منع أي وصول غير محدد صراحة) ───
+    // ─── 21. Default Deny Fallback (منع أي وصول غير محدد صراحة) ───
     match /{document=**} {
       allow read, write: if false;
     }
