@@ -46,7 +46,7 @@ const CHURCH_SERVICES = [
   'مجموعة جنود المسيح الكشفية',
 ];
 
-export const InventoryRequestScreen = () => {
+export const InventoryRequestScreen = ({ navigation }: any) => {
   const user = useAuthStore((s) => s.user);
   const isInventoryManager = user?.role === 'INVENTORY_MANAGER' || user?.role === 'ADMIN' || user?.role === 'GROUP_MANAGER';
 
@@ -185,10 +185,21 @@ export const InventoryRequestScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header with Back Button */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.headerTitle}>إدارة واستعارة العهدة والمخزون ⛺</Text>
+        <View style={styles.headerTopBar}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation?.goBack?.() || navigation?.navigate?.('MainSwipeApp')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtnText}>➔ رجوع</Text>
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
+            <Text style={styles.headerTitle}>إدارة واستعارة العهدة والمخزون ⛺</Text>
+          </View>
+        </View>
         {isInventoryManager && (
           <View style={styles.managerBadge}>
             <Text style={styles.managerBadgeText}>🔑 وضع إدارة المخزن (مسؤول العهدة)</Text>
@@ -547,8 +558,30 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
-  headerSubtitle: { color: '#D4A359', fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  headerTopBar: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  headerTitleWrap: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  backBtn: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  backBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: { color: '#D4A359', fontSize: 13, fontWeight: 'bold', marginBottom: 2 },
+  headerTitle: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
   managerBadge: {
     backgroundColor: '#0D9488',
     paddingHorizontal: 12,

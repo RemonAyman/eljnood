@@ -5,6 +5,7 @@ interface AttendanceState {
   records: AttendanceRecord[];
   markAttendance: (record: Omit<AttendanceRecord, 'id'>) => AttendanceRecord;
   getMemberAttendanceRate: (memberId: string) => number;
+  getMemberAbsenceDays: (memberIdOrCode: string) => number;
   importFromFingerprintExcel: (date: string, eventType: EventType) => number;
   getAttendanceStats: (date: string, eventType: EventType) => {
     present: number;
@@ -44,6 +45,13 @@ export const useAttendanceStore = create<AttendanceState>((set, get) => ({
     if (memberRecords.length === 0) return 100;
     const presentCount = memberRecords.filter((r) => r.status === 'PRESENT' || r.status === 'EXCUSED').length;
     return Math.round((presentCount / memberRecords.length) * 100);
+  },
+  getMemberAbsenceDays: (memberIdOrCode) => {
+    const clean = memberIdOrCode.trim().toLowerCase();
+    const list = get().records.filter(
+      (r) => (r.memberId.toLowerCase() === clean || r.memberCode.toLowerCase() === clean) && r.status === 'ABSENT'
+    );
+    return list.length;
   },
   importFromFingerprintExcel: (date, eventType) => {
     const demoMembers = [

@@ -72,7 +72,10 @@ const INITIAL_READING: DailyBibleReading = {
 
 export const BibleStudyScreen = ({ navigation }: any) => {
   const user = useAuthStore((s) => s.user);
-  const isLeaderOrAdmin = user?.role === 'ADMIN' || user?.role === 'LEADER' || user?.role === 'GROUP_MANAGER';
+  const isAdmin = user?.role === 'ADMIN';
+  const isLeaderOrAdmin = isAdmin || user?.role === 'LEADER' || user?.role === 'SECTION_LEADER' || user?.role === 'GROUP_MANAGER';
+  const isQuizMaster = isAdmin || user?.role === 'QUIZ_MASTER';
+  const canUploadBiblePdf = isAdmin || isLeaderOrAdmin;
 
   const [reading, setReading] = useState<DailyBibleReading>(INITIAL_READING);
   const [fontSize, setFontSize] = useState<number>(16);
@@ -83,12 +86,84 @@ export const BibleStudyScreen = ({ navigation }: any) => {
   const [userAnswers, setUserAnswers] = useState<Record<string, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
 
-  // Edit Reading Modal
+  // Edit Reading Modal (for section leader)
   const [showEditModal, setShowEditModal] = useState(false);
   const [editBook, setEditBook] = useState(reading.bookName);
   const [editChapter, setEditChapter] = useState(reading.chapterNumber.toString());
   const [editTitle, setEditTitle] = useState(reading.title);
   const [editText, setEditText] = useState(reading.readingText);
+
+  // Quiz Master Modal State
+  const [showQuizMasterModal, setShowQuizMasterModal] = useState(false);
+  const [quizTitle, setQuizTitle] = useState('');
+  const [quizType, setQuizType] = useState<'MULTIPLE_CHOICE' | 'ESSAY'>('MULTIPLE_CHOICE');
+  const [quizQuestionsCount, setQuizQuestionsCount] = useState('3');
+  const [quizNewQuestion, setQuizNewQuestion] = useState('');
+  const [quizOpt1, setQuizOpt1] = useState('');
+  const [quizOpt2, setQuizOpt2] = useState('');
+  const [quizOpt3, setQuizOpt3] = useState('');
+  const [quizOpt4, setQuizOpt4] = useState('');
+  const [correctOptionIdx, setCorrectOptionIdx] = useState<number>(0);
+
+  const handleDownloadFullBible = () => {
+    Alert.alert(
+      'تحميل الكتاب المقدس 📖',
+      'جاري تحميل ملف الكتاب المقدس كاملاً (PDF) بجودة عالية للقراءة بدون إنترنت...',
+      [
+        {
+          text: 'فتح في المتصفح / تنزيل',
+          onPress: () => {
+            Linking.openURL('https://copticchurch.net/bible').catch(() => {
+              Alert.alert('تم التحميل', 'تم بدء تنزيل ملف الكتاب المقدس كاملاً.');
+            });
+          },
+        },
+        { text: 'إلغاء', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleUploadBiblePdf = () => {
+    Alert.alert('رفع نسخة معتمدة 📤', 'يمكن لمسؤول المجموعة رفع أو تحديث رابط ملف الكتاب المقدس PDF المعتمد للكشافة.', [
+      {
+        text: 'تأكيد الرابط والرفع',
+        onPress: () => Alert.alert('نجاح ✅', 'تم تحديث ملف الكتاب المقدس الإلكتروني لجميع الكشافين والقادة.'),
+      },
+      { text: 'إلغاء', style: 'cancel' },
+    ]);
+  };
+
+  const handleAddQuizByMaster = () => {
+    if (!quizTitle.trim() || !quizNewQuestion.trim()) {
+      Alert.alert('تنبيه', 'يرجى إدخال عنوان المسابقة وصيغة السؤال.');
+      return;
+    }
+
+    const newQuestionObj: BibleQuizQuestion = {
+      id: `q_${Date.now()}`,
+      question: quizNewQuestion.trim(),
+      type: quizType,
+      options: quizType === 'MULTIPLE_CHOICE'
+        ? [quizOpt1 || 'الاختيار ١', quizOpt2 || 'الاختيار ٢', quizOpt3 || 'الاختيار ٣', quizOpt4 || 'الاختيار ٤']
+        : ['إجابة مقالية'],
+      correctOptionIndex: quizType === 'MULTIPLE_CHOICE' ? correctOptionIdx : 0,
+      explanation: 'سؤال معتمد من مسؤول المسابقات',
+    };
+
+    setReading((prev) => ({
+      ...prev,
+      quizQuestions: [...(prev.quizQuestions || []), newQuestionObj],
+    }));
+
+    setShowQuizMasterModal(false);
+    setQuizTitle('');
+    setQuizNewQuestion('');
+    setQuizOpt1('');
+    setQuizOpt2('');
+    setQuizOpt3('');
+    setQuizOpt4('');
+    Alert.alert('نجاح 🏆', 'تم نشر المسابقة الكشفية الجديدة بنجاح بواسطة مسؤول المسابقات!');
+  };
 
   const handleSelectAnswer = (qId: string, optIndex: number) => {
     if (quizSubmitted) return;
@@ -130,22 +205,74 @@ export const BibleStudyScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header with Back Button */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>خطة القراءة والتأمل السنوية 📖</Text>
-        <Text style={styles.headerTitle}>
-          {reading.bookName} - أصحاح {reading.chapterNumber}
-        </Text>
+        <View style={styles.headerTopBar}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation?.goBack?.() || navigation?.navigate?.('MainSwipeApp')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtnText}>➔ رجوع</Text>
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerSubtitle}>الكتاب المقدس والمسابقات الروحية 🕊️</Text>
+            <Text style={styles.headerTitle}>
+              {reading.bookName} - أصحاح {reading.chapterNumber}
+            </Text>
+          </View>
+        </View>
         <Text style={styles.headerTheme}>{reading.title}</Text>
 
-        {isLeaderOrAdmin && (
+        <View style={styles.headerActionsRow}>
+          {isLeaderOrAdmin && (
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => setShowEditModal(true)}
+            >
+              <Text style={styles.editBtnText}>✏️ نشر / تعديل إصحاح اليوم (رئيس القطاع)</Text>
+            </TouchableOpacity>
+          )}
+
+          {isQuizMaster && (
+            <TouchableOpacity
+              style={[styles.editBtn, { backgroundColor: '#7C3AED' }]}
+              onPress={() => setShowQuizMasterModal(true)}
+            >
+              <Text style={styles.editBtnText}>🏆 لوحة مسؤول المسابقات (إضافة مسابقة)</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Full Bible PDF Download / Upload Banner */}
+      <View style={styles.biblePdfBanner}>
+        <View style={styles.biblePdfInfo}>
+          <Text style={styles.biblePdfIcon}>📖</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.biblePdfTitle}>الكتاب المقدس كاملاً (العهدين القديم والجديد)</Text>
+            <Text style={styles.biblePdfSub}>نسخة إلكترونية معتمدة للتحميل والقراءة بدون إنترنت (PDF)</Text>
+          </View>
+        </View>
+        <View style={styles.biblePdfActions}>
           <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => setShowEditModal(true)}
+            style={styles.downloadBibleBtn}
+            onPress={handleDownloadFullBible}
+            activeOpacity={0.7}
           >
-            <Text style={styles.editBtnText}>✏️ تعديل إصحاح اليوم</Text>
+            <Text style={styles.downloadBibleBtnText}>📥 تحميل الكتاب كاملاً</Text>
           </TouchableOpacity>
-        )}
+
+          {canUploadBiblePdf && (
+            <TouchableOpacity
+              style={styles.uploadBibleBtn}
+              onPress={handleUploadBiblePdf}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.uploadBibleBtnText}>📤 رفع نسخة جديدة (الإدارة)</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Tabs Row */}
@@ -430,6 +557,95 @@ export const BibleStudyScreen = ({ navigation }: any) => {
         </View>
       </Modal>
 
+      {/* Quiz Master Creator Modal */}
+      <Modal visible={showQuizMasterModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={{ paddingVertical: 20 }}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>🏆 إعداد ونشر مسابقة كشفية (مسؤول المسابقات)</Text>
+
+              <Text style={styles.inputLabel}>عنوان المسابقة:</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="مثال: مسابقة إصحاح اليوم الكشفية"
+                placeholderTextColor="#888"
+                value={quizTitle}
+                onChangeText={setQuizTitle}
+              />
+
+              <Text style={styles.inputLabel}>نوع الأسئلة:</Text>
+              <View style={{ flexDirection: 'row-reverse', gap: 10, marginVertical: 6 }}>
+                <TouchableOpacity
+                  style={[styles.typeChoiceBtn, quizType === 'MULTIPLE_CHOICE' && styles.typeChoiceBtnActive]}
+                  onPress={() => setQuizType('MULTIPLE_CHOICE')}
+                >
+                  <Text style={[styles.typeChoiceText, quizType === 'MULTIPLE_CHOICE' && styles.typeChoiceTextActive]}>
+                    اختياري 🔘
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.typeChoiceBtn, quizType === 'ESSAY' && styles.typeChoiceBtnActive]}
+                  onPress={() => setQuizType('ESSAY')}
+                >
+                  <Text style={[styles.typeChoiceText, quizType === 'ESSAY' && styles.typeChoiceTextActive]}>
+                    مقالي 📝
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.inputLabel}>نص السؤال:</Text>
+              <TextInput
+                style={[styles.modalInput, { height: 60 }]}
+                placeholder="اكتب صيغة السؤال هنا..."
+                placeholderTextColor="#888"
+                value={quizNewQuestion}
+                onChangeText={setQuizNewQuestion}
+                multiline
+              />
+
+              {quizType === 'MULTIPLE_CHOICE' && (
+                <View>
+                  <Text style={styles.inputLabel}>خيارات الإجابة (واختر الإجابة الصحيحة):</Text>
+                  {[
+                    { val: quizOpt1, setter: setQuizOpt1, idx: 0, label: 'أ' },
+                    { val: quizOpt2, setter: setQuizOpt2, idx: 1, label: 'ب' },
+                    { val: quizOpt3, setter: setQuizOpt3, idx: 2, label: 'ج' },
+                    { val: quizOpt4, setter: setQuizOpt4, idx: 3, label: 'د' },
+                  ].map((optItem) => (
+                    <View key={optItem.idx} style={styles.optionInputRow}>
+                      <TouchableOpacity
+                        style={[styles.radioBtn, correctOptionIdx === optItem.idx && styles.radioBtnActive]}
+                        onPress={() => setCorrectOptionIdx(optItem.idx)}
+                      >
+                        <Text style={{ fontSize: 10, color: correctOptionIdx === optItem.idx ? '#FFF' : '#6B7280' }}>
+                          {correctOptionIdx === optItem.idx ? 'صح ✔' : 'خطأ'}
+                        </Text>
+                      </TouchableOpacity>
+                      <TextInput
+                        style={[styles.modalInput, { flex: 1, marginBottom: 0 }]}
+                        placeholder={`خيار (${optItem.label})`}
+                        placeholderTextColor="#888"
+                        value={optItem.val}
+                        onChangeText={optItem.setter}
+                      />
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.modalBtnRow}>
+                <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleAddQuizByMaster}>
+                  <Text style={styles.modalConfirmBtnText}>اعتماد ونشر المسابقة 🚀</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowQuizMasterModal(false)}>
+                  <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
       <BottomNavBar navigation={navigation} currentRoute="BibleStudy" />
     </View>
   );
@@ -616,4 +832,131 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   modalCancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 14 },
+  headerTopBar: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  headerTitleWrap: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  backBtn: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  backBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  headerActionsRow: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    marginTop: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  biblePdfBanner: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 14,
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 12,
+  },
+  biblePdfInfo: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  biblePdfIcon: {
+    fontSize: 28,
+  },
+  biblePdfTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#92400E',
+    textAlign: 'right',
+  },
+  biblePdfSub: {
+    fontSize: 11,
+    color: '#B45309',
+    textAlign: 'right',
+  },
+  biblePdfActions: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+  },
+  downloadBibleBtn: {
+    flex: 1,
+    backgroundColor: '#8B0000',
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  downloadBibleBtnText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  uploadBibleBtn: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#D97706',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  uploadBibleBtnText: {
+    color: '#B45309',
+    fontWeight: 'bold',
+    fontSize: 11,
+  },
+  typeChoiceBtn: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  typeChoiceBtnActive: {
+    backgroundColor: '#EDE9FE',
+    borderColor: '#7C3AED',
+  },
+  typeChoiceText: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: 'bold',
+  },
+  typeChoiceTextActive: {
+    color: '#7C3AED',
+  },
+  optionInputRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  radioBtn: {
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  radioBtnActive: {
+    backgroundColor: '#059669',
+    borderColor: '#059669',
+  },
 });

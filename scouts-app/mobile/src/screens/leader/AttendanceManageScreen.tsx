@@ -20,6 +20,10 @@ import { SafeHorizontalScrollView } from '../../components/ui/SafeHorizontalScro
 import { saveAttendanceToFirestore, fetchAttendanceFromFirestore } from '../../services/firebaseService';
 import { BottomNavBar } from '../../components/navigation/BottomNavBar';
 import { exportAttendanceReport } from '../../utils/reportExportUtils';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as XLSX from 'xlsx';
 
 const EVENT_OPTIONS: { id: EventType; title: string; icon: string; subtitle: string }[] = [
   { id: 'SCOUTING_DAY', title: 'اليوم الكشفي (الأعضاء)', icon: '⛺', subtitle: 'حضور وماليات الأطفال' },
@@ -119,13 +123,16 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
     init();
   }, [selectedDate]);
 
-  // QR Scanner modal state
+  // QR Scanner modal state & Camera
+  const [permission, requestPermission] = useCameraPermissions();
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [scannedCodeInput, setScannedCodeInput] = useState('');
+  const [scanDebounce, setScanDebounce] = useState(false);
 
   // Fingerprint Excel import modal state
   const [showExcelModal, setShowExcelModal] = useState(false);
-  const [excelTextData, setExcelTextData] = useState('');
+  const [isProcessingExcel, setIsProcessingExcel] = useState(false);
+  const [lastUploadedFileName, setLastUploadedFileName] = useState('');
 
   // Excuse modal state
   const [showExcuseModal, setShowExcuseModal] = useState(false);
@@ -216,13 +223,16 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
     setTargetMember(null);
   };
 
-  const handleSimulateQRScan = () => {
-    if (!scannedCodeInput.trim()) {
-      Alert.alert('تنبيه', 'من فضلك أدخل أو امسح كود الكشاف QR');
-      return;
-    }
-    const cleanCode = scannedCodeInput.trim().toLowerCase();
-    const found = members.find((m) => m.code.toLowerCase() === cleanCode);
+  const processCodeScanned = useCallback((rawCode: string) => {
+    if (!rawCode.trim()) return;
+    const cleanCode = rawCode.trim().toLowerCase();
+    const found = members.find(
+      (m) =>
+        m.code.toLowerCase() === cleanCode ||
+        cleanCode.includes(m.code.toLowerCase()) ||
+        m.code.toLowerCase().includes(cleanCode)
+    );
+
     if (found) {
       const attRec = {
         id: `${found.id}_${selectedDate}_${selectedEvent}`,
@@ -232,61 +242,107 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
         date: selectedDate,
         eventType: selectedEvent,
         status: 'PRESENT' as const,
-        recordedBy: 'قارئ الباركود / QR Scanner',
+        recordedBy: currentUser?.name || 'قارئ الباركود / QR Scanner',
         timestamp: new Date().toISOString(),
       };
       markAttendance(attRec);
       saveAttendanceToFirestore(attRec);
 
-      Alert.alert('تم بنجاح ✅', `تم تسجيل حضور: ${found.name} (${found.squadName})`);
+      Alert.alert('تم تسجيل الحضور بنجاح ✅', `الكشاف: ${found.name}\nالفرقة: ${found.squadName}\nالكود: ${found.code}`);
       setScannedCodeInput('');
       setShowScannerModal(false);
     } else {
-      Alert.alert('غير موجود ❌', `لم يتم العثور على عضو بالكود: ${scannedCodeInput}`);
+      Alert.alert('كود غير مسجل ❌', `لم يتم العثور على عضو مسجل بالكود: ${rawCode}`);
     }
-  };
+  }, [members, selectedDate, selectedEvent, currentUser, markAttendance]);
 
-  // Process Excel/CSV text from fingerprint device
-  const handleProcessFingerprintExcel = async () => {
-    if (!excelTextData.trim()) {
-      Alert.alert('تنبيه', 'يرجى لصق بيانات أو أرقام البصمة من شيت الأكسيل أولاً');
-      return;
-    }
+  const handleCameraBarcodeScanned = useCallback(({ data }: { data: string }) => {
+    if (scanDebounce) return;
+    setScanDebounce(true);
+    processCodeScanned(data);
+    setTimeout(() => {
+      setScanDebounce(false);
+    }, 2000);
+  }, [scanDebounce, processCodeScanned]);
 
-    const lines = excelTextData.split('\n');
-    let markedCount = 0;
-
-    for (const line of lines) {
-      const cleanLine = line.trim().toLowerCase();
-      if (!cleanLine) continue;
-
-      // Extract codes matching JS-2026-xxx or digits
-      const matchedMember = members.find((m) => {
-        return cleanLine.includes(m.code.toLowerCase()) || cleanLine.includes(m.name.toLowerCase());
+  // Real Excel File Upload (.xlsx / .xls)
+  const handlePickExcelFile = async () => {
+    try {
+      setIsProcessingExcel(true);
+      const res = await DocumentPicker.getDocumentAsync({
+        type: [
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel',
+          '*/*',
+        ],
+        copyToCacheDirectory: true,
       });
 
-      if (matchedMember) {
-        const attRec = {
-          id: `${matchedMember.id}_${selectedDate}_${selectedEvent}`,
-          memberId: matchedMember.id,
-          memberName: matchedMember.name,
-          memberCode: matchedMember.code,
-          date: selectedDate,
-          eventType: selectedEvent,
-          status: 'PRESENT' as const,
-          recordedBy: 'جهاز البصمة (Fingerprint Excel)',
-          timestamp: new Date().toISOString(),
-        };
-
-        markAttendance(attRec);
-        await saveAttendanceToFirestore(attRec);
-        markedCount++;
+      if (res.canceled || !res.assets || res.assets.length === 0) {
+        setIsProcessingExcel(false);
+        return;
       }
-    }
 
-    setShowExcelModal(false);
-    setExcelTextData('');
-    Alert.alert('تم بنجاح ✅', `تم استيراد ومطابقة ${markedCount} سجل بصمة بنجاح إلى المنظومة الكشفية السحابية! 🎉`);
+      const file = res.assets[0];
+      setLastUploadedFileName(file.name);
+
+      // Read file content
+      const base64 = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Parse using SheetJS XLSX
+      const workbook = XLSX.read(base64, { type: 'base64' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      let markedCount = 0;
+      const matchedIds = new Set<string>();
+
+      for (const row of rows) {
+        if (!Array.isArray(row)) continue;
+        const rowText = row.join(' ').toLowerCase();
+
+        for (const m of members) {
+          if (!matchedIds.has(m.id)) {
+            const codeMatch = m.code && rowText.includes(m.code.toLowerCase());
+            const nameMatch = m.name && rowText.includes(m.name.toLowerCase());
+
+            if (codeMatch || nameMatch) {
+              matchedIds.add(m.id);
+              const attRec = {
+                id: `${m.id}_${selectedDate}_${selectedEvent}`,
+                memberId: m.id,
+                memberName: m.name,
+                memberCode: m.code,
+                date: selectedDate,
+                eventType: selectedEvent,
+                status: 'PRESENT' as const,
+                recordedBy: `ملف إكسيل (${file.name})`,
+                timestamp: new Date().toISOString(),
+              };
+
+              markAttendance(attRec);
+              await saveAttendanceToFirestore(attRec);
+              markedCount++;
+              break;
+            }
+          }
+        }
+      }
+
+      setIsProcessingExcel(false);
+      setShowExcelModal(false);
+      Alert.alert(
+        'تم استيراد الإكسيل بنجاح 🎉',
+        `تم فحص شيت (${file.name}) ومطابقة وتسجيل حضور ${markedCount} عضو كشفي بنجاح!`
+      );
+    } catch (err: any) {
+      setIsProcessingExcel(false);
+      console.warn('Excel parse error:', err);
+      Alert.alert('تنبيه ⚠️', 'تعذر قراءة ملف الإكسيل. تأكد من أن الملف سليم وبصيغة .xlsx أو .xls.');
+    }
   };
 
   return (
@@ -430,23 +486,40 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
         </View>
       </ScrollView>
 
-      {/* QR Scanner Modal */}
+      {/* QR Scanner Modal with Real CameraView */}
       <Modal visible={showScannerModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>📷 ماسح الـ QR والباركود الكشفي</Text>
+          <View style={[styles.modalCard, { maxHeight: '90%' }]}>
+            <Text style={styles.modalTitle}>📷 ماسح الكاميرا لكود الـ QR الكشفي</Text>
             <Text style={styles.modalSubtitle}>
-              وجّه الكاميرا نحو كارت الكشاف أو أدخل كود العضوية للتحضير الفوري:
+              وجّه كاميرا الهاتف نحو كود الـ QR الخاص بالكشاف ليتم تحضيره وتسجيله فوراً
             </Text>
 
-            <View style={styles.scannerBox}>
-              <Text style={styles.scannerIcon}>📸</Text>
-              <Text style={styles.scannerTip}>الكاميرا نشطة لقراءة بطاقات الـ QR الكشفية</Text>
+            {/* Live Camera View */}
+            <View style={styles.cameraFrameWrap}>
+              {!permission?.granted ? (
+                <View style={styles.permRequestBox}>
+                  <Text style={styles.permText}>يجب منح الإذن للكاميرا لتتمكن من مسح الـ QR</Text>
+                  <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
+                    <Text style={styles.permBtnText}>منح إذن الكاميرا 📷</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <CameraView
+                  style={StyleSheet.absoluteFill}
+                  facing="back"
+                  barcodeScannerSettings={{
+                    barcodeTypes: ['qr', 'code128', 'ean13'],
+                  }}
+                  onBarcodeScanned={handleCameraBarcodeScanned}
+                />
+              )}
+              <View style={styles.scannerCrosshair} />
             </View>
 
             <TextInput
               style={styles.modalInput}
-              placeholder="أو اكتب الكود (مثال: JS-2026-448)"
+              placeholder="أو اكتب الكود يدوياً (مثال: JS-2026-448)"
               placeholderTextColor="#888"
               value={scannedCodeInput}
               onChangeText={setScannedCodeInput}
@@ -454,41 +527,52 @@ export const AttendanceManageScreen = ({ navigation }: { navigation?: any }) => 
             />
 
             <View style={styles.modalBtnRow}>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSimulateQRScan}>
-                <Text style={styles.modalConfirmBtnText}>تسجيل الحضور ✅</Text>
+              <TouchableOpacity
+                style={styles.modalConfirmBtn}
+                onPress={() => processCodeScanned(scannedCodeInput)}
+              >
+                <Text style={styles.modalConfirmBtnText}>تسجيل الحضور يدوي ✅</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowScannerModal(false)}>
-                <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+                <Text style={styles.modalCancelBtnText}>إغلاق</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Fingerprint Excel Text Modal */}
+      {/* Real Fingerprint Excel File Upload Modal */}
       <Modal visible={showExcelModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>📊 استيراد بيانات جهاز البصمة Excel</Text>
+            <Text style={styles.modalTitle}>📊 استيراد وتحضير شيت Excel</Text>
             <Text style={styles.modalSubtitle}>
-              انسخ والصق نصوص شيت الأكسيل المصدر من جهاز البصمة للتحضير الفوري:
+              اختر ملف الإكسيل (.xlsx أو .xls) المسحوب من جهاز البصمة ليقوم السيستم بمطابقة أكواد الأعضاء وتحضيرهم تلقائياً
             </Text>
 
-            <TextInput
-              style={[styles.modalInput, { height: 140, textAlignVertical: 'top' }]}
-              placeholder="انسخ والصق بيانات شيت الأكسيل أو أكواد البصمة هنا..."
-              placeholderTextColor="#888"
-              value={excelTextData}
-              onChangeText={setExcelTextData}
-              multiline
-            />
+            <View style={styles.excelDropzone}>
+              <Text style={styles.excelDropzoneIcon}>📑</Text>
+              <Text style={styles.excelDropzoneTitle}>رفع ملف الإكسيل مباشرة</Text>
+              <Text style={styles.excelDropzoneSub}>
+                {lastUploadedFileName ? `آخر ملف: ${lastUploadedFileName}` : 'يدعم كافة صيغ إكسيل أجهزة البصمة وجداول الحضور'}
+              </Text>
+
+              {isProcessingExcel ? (
+                <ActivityIndicator size="large" color="#8B0000" style={{ marginTop: 12 }} />
+              ) : (
+                <TouchableOpacity
+                  style={styles.uploadExcelActionBtn}
+                  onPress={handlePickExcelFile}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.uploadExcelActionText}>📁 اضغط لاختيار ورفع ملف الإكسيل (.xlsx)</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
             <View style={styles.modalBtnRow}>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleProcessFingerprintExcel}>
-                <Text style={styles.modalConfirmBtnText}>تفريغ واستيراد البصمة 📥</Text>
-              </TouchableOpacity>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowExcelModal(false)}>
-                <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+                <Text style={styles.modalCancelBtnText}>إغلاق</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -769,4 +853,85 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   modalCancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 13 },
+  cameraFrameWrap: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#000',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#D4A359',
+  },
+  permRequestBox: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permText: {
+    color: '#F9FAFB',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  permBtn: {
+    backgroundColor: '#8B0000',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  permBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  scannerCrosshair: {
+    width: 140,
+    height: 140,
+    borderWidth: 2,
+    borderColor: 'rgba(212, 163, 89, 0.85)',
+    borderRadius: 16,
+    borderStyle: 'dashed',
+  },
+  excelDropzone: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    borderRadius: 18,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  excelDropzoneIcon: {
+    fontSize: 40,
+    marginBottom: 6,
+  },
+  excelDropzoneTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  excelDropzoneSub: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  uploadExcelActionBtn: {
+    backgroundColor: '#1E3A8A',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  uploadExcelActionText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
 });

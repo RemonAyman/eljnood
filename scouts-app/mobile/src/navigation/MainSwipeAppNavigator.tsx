@@ -30,6 +30,7 @@ import { ChildHomeScreen } from '../screens/child/ChildHomeScreen';
 import { ParentHomeScreen } from '../screens/parent/ParentHomeScreen';
 import { InventoryRequestScreen } from '../screens/shared/InventoryRequestScreen';
 import { RoomReservationScreen } from '../screens/shared/RoomReservationScreen';
+import { BibleStudyScreen } from '../screens/shared/BibleStudyScreen';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -116,6 +117,15 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
       ];
     }
 
+    if (role === 'QUIZ_MASTER') {
+      return [
+        { key: 'BibleStudy', title: 'الكتاب المقدس والمسابقات', icon: '🎯', component: BibleStudyScreen },
+        { key: 'Curricula', title: 'المناهج والمسابقات الروحية', icon: '📚', component: CurriculaScreen },
+        { key: 'ChatRooms', title: 'غرف التواصل والدردشة', icon: '💬', component: ChatRoomsScreen },
+        { key: 'UserProfile', title: 'الملف الشخصي والحساب', icon: '👤', component: UserProfileScreen },
+      ];
+    }
+
     // Default: CHILD / SCOUT
     return [
       { key: 'ChildHome', title: 'جنود المسيح الكشفية', icon: '🏠', component: ChildHomeScreen },
@@ -194,13 +204,23 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
         {/* ─── Modern Unified Top Header ─── */}
         <View style={[styles.topHeader, isDarkMode && styles.topHeaderDark]}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity
-              style={styles.headerActionBtn}
-              onPress={toggleDarkMode}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.headerActionIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
-            </TouchableOpacity>
+            {activeIndex !== 0 ? (
+              <TouchableOpacity
+                style={styles.headerBackBtn}
+                onPress={() => navigateToTab(tabs[0].key)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.headerBackText}>← الرئيسية</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.headerActionBtn}
+                onPress={toggleDarkMode}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.headerActionIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.headerCenter}>
@@ -233,7 +253,7 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
           </View>
         </View>
 
-        {/* ─── Facebook-style Swipeable Horizontal Pager ─── */}
+        {/* ─── Optimized Swipeable Horizontal Pager (Zero Stuck / Zero Lag) ─── */}
         <ScrollView
           ref={scrollRef}
           horizontal
@@ -241,19 +261,28 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
           scrollEnabled={swipeEnabled}
           nestedScrollEnabled={true}
           showsHorizontalScrollIndicator={false}
-          bounces={true}
+          bounces={false}
           scrollEventThrottle={16}
           decelerationRate="fast"
+          snapToInterval={SCREEN_WIDTH}
+          snapToAlignment="start"
+          disableIntervalMomentum={true}
           onMomentumScrollEnd={handleMomentumScrollEnd}
           style={styles.pager}
           contentContainerStyle={styles.pagerContent}
           keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={Platform.OS === 'android'}
         >
-          {tabs.map((tab) => {
+          {tabs.map((tab, idx) => {
             const ScreenComponent = tab.component;
+            const shouldRender = Math.abs(idx - activeIndex) <= 1;
             return (
-              <View key={tab.key} style={styles.pageItem}>
-                <ScreenComponent navigation={wrappedNavigation} route={route} />
+              <View key={tab.key} style={[styles.pageItem, { width: SCREEN_WIDTH }]}>
+                {shouldRender ? (
+                  <ScreenComponent navigation={wrappedNavigation} route={route} />
+                ) : (
+                  <View style={{ flex: 1, backgroundColor: '#FAF7F2' }} />
+                )}
               </View>
             );
           })}
@@ -349,6 +378,19 @@ const styles = StyleSheet.create({
     padding: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 16,
+  },
+  headerBackBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+  },
+  headerBackText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   headerActionIcon: {
     fontSize: 14,

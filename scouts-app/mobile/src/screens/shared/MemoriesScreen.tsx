@@ -18,19 +18,8 @@ import {
   sendNotificationToFirestore,
 } from '../../services/firebaseService';
 
-interface MemoryItem {
-  id: string;
-  category: string;
-  title: string;
-  eventDate: string;
-  location: string;
-  likesCount: number;
-  commentsCount: number;
-  type: 'PHOTO' | 'VIDEO' | 'ALBUM';
-  coverEmoji: string;
-  coverImageUrl?: string;
-  description: string;
-}
+import { useAuthStore } from '../../store/authStore';
+import { MemoryItem } from '../../types';
 
 const MEMORY_CATEGORIES = [
   { id: 'TESTS', title: 'الاختبارات الكشفية', icon: '📝', subtitle: 'اختبارات الترقي والشارات' },
@@ -40,7 +29,20 @@ const MEMORY_CATEGORIES = [
   { id: 'FESTIVALS', title: 'المهرجانات', icon: '🏆', subtitle: 'مهرجانات الكرازة والمعارض الكشفية' },
   { id: 'AGAPI', title: 'الأغابي', icon: '🍞', subtitle: 'أيام الأغابي والمحبة الكنسية' },
   { id: 'OCCASION_PARTIES', title: 'حفلات المناسبات', icon: '🎉', subtitle: 'الأعياد وحفلات ختام الأنشطة' },
-  { id: 'TRIPS', title: 'الرحلات الكشفية', icon: '🚌', subtitle: 'الرحلات الترفيهية والثقافية والزيارات الكشفية' },
+  { id: 'TRIPS', title: 'الرحلات الكشفية', icon: '🚌', subtitle: 'الرحلات الترفيهية والتاريخية والزيارات' },
+];
+
+// Progression sectors:
+// Boys: براعم -> أشبال -> كشاف ومتقدم (مع بعض)
+// Girls: براعم -> زهرات -> مرشدات ورائدات (مع بعض)
+const SECTORS_LIST = [
+  { id: 'ALL', title: 'جميع القطاعات' },
+  { id: 'BARAEM', title: 'براعم 🌱' },
+  { id: 'ASHBAL', title: 'أشبال 🐺' },
+  { id: 'ZAHRAT', title: 'زهرات 🌸' },
+  { id: 'KUSHAF_MUTAQADDEM', title: 'كشاف ومتقدم ⛺🔥' },
+  { id: 'MURSHIDAT_RAIDAT', title: 'مرشدات ورائدات 🎀' },
+  { id: 'JOWALAH', title: 'جوالة وقادة 🧭' },
 ];
 
 const INITIAL_MEMORIES: MemoryItem[] = [
@@ -49,6 +51,8 @@ const INITIAL_MEMORIES: MemoryItem[] = [
     category: 'CAMPS',
     title: 'معسكر كشافة وادي النطرون السنوي',
     eventDate: 'يوليو 2026',
+    year: 2026,
+    sector: 'KUSHAF_MUTAQADDEM',
     location: 'دير البراموس - وادي النطرون',
     likesCount: 142,
     commentsCount: 28,
@@ -59,9 +63,11 @@ const INITIAL_MEMORIES: MemoryItem[] = [
   },
   {
     id: 'm2',
-    category: 'PARTIES',
+    category: 'PROMISE_PARTIES',
     title: 'حفل أداء الوعد وتسليم المناديل الكشفية',
     eventDate: 'مايو 2026',
+    year: 2026,
+    sector: 'ALL',
     location: 'مسرح الكنيسة الكبير',
     likesCount: 98,
     commentsCount: 15,
@@ -75,6 +81,8 @@ const INITIAL_MEMORIES: MemoryItem[] = [
     category: 'TRIPS',
     title: 'رحلة قطاع المرشدات إلى دير الأنبا أنطونيوس',
     eventDate: 'أبريل 2026',
+    year: 2026,
+    sector: 'MURSHIDAT_RAIDAT',
     location: 'دير الأنبا أنطونيوس - البحر الأحمر',
     likesCount: 115,
     commentsCount: 19,
@@ -85,9 +93,11 @@ const INITIAL_MEMORIES: MemoryItem[] = [
   },
   {
     id: 'm4',
-    category: 'COMPETITIONS',
+    category: 'FESTIVALS',
     title: 'الفوز بالمركز الأول في مسابقة المعارض الكشفية',
     eventDate: 'فبراير 2026',
+    year: 2026,
+    sector: 'KUSHAF_MUTAQADDEM',
     location: 'مهرجان إيبارشية الكرازة',
     likesCount: 184,
     commentsCount: 42,
@@ -98,47 +108,57 @@ const INITIAL_MEMORIES: MemoryItem[] = [
   },
   {
     id: 'm5',
-    category: 'TASBEHA',
-    title: 'سهرة كيهكية وتسبحة نصف الليل الكشفية',
-    eventDate: 'ديسمبر 2025',
-    location: 'كاتدرائية رئيس الملائكة ميخائيل',
-    likesCount: 88,
-    commentsCount: 12,
+    category: 'TRIPS',
+    title: 'رحلة معالم الإسكندرية وقلعة قايتباي للأشبال',
+    eventDate: 'أغسطس 2024',
+    year: 2024,
+    sector: 'ASHBAL',
+    location: 'الإسكندرية',
+    likesCount: 92,
+    commentsCount: 11,
     type: 'PHOTO',
-    coverEmoji: '🕯️',
-    coverImageUrl: 'https://images.unsplash.com/photo-1510973005906-c5b1a0d6c5f4?w=800&q=80',
-    description: 'صلاة وتسبحة خاشعة بمشاركة جميع فرق البراعم، الأشبال، الكشاف، والجوالة.',
+    coverEmoji: '🚌',
+    coverImageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80',
+    description: 'يوم صيفي رائع لأشبال جنود المسيح في الإسكندرية وزيارة المعالم التاريخية.',
   },
   {
     id: 'm6',
-    category: 'SPIRITUAL',
-    title: 'خلوة قطاع الجوالة الروحية السنوية',
-    eventDate: 'مارس 2026',
-    location: 'دير الأنبا بيشوي - وادي النطرون',
-    likesCount: 73,
-    commentsCount: 9,
-    type: 'ALBUM',
-    coverEmoji: '🕊️',
-    coverImageUrl: 'https://images.unsplash.com/photo-1476611338391-6f395a0dd82e?w=800&q=80',
-    description: 'يوم روحي متكامل للجوالة والقادة مع القسيس المرشد وجلسات التأمل والصلاة.',
-  },
-  {
-    id: 'm7',
-    category: 'GROUP_PHOTOS',
-    title: 'صورة المجموعة التذكارية - اليوم الكشفي 2026',
-    eventDate: 'سبتمبر 2026',
-    location: 'ساحة الكنيسة الكبرى',
-    likesCount: 256,
-    commentsCount: 68,
+    category: 'TRIPS',
+    title: 'رحلة أثرية لدير السريان الأثري',
+    eventDate: 'نوفمبر 2018',
+    year: 2018,
+    sector: 'ALL',
+    location: 'وادي النطرون',
+    likesCount: 65,
+    commentsCount: 8,
     type: 'PHOTO',
-    coverEmoji: '📸',
-    coverImageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80',
-    description: 'الصورة التذكارية الرسمية لأسرة مجموعة جنود المسيح الكشفية في اليوم الكشفي السنوي.',
+    coverEmoji: '⛪',
+    coverImageUrl: 'https://images.unsplash.com/photo-1476611338391-6f395a0dd82e?w=800&q=80',
+    description: 'رحلة نادرة وموثقة من أرشيف الكشافة لعام 2018.',
   },
 ];
 
 export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
+  const currentUser = useAuthStore((s) => s.user);
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isLabManager = currentUser?.role === 'SUBSCRIPTION_OFFICER';
+  const canUploadMemories = isAdmin || isLabManager;
+
+  const currentYear = new Date().getFullYear();
+  // Dynamic years list from 2005 to current year (and upcoming year automatically)
+  const availableYears = React.useMemo(() => {
+    const years: number[] = [];
+    const maxYear = Math.max(currentYear, 2026);
+    for (let y = maxYear; y >= 2005; y--) {
+      years.push(y);
+    }
+    return years;
+  }, [currentYear]);
+
   const [selectedCategory, setSelectedCategory] = useState<string>('CAMPS');
+  const [selectedYear, setSelectedYear] = useState<number | 'ALL'>('ALL');
+  const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('ALL');
+
   const [memories, setMemories] = useState<MemoryItem[]>(INITIAL_MEMORIES);
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -146,11 +166,13 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
   // Lightbox Modal
   const [activeMemory, setActiveMemory] = useState<MemoryItem | null>(null);
 
-  // Upload Modal
+  // Upload Modal (Lab Manager / Admin only)
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newLocation, setNewLocation] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newYear, setNewYear] = useState<number>(currentYear);
+  const [newSector, setNewSector] = useState<string>('ALL');
 
   React.useEffect(() => {
     async function loadData() {
@@ -169,7 +191,60 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
     loadData();
   }, []);
 
-  const filteredMemories = memories.filter((m) => m.category === selectedCategory);
+  // Determine allowed sectors according to Scout Graduation History:
+  // Boys: Baraem -> Ashbal -> Kushaf/Mutaqaddem (together). CANNOT see Girls sectors (Zahrat, Murshidat/Raidat)
+  // Girls: Baraem -> Zahrat -> Murshidat/Raidat (together). CANNOT see Boys sectors (Ashbal, Kushaf/Mutaqaddem)
+  const allowedSectorsForUser = React.useMemo(() => {
+    if (!currentUser || isAdmin || currentUser.role === 'GROUP_MANAGER' || isLabManager) {
+      return null; // Full visibility
+    }
+
+    const secName = (currentUser.sectionName || (currentUser as any)?.squadName || '').toLowerCase();
+    const isGirl = secName.includes('زهرات') || secName.includes('مرشدات') || secName.includes('رائدات') || currentUser.role === 'PARENT';
+
+    if (isGirl) {
+      if (secName.includes('رائدات') || secName.includes('مرشدات')) {
+        return ['ALL', 'BARAEM', 'ZAHRAT', 'MURSHIDAT_RAIDAT'];
+      }
+      if (secName.includes('زهرات')) {
+        return ['ALL', 'BARAEM', 'ZAHRAT'];
+      }
+      return ['ALL', 'BARAEM'];
+    } else {
+      // Boys progression
+      if (secName.includes('متقدم') || secName.includes('كشاف')) {
+        return ['ALL', 'BARAEM', 'ASHBAL', 'KUSHAF_MUTAQADDEM'];
+      }
+      if (secName.includes('أشبال') || secName.includes('شبل')) {
+        return ['ALL', 'BARAEM', 'ASHBAL'];
+      }
+      if (secName.includes('جوال') || currentUser.role === 'JOWALAH') {
+        return ['ALL', 'BARAEM', 'ASHBAL', 'KUSHAF_MUTAQADDEM', 'JOWALAH'];
+      }
+      return ['ALL', 'BARAEM'];
+    }
+  }, [currentUser, isAdmin, isLabManager]);
+
+  const filteredMemories = memories.filter((m) => {
+    if (m.category !== selectedCategory) return false;
+
+    // Year filter (especially useful in TRIPS)
+    if (selectedCategory === 'TRIPS' && selectedYear !== 'ALL') {
+      if (m.year && m.year !== selectedYear) return false;
+    }
+
+    // Sector progression access check
+    if (allowedSectorsForUser && m.sector && !allowedSectorsForUser.includes(m.sector)) {
+      return false;
+    }
+
+    // Explicit Sector filter if chosen
+    if (selectedSectorFilter !== 'ALL' && m.sector && m.sector !== 'ALL' && m.sector !== selectedSectorFilter) {
+      return false;
+    }
+
+    return true;
+  });
 
   const toggleLike = (id: string) => {
     setLikedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -223,10 +298,21 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header with Back Button */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.headerTitle}>أرشيف الذكريات والمعسكرات الكشفية 📸</Text>
+        <View style={styles.headerTopBar}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation?.goBack?.() || navigation?.navigate?.('MainSwipeApp')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtnText}>➔ رجوع</Text>
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
+            <Text style={styles.headerTitle}>أرشيف الذكريات والمعسكرات 📸</Text>
+          </View>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -240,10 +326,64 @@ export const MemoriesScreen = ({ navigation }: { navigation?: any }) => {
           />
         </View>
 
-        {/* Upload Memory Trigger Button */}
-        <TouchableOpacity style={styles.uploadTriggerBtn} onPress={() => setShowUploadModal(true)}>
-          <Text style={styles.uploadTriggerBtnText}>➕ مشاركة صورة أو ذكرى جديدة في الأرشيف</Text>
-        </TouchableOpacity>
+        {/* Trips Year Selector (Dynamic 2005 - currentYear, automatically updates) */}
+        {selectedCategory === 'TRIPS' && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>📅 أرشيف الرحلات حسب السنة (2005 - {currentYear})</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.yearsRow}>
+              <TouchableOpacity
+                style={[styles.yearChip, selectedYear === 'ALL' && styles.yearChipActive]}
+                onPress={() => setSelectedYear('ALL')}
+              >
+                <Text style={[styles.yearChipText, selectedYear === 'ALL' && styles.yearChipTextActive]}>
+                  كل السنين
+                </Text>
+              </TouchableOpacity>
+              {availableYears.map((yr) => (
+                <TouchableOpacity
+                  key={yr}
+                  style={[styles.yearChip, selectedYear === yr && styles.yearChipActive]}
+                  onPress={() => setSelectedYear(yr)}
+                >
+                  <Text style={[styles.yearChipText, selectedYear === yr && styles.yearChipTextActive]}>
+                    {yr}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Sector Progression Filter */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>⚜️ تصفية حسب القطاع (تاريخ التدرج الكشفي)</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sectorsRow}>
+            {SECTORS_LIST.map((sec) => (
+              <TouchableOpacity
+                key={sec.id}
+                style={[styles.sectorChip, selectedSectorFilter === sec.id && styles.sectorChipActive]}
+                onPress={() => setSelectedSectorFilter(sec.id)}
+              >
+                <Text style={[styles.sectorChipText, selectedSectorFilter === sec.id && styles.sectorChipTextActive]}>
+                  {sec.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Upload Memory Trigger Button (Restricted to Lab Manager & Admin) */}
+        {canUploadMemories ? (
+          <TouchableOpacity style={styles.uploadTriggerBtn} onPress={() => setShowUploadModal(true)}>
+            <Text style={styles.uploadTriggerBtnText}>➕ إضافة رحلة أو ذكرى جديدة (مسؤول المعمل / الإدارة)</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.infoBanner}>
+            <Text style={styles.infoBannerText}>
+              💡 الأرشيف متاح للعرض والمشاهدة طبقاً للمراحل التي تدرجت بها. الإضافة مخصصة لمسؤول المعمل والإدارة.
+            </Text>
+          </View>
+        )}
 
         {/* Gallery Grid */}
         <View style={styles.galleryList}>
@@ -568,6 +708,91 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'right',
     marginBottom: 12,
+  },
+  headerTopBar: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  headerTitleWrap: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  backBtn: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  backBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  yearsRow: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  yearChip: {
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  yearChipActive: {
+    backgroundColor: '#8B0000',
+    borderColor: '#8B0000',
+  },
+  yearChipText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#4B5563',
+  },
+  yearChipTextActive: {
+    color: '#FFFFFF',
+  },
+  sectorsRow: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  sectorChip: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  sectorChipActive: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#DC2626',
+  },
+  sectorChipText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#4B5563',
+  },
+  sectorChipTextActive: {
+    color: '#DC2626',
+  },
+  infoBanner: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  infoBannerText: {
+    fontSize: 11,
+    color: '#1E40AF',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   modalBtnRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   modalConfirmBtn: {

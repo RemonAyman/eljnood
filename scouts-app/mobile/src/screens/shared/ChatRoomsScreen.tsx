@@ -220,9 +220,26 @@ const ChatBubbleItem = React.memo(({ msg, isMe, currentUserAvatar, memberAvatar,
 });
 
 export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
-  const { currentRoomId, messages, sendMessage, setRoom } = useChatStore();
+  const {
+    currentRoomId,
+    messages,
+    sendMessage,
+    setRoom,
+    lockedRooms,
+    mutedRooms,
+    toggleLockRoom,
+    toggleMuteRoom,
+  } = useChatStore();
   const currentUser = useAuthStore((s) => s.user);
   const members = useMembersStore((s) => s.members);
+
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isSectionLeader = currentUser?.role === 'SECTION_LEADER';
+  const canManageRoom = isAdmin || isSectionLeader;
+  const isRoomLocked = !!lockedRooms[currentRoomId];
+  const isRoomMuted = !!mutedRooms[currentRoomId];
+  const isGeneralBroadcastOnly = currentRoomId === 'GENERAL';
+  const canSendInCurrentRoom = isGeneralBroadcastOnly ? isAdmin : (!isRoomLocked || canManageRoom);
 
   const [firestoreMessages, setFirestoreMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -533,6 +550,41 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
         />
       </View>
 
+      {/* Room Controls Bar (Mute Notifications + Lock/Unlock Room) */}
+      <View style={styles.roomControlsBar}>
+        <TouchableOpacity
+          style={[styles.controlPill, isRoomMuted && styles.controlPillActive]}
+          onPress={() => toggleMuteRoom(currentRoomId)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.controlPillIcon}>{isRoomMuted ? '🔕' : '🔔'}</Text>
+          <Text style={[styles.controlPillText, isRoomMuted && styles.controlPillTextActive]}>
+            {isRoomMuted ? 'تم كتم الإشعارات' : 'كتم الإشعارات'}
+          </Text>
+        </TouchableOpacity>
+
+        {isGeneralBroadcastOnly ? (
+          <View style={styles.broadcastNoticePill}>
+            <Text style={styles.broadcastNoticeText}>📢 قناة إعلانات عامة (المسؤول العام فقط)</Text>
+          </View>
+        ) : canManageRoom ? (
+          <TouchableOpacity
+            style={[styles.controlPill, isRoomLocked && styles.controlPillLocked]}
+            onPress={() => toggleLockRoom(currentRoomId)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.controlPillIcon}>{isRoomLocked ? '🔒' : '🔓'}</Text>
+            <Text style={[styles.controlPillText, isRoomLocked && styles.controlPillTextLocked]}>
+              {isRoomLocked ? 'الغرفة مغلقة (اضغط للفتح)' : 'قفل الغرفة'}
+            </Text>
+          </TouchableOpacity>
+        ) : isRoomLocked ? (
+          <View style={styles.lockedNoticePill}>
+            <Text style={styles.lockedNoticeText}>🔒 الغرفة مغلقة بواسطة القائد</Text>
+          </View>
+        ) : null}
+      </View>
+
       {/* Messages Stream - Virtualized FlatList */}
       <FlatList
         ref={flatListRef}
@@ -566,51 +618,61 @@ export const ChatRoomsScreen = ({ navigation }: { navigation?: any }) => {
         </View>
       )}
 
-      {/* Input Bar */}
-      <View
-        style={[
-          styles.inputContainer,
-          { paddingBottom: isKeyboardVisible ? (Platform.OS === 'ios' ? 10 : 8) : 68 },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.mediaButton}
-          onPress={handleAttachImage}
-          activeOpacity={0.7}
-          disabled={isUploadingMedia}
+      {/* Input Bar or Restricted/Locked Message */}
+      {!canSendInCurrentRoom ? (
+        <View style={[styles.inputContainer, styles.restrictedContainer]}>
+          <Text style={styles.restrictedText}>
+            {isGeneralBroadcastOnly
+              ? '📢 هذه قناة إعلانات مخصصة للمسؤول العام فقط للإرسال.'
+              : '🔒 تم إغلاق المحادثة في هذه الغرفة بواسطة رئيس القطاع / المسؤول.'}
+          </Text>
+        </View>
+      ) : (
+        <View
+          style={[
+            styles.inputContainer,
+            { paddingBottom: isKeyboardVisible ? (Platform.OS === 'ios' ? 10 : 8) : 68 },
+          ]}
         >
-          <Text style={styles.mediaButtonText}>📎</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.mediaButton}
+            onPress={handleAttachImage}
+            activeOpacity={0.7}
+            disabled={isUploadingMedia}
+          >
+            <Text style={styles.mediaButtonText}>📎</Text>
+          </TouchableOpacity>
 
-        <TextInput
-          style={styles.textInput}
-          placeholder="اكتب رسالتك الكشفية..."
-          placeholderTextColor="#9CA3AF"
-          value={inputMessage}
-          onChangeText={setInputMessage}
-          multiline
-          onFocus={() => {
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
-          }}
-        />
+          <TextInput
+            style={styles.textInput}
+            placeholder="اكتب رسالتك الكشفية..."
+            placeholderTextColor="#9CA3AF"
+            value={inputMessage}
+            onChangeText={setInputMessage}
+            multiline
+            onFocus={() => {
+              setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
+            }}
+          />
 
-        <TouchableOpacity
-          style={[styles.voiceButton, isRecording && styles.voiceButtonRecording]}
-          onPress={handleSendVoiceNote}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.voiceButtonText}>{isRecording ? '🔴' : '🎙️'}</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.voiceButton, isRecording && styles.voiceButtonRecording]}
+            onPress={handleSendVoiceNote}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.voiceButtonText}>{isRecording ? '🔴' : '🎙️'}</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.sendButton, !inputMessage.trim() && styles.sendButtonDisabled]}
-          onPress={handleSend}
-          disabled={!inputMessage.trim()}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.sendButtonText}>إرسال</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.sendButton, !inputMessage.trim() && styles.sendButtonDisabled]}
+            onPress={handleSend}
+            disabled={!inputMessage.trim()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.sendButtonText}>إرسال</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Full-screen Image Preview Modal */}
       <Modal
@@ -1005,4 +1067,85 @@ const styles = StyleSheet.create({
     height: '80%',
     borderRadius: 12,
   },
+  roomControlsBar: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  controlPill: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+  },
+  controlPillActive: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#F87171',
+  },
+  controlPillLocked: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+  },
+  controlPillIcon: {
+    fontSize: 12,
+  },
+  controlPillText: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  controlPillTextActive: {
+    color: '#DC2626',
+  },
+  controlPillTextLocked: {
+    color: '#B45309',
+  },
+  broadcastNoticePill: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+  },
+  broadcastNoticeText: {
+    fontSize: 10,
+    color: '#1D4ED8',
+    fontWeight: 'bold',
+  },
+  lockedNoticePill: {
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+  },
+  lockedNoticeText: {
+    fontSize: 10,
+    color: '#B91C1C',
+    fontWeight: 'bold',
+  },
+  restrictedContainer: {
+    justifyContent: 'center',
+    paddingVertical: 14,
+    backgroundColor: '#F3F4F6',
+  },
+  restrictedText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
 });
+

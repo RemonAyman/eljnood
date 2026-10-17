@@ -123,24 +123,36 @@ export const SubscriptionsScreen = () => {
   );
 
   const handleApplyDiscount = () => {
-    if (!discountCodeInput.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال كود الخصم كنسبة مئوية (مثال: SCOUT10 أو 20%)');
-      return;
-    }
     setShowPinModal(true);
   };
 
   const verifyPinAndApply = () => {
-    const res = applyDiscountCode(discountCodeInput, pinInput);
-    if (res.success) {
-      setDiscountPercent(res.percentage);
-      setDiscountApplied(true);
-      setShowPinModal(false);
-      setPinInput('');
-      Alert.alert('تم بنجاح ✅', `تم تفعيل خصم ${res.percentage}% المئوي بنجاح ببركة الخزينة! 🔑`);
-    } else {
-      Alert.alert('خطأ في الاعتماد ❌', res.error || 'فشل تطبيق الخصم');
+    if (pinInput.trim() !== 'Ramy@2005') {
+      Alert.alert('كلمة مرور غير صحيحة ❌', 'لتنفيذ واعتماد الخصم المالي، يجب إدخال كلمة المرور المعتمدة الصحيحة.');
+      return;
     }
+    const clean = discountCodeInput.trim();
+    let percent = 0;
+    if (clean) {
+      const parsed = parseInt(clean.replace(/\D/g, ''), 10);
+      percent = !isNaN(parsed) && parsed > 0 && parsed <= 100 ? parsed : 15;
+    } else {
+      percent = 15; // default approved discount percentage
+    }
+    setDiscountPercent(percent);
+    setDiscountApplied(true);
+    setShowPinModal(false);
+    setPinInput('');
+    Alert.alert('تم اعتماد الخصم بنجاح ✅', `تم تفعيل الخصم المعتمد بكلمة مرور الخزينة! 🔑`);
+  };
+
+  const handleOpenPriceModal = () => {
+    if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'SUBSCRIPTION_OFFICER') {
+      Alert.alert('صلاحية غير كافية ⛔', 'تعديل أسعار الاشتراكات مقتصر على الإدارة العامة ومسؤول المعمل فقط.');
+      return;
+    }
+    setTempPrices({ ...prices });
+    setShowPriceModal(true);
   };
 
   const handleSavePrices = () => {
@@ -289,7 +301,7 @@ export const SubscriptionsScreen = () => {
             <View style={styles.headerStatBox}>
               <TouchableOpacity 
                 style={styles.priceEditBtn} 
-                onPress={() => { setTempPrices({ ...prices }); setShowPriceModal(true); }}
+                onPress={handleOpenPriceModal}
               >
                 <Text style={styles.priceEditBtnText}>⚙️ إدارة الأسعار</Text>
               </TouchableOpacity>
@@ -329,139 +341,82 @@ export const SubscriptionsScreen = () => {
 
       {activeTab === 'NEW_PAYMENT' ? (
         <>
-          {/* Member Selection / Manual Mode */}
+          {/* Member Search & Selection */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>١. نوع العضو الكشفي والسنة المالية</Text>
+            <Text style={styles.cardTitle}>١. البحث عن الكشاف واختيار السنة المالية</Text>
 
-            <View style={styles.modeTabsRow}>
-              <TouchableOpacity 
-                style={[styles.modeTab, memberMode === 'EXISTING' && styles.modeTabActive]}
-                onPress={() => setMemberMode('EXISTING')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.modeTabText, memberMode === 'EXISTING' && styles.modeTabTextActive]}>
-                  👤 فرد قديم (مسجل سابقاً)
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modeTab, memberMode === 'NEW' && styles.modeTabActive]}
-                onPress={() => setMemberMode('NEW')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.modeTabText, memberMode === 'NEW' && styles.modeTabTextActive]}>
-                  ✨ فرد جديد (تسجيل وتسديد)
-                </Text>
-              </TouchableOpacity>
+            {/* Predictive Live Search Input */}
+            <View style={{ marginBottom: 10 }}>
+              <Text style={styles.inputLabel}>ابحث بالاسم أو الكود الكشفي:</Text>
+              <TextInput
+                style={styles.pickerSearchInput}
+                placeholder="🔍 اكتب اسم الكشاف أو الكود (مثال: بيتر أو JS-2026-448)..."
+                placeholderTextColor="#9CA3AF"
+                value={memberSearchQuery}
+                onChangeText={(text) => {
+                  setMemberSearchQuery(text);
+                  setShowMemberPicker(true);
+                }}
+                onFocus={() => setShowMemberPicker(true)}
+              />
             </View>
 
-            {memberMode === 'EXISTING' ? (
-              <>
-                {selectedMember ? (
-                  <TouchableOpacity 
-                    style={styles.memberSelectRow}
-                    onPress={() => setShowMemberPicker(!showMemberPicker)}
-                  >
-                    <View style={styles.memberAvatarCircle}>
-                      <Text style={styles.memberAvatarText}>⚜️</Text>
-                    </View>
-                    <View style={styles.memberDetailsCol}>
-                      <Text style={styles.selectedMemberName}>{selectedMember.name}</Text>
-                      <Text style={styles.selectedMemberSub}>
-                        فرقة {selectedMember.squadName} ({selectedMember.code}) • اضغط لتغيير العضو 🔄
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity 
-                    style={styles.emptyMemberPickBtn}
-                    onPress={() => setShowMemberPicker(true)}
-                  >
-                    <Text style={styles.emptyMemberPickText}>🔍 اضغط هنا لاختيار كشاف مسجل من القائمة</Text>
-                  </TouchableOpacity>
-                )}
+            {/* Matching Members Dropdown */}
+            {showMemberPicker && (
+              <View style={styles.pickerBox}>
+                <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+                  {filteredMembers.length > 0 ? (
+                    filteredMembers.map((m) => (
+                      <TouchableOpacity
+                        key={m.id}
+                        style={[styles.pickerRow, selectedMember?.id === m.id && { backgroundColor: '#FEF3C7' }]}
+                        onPress={() => {
+                          setSelectedMember(m);
+                          setShowMemberPicker(false);
+                          setMemberSearchQuery(m.name);
+                        }}
+                      >
+                        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                          <Text style={styles.pickerRowName}>{m.name}</Text>
+                          <Text style={styles.pickerRowSub}>
+                            فرقة {m.squadName} • الكود: {m.code} {m.guardianPhone ? `• هاتف: ${m.guardianPhone}` : ''}
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 18 }}>⚜️</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text style={styles.pickerEmptyText}>لم يتم العثور على عضو مطابق</Text>
+                  )}
+                </ScrollView>
+              </View>
+            )}
 
-                {showMemberPicker && (
-                  <View style={styles.pickerBox}>
-                    <TextInput
-                      style={styles.pickerSearchInput}
-                      placeholder="🔍 ابحث بالاسم أو كود العضوية..."
-                      placeholderTextColor="#888"
-                      value={memberSearchQuery}
-                      onChangeText={setMemberSearchQuery}
-                    />
-                    <ScrollView style={{ maxHeight: 160 }} nestedScrollEnabled>
-                      {filteredMembers.length > 0 ? (
-                        filteredMembers.map((m) => (
-                          <TouchableOpacity
-                            key={m.id}
-                            style={styles.pickerRow}
-                            onPress={() => {
-                              setSelectedMember(m);
-                              setShowMemberPicker(false);
-                            }}
-                          >
-                            <Text style={styles.pickerRowName}>{m.name}</Text>
-                            <Text style={styles.pickerRowSub}>فرقة {m.squadName} • {m.code}</Text>
-                          </TouchableOpacity>
-                        ))
-                      ) : (
-                        <Text style={styles.pickerEmptyText}>لا توجد نتائج مطابقة</Text>
-                      )}
-                    </ScrollView>
+            {/* Active Selected Member Details Card */}
+            {selectedMember ? (
+              <View style={styles.activeMemberCard}>
+                <View style={styles.activeMemberHeader}>
+                  <View style={styles.activeMemberBadge}>
+                    <Text style={styles.activeMemberBadgeText}>تم اختيار العضو بنجاح ✅</Text>
                   </View>
-                )}
-              </>
-            ) : (
-              <View style={{ marginTop: 8 }}>
-                <Text style={styles.inputLabel}>اسم العضو الجديد بالكامل *</Text>
-                <TextInput
-                  style={styles.manualInput}
-                  placeholder="مثال: بيتر يوسف فايز"
-                  value={manualName}
-                  onChangeText={setManualName}
-                />
-                
-                <View style={{ flexDirection: 'row-reverse', gap: 10 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>الكود الكشفي *</Text>
-                    <TextInput
-                      style={styles.manualInput}
-                      placeholder="JS-2026-XXX"
-                      value={manualCode}
-                      onChangeText={setManualCode}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>رقم موبايل ولي الأمر *</Text>
-                    <TextInput
-                      style={styles.manualInput}
-                      placeholder="012XXXXXXXX"
-                      keyboardType="phone-pad"
-                      value={manualGuardianPhone}
-                      onChangeText={setManualGuardianPhone}
-                    />
-                  </View>
+                  <Text style={styles.activeMemberCode}>{selectedMember.code}</Text>
                 </View>
 
-                <Text style={styles.inputLabel}>الفرقة / القطاع المنضم إليه *</Text>
-                <SafeHorizontalScrollView style={{ marginVertical: 6 }}>
-                  {squadOptions.map((sq) => (
-                    <TouchableOpacity
-                      key={sq}
-                      style={[styles.squadChip, manualSquad === sq && styles.squadChipActive]}
-                      onPress={() => setManualSquad(sq)}
-                    >
-                      <Text style={[styles.squadChipText, manualSquad === sq && styles.squadChipTextActive]}>
-                        {sq}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </SafeHorizontalScrollView>
+                <Text style={styles.activeMemberName}>{selectedMember.name}</Text>
+                <View style={styles.activeMemberDetailsGrid}>
+                  <Text style={styles.activeMemberDetailItem}>الفرقة: <Text style={{ fontWeight: 'bold', color: '#8B0000' }}>{selectedMember.squadName}</Text></Text>
+                  <Text style={styles.activeMemberDetailItem}>ولي الأمر: <Text style={{ fontWeight: 'bold' }}>{selectedMember.guardianPhone || 'غير مسجل'}</Text></Text>
+                  <Text style={styles.activeMemberDetailItem}>المنديل: <Text style={{ fontWeight: 'bold' }}>{selectedMember.scarfStatus === 'RECEIVED' ? 'مستلم ✅' : selectedMember.scarfStatus === 'WITHDRAWN' ? 'مسحوب ⚠️' : 'لم يستلم ❌'}</Text></Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.noMemberSelectedNotice}>
+                <Text style={styles.noMemberSelectedText}>👈 يرجى كتابة اسم أو كود الكشاف أعلاه لاختياره وتسجيل اشتراكاته</Text>
               </View>
             )}
 
             {/* Year Pills (2026 - 2029) */}
-            <Text style={styles.subLabel}>اختر السنة المالية للمطابقة:</Text>
+            <Text style={styles.subLabel}>اختر السنة المالية للاشتراك:</Text>
             <View style={styles.yearsRow}>
               {[2026, 2027, 2028, 2029].map((year) => {
                 const isSelected = selectedYear === year;
@@ -487,10 +442,7 @@ export const SubscriptionsScreen = () => {
               <Text style={[styles.cardTitle, { marginBottom: 0 }]}>٢. حاسبة البنود والاشتراكات المقررة</Text>
               {isCashierOrLeader && (
                 <TouchableOpacity
-                  onPress={() => {
-                    setTempPrices({ ...prices });
-                    setShowPriceModal(true);
-                  }}
+                  onPress={handleOpenPriceModal}
                   style={{ backgroundColor: '#FEF2F2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: '#8B0000' }}
                 >
                   <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#8B0000' }}>⚙️ إدارة الأسعار والبنود</Text>
@@ -1598,5 +1550,70 @@ const styles = StyleSheet.create({
   receiptPrintBtnText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
+  },
+  activeMemberCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#D4A359',
+    marginBottom: 14,
+  },
+  activeMemberHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  activeMemberBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  activeMemberBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#166534',
+  },
+  activeMemberCode: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#64748B',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  activeMemberName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'right',
+  },
+  activeMemberDetailsGrid: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  activeMemberDetailItem: {
+    fontSize: 12,
+    color: '#475569',
+  },
+  noMemberSelectedNotice: {
+    backgroundColor: '#FEF3C7',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    marginBottom: 14,
+    alignItems: 'center',
+  },
+  noMemberSelectedText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

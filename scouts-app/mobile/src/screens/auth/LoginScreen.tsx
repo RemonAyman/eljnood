@@ -70,6 +70,20 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     desc: 'إدخال جرد العهدة، متابعة الكميات المتاحة، وتأكيد التسليم والإرجاع',
   },
 
+  // 4. Quiz Master (مسؤول المسابقات)
+  {
+    id: 'quiz',
+    email: 'quiz@jnood-scouts.com',
+    aliases: ['quiz', 'competitions', 'mosabaqat', 'quiz_master'],
+    role: 'QUIZ_MASTER',
+    name: 'مسؤول المسابقات الكشفية والروحية',
+    screen: 'BibleStudy',
+    icon: '🎯',
+    category: 'مسؤولو المسابقات',
+    color: '#059669',
+    desc: 'إعداد وتنزيل المسابقات الاختيارية والمقالية، تحديد الإجابات وتوزيع النقاط',
+  },
+
   // 3. Section Leaders (رؤساء القطاعات)
   {
     id: 'ashbal',
@@ -306,6 +320,8 @@ export const LoginScreen = ({ navigation }: any) => {
           ? 'InventoryRequest'
           : userRole === 'SUBSCRIPTION_OFFICER'
           ? 'Subscriptions'
+          : userRole === 'QUIZ_MASTER'
+          ? 'BibleStudy'
           : userRole === 'PARENT'
           ? 'ParentHome'
           : userRole === 'LEADER' || userRole === 'SECTION_LEADER' || userRole === 'JOWALAH'

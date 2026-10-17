@@ -100,26 +100,64 @@ export function getAvailableChatRoomsForUser(user: {
   return rooms;
 }
 
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 interface ChatState {
   currentRoomId: string;
   messages: ChatMessage[];
+  lockedRooms: Record<string, boolean>; // roomId -> isLocked
+  mutedRooms: Record<string, boolean>; // roomId -> isMuted
   setRoom: (roomId: string) => void;
+  toggleLockRoom: (roomId: string) => boolean;
+  toggleMuteRoom: (roomId: string) => boolean;
   sendMessage: (messageData: Omit<ChatMessage, 'id' | 'createdAt'>) => ChatMessage;
 }
 
-export const useChatStore = create<ChatState>((set) => ({
-  currentRoomId: 'GENERAL',
-  messages: [],
-  setRoom: (roomId: string) => {
-    set({ currentRoomId: roomId });
-  },
-  sendMessage: (messageData) => {
-    const newMessage: ChatMessage = {
-      ...messageData,
-      id: `msg_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      createdAt: new Date().toISOString(),
-    };
-    set((state) => ({ messages: [...state.messages, newMessage] }));
-    return newMessage;
-  },
-}));
+export const useChatStore = create<ChatState>()(
+  persist(
+    (set, get) => ({
+      currentRoomId: 'GENERAL',
+      messages: [],
+      lockedRooms: {},
+      mutedRooms: {},
+      setRoom: (roomId: string) => {
+        set({ currentRoomId: roomId });
+      },
+      toggleLockRoom: (roomId: string) => {
+        const current = !!get().lockedRooms[roomId];
+        const next = !current;
+        set((state) => ({
+          lockedRooms: { ...state.lockedRooms, [roomId]: next },
+        }));
+        return next;
+      },
+      toggleMuteRoom: (roomId: string) => {
+        const current = !!get().mutedRooms[roomId];
+        const next = !current;
+        set((state) => ({
+          mutedRooms: { ...state.mutedRooms, [roomId]: next },
+        }));
+        return next;
+      },
+      sendMessage: (messageData) => {
+        const newMessage: ChatMessage = {
+          ...messageData,
+          id: `msg_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({ messages: [...state.messages, newMessage] }));
+        return newMessage;
+      },
+    }),
+    {
+      name: 'jnood-chat-settings-v1',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        lockedRooms: state.lockedRooms,
+        mutedRooms: state.mutedRooms,
+      }),
+    }
+  )
+);
+

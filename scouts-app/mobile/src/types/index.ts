@@ -7,7 +7,8 @@ export type Role =
   | 'PARENT' 
   | 'ADMIN'
   | 'INVENTORY_MANAGER'
-  | 'SUBSCRIPTION_OFFICER';
+  | 'SUBSCRIPTION_OFFICER'
+  | 'QUIZ_MASTER';
 
 export type Gender = 'MALE' | 'FEMALE';
 
@@ -160,9 +161,20 @@ export interface RoomReservation {
 export interface BibleQuizQuestion {
   id: string;
   question: string;
+  type?: 'MULTIPLE_CHOICE' | 'ESSAY';
   options: string[];
   correctOptionIndex: number;
   explanation?: string;
+}
+
+export interface BibleQuiz {
+  id: string;
+  title: string;
+  sector?: string;
+  type: 'MULTIPLE_CHOICE' | 'ESSAY';
+  questions: BibleQuizQuestion[];
+  createdAt: string;
+  createdBy: string;
 }
 
 export interface DailyBibleReading {
@@ -172,9 +184,28 @@ export interface DailyBibleReading {
   chapterNumber: number;
   title: string;
   readingText: string;
+  sector?: string; // Target sector if assigned by section leader
   meditationPdfUrl?: string;
   meditationAudioUrl?: string;
   meditationVideoUrl?: string;
+  bibleFullPdfUrl?: string;
   quizQuestions?: BibleQuizQuestion[];
+}
+
+export interface MemoryItem {
+  id: string;
+  category: string;
+  title: string;
+  eventDate: string;
+  location: string;
+  likesCount: number;
+  commentsCount: number;
+  type: 'PHOTO' | 'VIDEO' | 'ALBUM';
+  coverEmoji: string;
+  coverImageUrl?: string;
+  description: string;
+  year?: number; // e.g. 2005 - 2026, 2027
+  sector?: string; // 'براعم' | 'أشبال' | 'كشاف_متقدم' | 'مرشدات_رائدات' | 'جوالة' | 'الكل'
+  allowedViewerSectors?: string[];
 }
 

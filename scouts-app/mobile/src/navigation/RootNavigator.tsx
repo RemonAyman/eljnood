@@ -143,10 +143,16 @@ export function RootNavigator() {
         return;
       }
 
-      // 2. Do not show chat banner if user is currently in the Chat screen
+      // 2. Do not show chat banner if user is currently in the Chat screen or if room is muted
       const currentRoute = navigationRef.current?.getCurrentRoute();
       if (latest.type === 'CHAT' && (currentRoute?.name === 'ChatRooms' || currentRoute?.name === 'Chat')) {
         return;
+      }
+      if (latest.type === 'CHAT' && latest.roomId) {
+        const { mutedRooms } = useChatStore.getState();
+        if (mutedRooms[latest.roomId]) {
+          return;
+        }
       }
 
       // 3. Filter by targetRole if specified

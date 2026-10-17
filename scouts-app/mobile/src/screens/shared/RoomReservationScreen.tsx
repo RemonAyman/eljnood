@@ -45,7 +45,7 @@ const SERVICES_LIST = [
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 8); // 8:00 to 23:00
 
-export const RoomReservationScreen = () => {
+export const RoomReservationScreen = ({ navigation }: any) => {
   const [selectedRoomId, setSelectedRoomId] = useState<string>('SCOUT_HALL');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [reservations, setReservations] = useState<RoomReservation[]>([]);
@@ -142,10 +142,21 @@ export const RoomReservationScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header with Back Button */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
-        <Text style={styles.headerTitle}>جدول حجز قاعات ومسارح الكنيسة 🏛️</Text>
+        <View style={styles.headerTopBar}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation?.goBack?.() || navigation?.navigate?.('MainSwipeApp')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtnText}>➔ رجوع</Text>
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerSubtitle}>مجموعة جنود المسيح الكشفية</Text>
+            <Text style={styles.headerTitle}>جدول حجز قاعات ومسارح الكنيسة 🏛️</Text>
+          </View>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -295,8 +306,29 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
-  headerSubtitle: { color: '#D4A359', fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  headerTopBar: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  headerTitleWrap: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  backBtn: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  backBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: { color: '#D4A359', fontSize: 13, fontWeight: 'bold', marginBottom: 2 },
+  headerTitle: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
   content: { padding: 16, paddingBottom: 40 },
   sectionCard: {
     backgroundColor: '#FFF',
