@@ -47,6 +47,21 @@ export const BottomNavBar = ({ navigation, currentRoute, isRootBar }: BottomNavB
   const getNavItems = () => {
     const role = user?.role || 'CHILD';
 
+    if (role === 'INVENTORY_MANAGER') {
+      return [
+        { key: 'InventoryRequest', label: 'المخزن والعهدة', icon: '📦', route: 'InventoryRequest' },
+        { key: 'RoomReservation', label: 'حجز القاعات', icon: '⛪', route: 'RoomReservation' },
+        { key: 'UserProfile', label: 'حسابي', icon: '👤', route: 'UserProfile' },
+      ];
+    }
+
+    if (role === 'SUBSCRIPTION_OFFICER') {
+      return [
+        { key: 'Subscriptions', label: 'الاشتراكات والماليات', icon: '💰', route: 'Subscriptions' },
+        { key: 'UserProfile', label: 'حسابي', icon: '👤', route: 'UserProfile' },
+      ];
+    }
+
     if (role === 'ADMIN') {
       return [
         { key: 'AdminDashboard', label: 'الرئيسية', icon: '📊', route: 'AdminDashboard' },

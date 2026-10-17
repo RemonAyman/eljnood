@@ -28,6 +28,8 @@ import { CurriculaScreen } from '../screens/shared/CurriculaScreen';
 import { MemoriesScreen } from '../screens/shared/MemoriesScreen';
 import { ChildHomeScreen } from '../screens/child/ChildHomeScreen';
 import { ParentHomeScreen } from '../screens/parent/ParentHomeScreen';
+import { InventoryRequestScreen } from '../screens/shared/InventoryRequestScreen';
+import { RoomReservationScreen } from '../screens/shared/RoomReservationScreen';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -66,6 +68,21 @@ export const MainSwipeAppNavigator = ({ navigation, route }: any) => {
   // Tab definitions by Role
   const tabs: TabConfig[] = useMemo(() => {
     const role = user?.role || 'CHILD';
+
+    if (role === 'INVENTORY_MANAGER') {
+      return [
+        { key: 'InventoryRequest', title: 'إدارة واستعارة العهدة', icon: '📦', component: InventoryRequestScreen },
+        { key: 'RoomReservation', title: 'جدول حجز القاعات', icon: '⛪', component: RoomReservationScreen },
+        { key: 'UserProfile', title: 'الملف الشخصي والحساب', icon: '👤', component: UserProfileScreen },
+      ];
+    }
+
+    if (role === 'SUBSCRIPTION_OFFICER') {
+      return [
+        { key: 'Subscriptions', title: 'الاشتراكات والماليات', icon: '💰', component: SubscriptionsScreen },
+        { key: 'UserProfile', title: 'الملف الشخصي والحساب', icon: '👤', component: UserProfileScreen },
+      ];
+    }
 
     if (role === 'ADMIN' || role === 'GROUP_MANAGER') {
       return [

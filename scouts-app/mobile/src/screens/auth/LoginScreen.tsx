@@ -7,6 +7,7 @@ import { auth } from '../../config/firebase.config';
 import { useAuthStore } from '../../store/authStore';
 import { validateLoginForm, isValidOTP, ValidationMessages } from '../../utils/validation';
 import { findUserOrMemberInFirestore } from '../../services/firebaseService';
+import { Role } from '../../types';
 
 // ─── Inline error component ───────────────────────────────────────────────────
 const FieldError = ({ message }: { message?: string }) =>
@@ -16,7 +17,7 @@ export interface OfficialAccount {
   id: string;
   email: string;
   aliases: string[];
-  role: 'ADMIN' | 'SECTION_LEADER' | 'LEADER' | 'PARENT' | 'CHILD' | 'JOWALAH';
+  role: Role;
   name: string;
   screen: string;
   section?: string;
@@ -46,13 +47,27 @@ export const OFFICIAL_SCOUT_ACCOUNTS: OfficialAccount[] = [
     id: 'subscriptions',
     email: 'subscriptions@jnood-scouts.com',
     aliases: ['subs', 'subscription', 'cashier', 'cashier@scouts.org'],
-    role: 'SECTION_LEADER',
-    name: 'مسؤول الاشتراكات والمعمل',
+    role: 'SUBSCRIPTION_OFFICER',
+    name: 'مسؤول الاشتراكات والماليات',
     screen: 'Subscriptions',
     icon: '💰',
     category: 'مسؤولو الاشتراكات',
     color: '#1E3A8A',
-    desc: 'تحصيل الاشتراكات، تعديل الأسعار، وإصدار الإيصالات',
+    desc: 'تحصيل الاشتراكات، تعديل الأسعار، وإصدار الإيصالات المالية',
+  },
+
+  // 3. Inventory Officer (مسؤول العهدة والمخزن)
+  {
+    id: 'inventory',
+    email: 'inventory@jnood-scouts.com',
+    aliases: ['inventory', 'store', 'makhzan', 'inventory@scouts.org'],
+    role: 'INVENTORY_MANAGER',
+    name: 'مسؤول العهدة والمخزن الكشفي',
+    screen: 'InventoryRequest',
+    icon: '📦',
+    category: 'مسؤولو العهدة والمخزن',
+    color: '#0D9488',
+    desc: 'إدخال جرد العهدة، متابعة الكميات المتاحة، وتأكيد التسليم والإرجاع',
   },
 
   // 3. Section Leaders (رؤساء القطاعات)
@@ -287,6 +302,10 @@ export const LoginScreen = ({ navigation }: any) => {
       const targetScreen =
         userRole === 'ADMIN'
           ? 'AdminDashboard'
+          : userRole === 'INVENTORY_MANAGER'
+          ? 'InventoryRequest'
+          : userRole === 'SUBSCRIPTION_OFFICER'
+          ? 'Subscriptions'
           : userRole === 'PARENT'
           ? 'ParentHome'
           : userRole === 'LEADER' || userRole === 'SECTION_LEADER' || userRole === 'JOWALAH'

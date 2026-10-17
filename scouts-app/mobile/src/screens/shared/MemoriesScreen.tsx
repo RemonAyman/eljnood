@@ -40,6 +40,7 @@ const MEMORY_CATEGORIES = [
   { id: 'FESTIVALS', title: 'المهرجانات', icon: '🏆', subtitle: 'مهرجانات الكرازة والمعارض الكشفية' },
   { id: 'AGAPI', title: 'الأغابي', icon: '🍞', subtitle: 'أيام الأغابي والمحبة الكنسية' },
   { id: 'OCCASION_PARTIES', title: 'حفلات المناسبات', icon: '🎉', subtitle: 'الأعياد وحفلات ختام الأنشطة' },
+  { id: 'TRIPS', title: 'الرحلات الكشفية', icon: '🚌', subtitle: 'الرحلات الترفيهية والثقافية والزيارات الكشفية' },
 ];
 
 const INITIAL_MEMORIES: MemoryItem[] = [

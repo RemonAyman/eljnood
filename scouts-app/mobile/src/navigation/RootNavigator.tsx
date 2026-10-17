@@ -39,6 +39,8 @@ import { ContactUsScreen } from '../screens/public/ContactUsScreen';
 
 import { MainSwipeAppNavigator } from './MainSwipeAppNavigator';
 
+import { BibleStudyScreen } from '../screens/shared/BibleStudyScreen';
+
 export const navigationRef = createNavigationContainerRef<any>();
 const Stack = createStackNavigator();
 
@@ -62,7 +64,7 @@ const ProtectedInventoryRequest = (props: any) => (
   <AuthGuard
     navigation={props.navigation}
     requireAuth={true}
-    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER']}
+    allowedRoles={['ADMIN', 'LEADER', 'SECTION_LEADER', 'JOWALAH', 'GROUP_MANAGER', 'INVENTORY_MANAGER']}
   >
     <InventoryRequestScreen {...props} />
   </AuthGuard>
@@ -81,6 +83,12 @@ const ProtectedRoomReservation = (props: any) => (
 const ProtectedScoutingPlan = (props: any) => (
   <AuthGuard navigation={props.navigation} requireAuth={true}>
     <ScoutingPlanScreen {...props} />
+  </AuthGuard>
+);
+
+const ProtectedBibleStudy = (props: any) => (
+  <AuthGuard navigation={props.navigation} requireAuth={true}>
+    <BibleStudyScreen {...props} />
   </AuthGuard>
 );
 
@@ -341,6 +349,11 @@ export function RootNavigator() {
           name="ScoutingPlan"
           component={ProtectedScoutingPlan}
           options={{ title: 'الخطة السنوية الكشفية' }}
+        />
+        <Stack.Screen
+          name="BibleStudy"
+          component={ProtectedBibleStudy}
+          options={{ title: 'الكتاب المقدس والمسابقات' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

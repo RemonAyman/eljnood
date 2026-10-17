@@ -1,4 +1,13 @@
-export type Role = 'CHILD' | 'LEADER' | 'JOWALAH' | 'SECTION_LEADER' | 'GROUP_MANAGER' | 'PARENT' | 'ADMIN';
+export type Role = 
+  | 'CHILD' 
+  | 'LEADER' 
+  | 'JOWALAH' 
+  | 'SECTION_LEADER' 
+  | 'GROUP_MANAGER' 
+  | 'PARENT' 
+  | 'ADMIN'
+  | 'INVENTORY_MANAGER'
+  | 'SUBSCRIPTION_OFFICER';
 
 export type Gender = 'MALE' | 'FEMALE';
 
@@ -29,6 +38,8 @@ export interface Member {
   name: string;
   gender: Gender;
   scarfStatus: ScarfStatus;
+  scarfName?: string;
+  withdrawalReason?: string;
   birthDate: string;
   gradeLevel: GradeLevel;
   squadName: SquadName;
@@ -111,15 +122,29 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export interface InventoryItem {
+  id: string;
+  categoryId: string; // THEATER, GAMES, etc.
+  name: string;
+  totalQuantity: number;
+  availableQuantity: number;
+  unit?: string;
+  notes?: string;
+}
+
 export interface InventoryRequest {
   id: string;
   category: string;
+  categoryId?: string;
+  itemId?: string;
   itemName: string;
+  quantity: number;
   serviceName: string;
   requesterName: string;
   pickupDatetime: string;
   returnDatetime: string;
   status: 'PENDING' | 'APPROVED' | 'DELIVERED' | 'RETURNED' | 'REJECTED';
+  createdAt?: string;
 }
 
 export interface RoomReservation {
@@ -131,3 +156,25 @@ export interface RoomReservation {
   endHour: number;
   reservedByName: string;
 }
+
+export interface BibleQuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
+  explanation?: string;
+}
+
+export interface DailyBibleReading {
+  id: string;
+  date: string; // YYYY-MM-DD
+  bookName: string;
+  chapterNumber: number;
+  title: string;
+  readingText: string;
+  meditationPdfUrl?: string;
+  meditationAudioUrl?: string;
+  meditationVideoUrl?: string;
+  quizQuestions?: BibleQuizQuestion[];
+}
+

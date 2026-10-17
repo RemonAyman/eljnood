@@ -263,14 +263,22 @@ export const CurriculaScreen = ({ navigation }: any) => {
         <View style={styles.verseCard}>
           <View style={styles.verseHeader}>
             <Text style={styles.verseTag}>🕊️ الكتاب المقدس: إصحاح وقراءة اليوم</Text>
-            <Text style={styles.verseRef}>أفسس ٦ (العدد ١ - ٢٤)</Text>
+            <Text style={styles.verseRef}>إنجيل متى ٥ (الموعظة على الجبل)</Text>
           </View>
           <Text style={styles.verseText}>
-            «أَخِيرًا يَا إِخْوَتِي تَشَدَّدُوا فِي الرَّبِّ وَفِي شِدَّةِ قُوَّتِهِ، الْبَسُوا سِلاَحَ اللهِ الْكَامِلَ»
+            «فَلْيُضِئْ نُورُكُمْ هكَذَا قُدَّامَ النَّاسِ، لِكَيْ يَرَوْا أَعْمَالَكُمُ الْحَسَنَةَ، وَيُمَجِّدُوا أَبَاكُمُ الَّذِي فِي السَّمَاوَاتِ»
           </Text>
           <Text style={styles.verseMeditation}>
-            💡 التأمل المرفق: فيديو شرح وتأملات بصوت القمص والخدام + مسابقة تفاعلية أسبوعية على الإصحاح!
+            💡 خطة القراءة السنوية: قراءة الإصحاح يومياً، تحميل تسجيلات الصوت والفيديو والـ PDF، والمشاركة في المسابقة التفاعلية اليومية!
           </Text>
+          <TouchableOpacity
+            style={styles.openBibleBtn}
+            onPress={() => navigation?.navigate('BibleStudy')}
+          >
+            <Text style={styles.openBibleBtnText}>
+              📖 فتح إصحاح اليوم والتأملات والمسابقة أونلاين ➔
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Squad Selection via Horizontal Card Selector */}
@@ -697,5 +705,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  openBibleBtn: {
+    backgroundColor: '#8B0000',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  openBibleBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

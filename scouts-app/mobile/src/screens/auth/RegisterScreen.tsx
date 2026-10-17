@@ -43,8 +43,11 @@ export const RegisterScreen = ({ navigation, route }: any) => {
   // ─── Child Fields ─────────────────────────────────────────────────────────────
   const [name, setName] = useState('');
   const [code, setCode] = useState(`JS-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
+  const [birthDate, setBirthDate] = useState('2014-05-15');
   const [gender, setGender] = useState<Gender>('MALE');
   const [scarfStatus, setScarfStatus] = useState<ScarfStatus>('RECEIVED');
+  const [scarfName, setScarfName] = useState('منديل وعد كشفي');
+  const [withdrawalReason, setWithdrawalReason] = useState('');
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>('PREP_1');
   const [guardianPhone, setGuardianPhone] = useState('');
   const [childPhone, setChildPhone] = useState('');
@@ -115,6 +118,18 @@ export const RegisterScreen = ({ navigation, route }: any) => {
     { value: 'جوالة', label: 'جوالة', icon: '🛡️' }
   ];
 
+  const SCARF_NAMES = [
+    'منديل مرحلة براعم',
+    'منديل وعد أشبال/زهرات',
+    'منديل كشاف / مرشدات مبتدئ',
+    'منديل كشفي درجة ثانية',
+    'منديل كشفي درجة أولى',
+    'منديل كشاف متقدم / رائدات',
+    'منديل مرحلة الجوالة',
+    'منديل الشارة الخشبية (قادة)',
+    'منديل الفوج الكشفي الرسمي',
+  ];
+
   const handleSubmit = useCallback(async () => {
     let validationData: any = {
       role: activeRole,
@@ -173,7 +188,9 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         code: code.trim(),
         gender,
         scarfStatus,
-        birthDate: '2012-01-01',
+        scarfName: scarfStatus === 'RECEIVED' ? scarfName : undefined,
+        withdrawalReason: scarfStatus === 'WITHDRAWN' ? withdrawalReason.trim() : undefined,
+        birthDate: birthDate.trim() || '2014-01-01',
         gradeLevel,
         squadName: calculatedSquad,
         phone: childPhone.trim(),
@@ -398,6 +415,15 @@ export const RegisterScreen = ({ navigation, route }: any) => {
               editable={false}
             />
 
+            <Text style={styles.inputLabel}>تاريخ الميلاد وسنة التحاق الفرد * [إجباري]</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="مثال: 2014-05-20"
+              value={birthDate}
+              onChangeText={setBirthDate}
+              textAlign="right"
+            />
+
             {/* Gender Selector */}
             <IconCardSelector
               label="النوع * [إجباري]"
@@ -421,6 +447,38 @@ export const RegisterScreen = ({ navigation, route }: any) => {
               selectedValue={scarfStatus}
               onSelect={(val) => setScarfStatus(val as ScarfStatus)}
             />
+
+            {scarfStatus === 'RECEIVED' && (
+              <View style={styles.subCardBox}>
+                <Text style={styles.subCardLabel}>🧣 قائمة منسدلة بأسماء المناديل (اختر نوع المنديل):</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 6 }}>
+                  {SCARF_NAMES.map((sName) => (
+                    <TouchableOpacity
+                      key={sName}
+                      style={[styles.chipItem, scarfName === sName && styles.chipItemActive]}
+                      onPress={() => setScarfName(sName)}
+                    >
+                      <Text style={[styles.chipItemText, scarfName === sName && styles.chipItemTextActive]}>
+                        {sName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {scarfStatus === 'WITHDRAWN' && (
+              <View style={[styles.subCardBox, { borderColor: '#FCA5A5', backgroundColor: '#FEF2F2' }]}>
+                <Text style={[styles.subCardLabel, { color: '#B91C1C' }]}>⚠️ سبب سحب المنديل الكشفي * [إجباري]:</Text>
+                <TextInput
+                  style={[styles.input, { borderColor: '#F87171', backgroundColor: '#FFF' }]}
+                  placeholder="اكتب سبب سحب المنديل بالتفصيل..."
+                  value={withdrawalReason}
+                  onChangeText={setWithdrawalReason}
+                  textAlign="right"
+                />
+              </View>
+            )}
 
             <Text style={styles.sectionHeader}>٢. بيانات التواصل والعنوان</Text>
 
@@ -881,5 +939,42 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     fontSize: 18,
+  },
+  subCardBox: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+  subCardLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#374151',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  chipItem: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 8,
+  },
+  chipItemActive: {
+    backgroundColor: '#8B0000',
+    borderColor: '#8B0000',
+  },
+  chipItemText: {
+    fontSize: 12,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  chipItemTextActive: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });
